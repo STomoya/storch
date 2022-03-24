@@ -3,7 +3,8 @@ FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-devel
 ENV DEBIAN_FRONTEND=noniteractive
 RUN apt update -y && \
     apt install -y \
-    libopencv-dev
+    libopencv-dev \
+    git
 
 ARG UID
 RUN useradd -l -m -u ${UID} dockeruser
