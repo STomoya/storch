@@ -1,0 +1,17 @@
+version: '2.3'
+
+services:
+  python:
+    build:
+      context: .
+      dockerfile: docker/torch/Dockerfile
+      args:
+        - UID=${USERID}
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - .:/usr/src
+    working_dir: /usr/src
+    tty: true
+    shm_size: '8gb'

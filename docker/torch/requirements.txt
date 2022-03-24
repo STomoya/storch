@@ -1,0 +1,14 @@
+scikit-learn
+scikit-image
+matplotlib
+tqdm
+scipy
+kornia
+opencv-python
+opt_einsum
+einops
+loguru
+rich
+ninja
+torchdata
+tensorboard
