@@ -17,7 +17,10 @@ __all__=[
     'save_images',
     'to_tensor',
     'tensor2heatmap',
-    'tensor2heatmap_cv2'
+    'tensor2heatmap_cv2',
+    'make_mask',
+    'make_masks',
+    'apply_mask'
 ]
 
 def make_image_grid(*image_tensors, num_images=None):
