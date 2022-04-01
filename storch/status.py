@@ -267,7 +267,7 @@ class Status:
     def log_model(self, model):
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
-    def log_gpu(self):
+    def log_gpu_memory(self):
         if torch.cuda.is_available():
             self.log(f'\n{torch.cuda.memory_summary()}')
         else:
@@ -327,7 +327,7 @@ class Status:
         if self.batches_done == 0:
             # print gpu on first step
             # for checking memory usage
-            self.log_gpu()
+            self.log_gpu_memory()
 
         if self._bar:
             postfix = [f'{k} : {v:.5f}' for k, v in kwargs.items()]
