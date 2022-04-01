@@ -8,4 +8,5 @@ def get_activation(name):
     elif name == 'gelu':  return nn.GELU()
     elif name in ['swish', 'silu']: return nn.SiLU(True)
     elif name == 'tanh':  return nn.Tanh()
+    elif name == 'sigmoid': return nn.Sigmoid()
     raise Exception(f'Activation: {name}')
