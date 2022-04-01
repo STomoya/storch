@@ -12,6 +12,7 @@ import time, datetime
 from statistics import mean
 import warnings
 from argparse import ArgumentParser, Namespace
+from contextlib import contextmanager
 
 import matplotlib.pyplot as plt
 import torch
@@ -351,6 +352,26 @@ class Status:
             for key, value in kwargs.items():
                 self._tb_writer.add_scalar(key, value, self.batches_done)
 
+
+    @contextmanager
+    def stop_timer(self):
+        '''context manager to stop the timer.
+
+        Example usage:
+            # The first batch ETA will add the time of validation for the previous epoch
+            for _ in range(epochs):
+                train_one_epoch()   # calls .update() each step.
+                val_on_each_epoch() # doesn't call .update()
+
+            # To avoid this you can:
+            for _ in range(epochs):
+                train_one_epoch()
+                with status.stop_timer(): # this will stop the timer during with statement.
+                    val_on_each_epoch()
+        '''
+        stop_start = time.time()
+        yield
+        self._step_start += time.time() - stop_start
 
     def is_end(self):
         '''have reached last batch?'''
