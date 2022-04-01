@@ -9,7 +9,7 @@ from typing import Any
 
 import logging
 import time, datetime
-import subprocess
+from statistics import mean
 import warnings
 from argparse import ArgumentParser, Namespace
 
@@ -166,6 +166,7 @@ class Status:
     def __init__(self,
         max_iters: int, bar: bool=True,
         log_file: str=None, log_interval: int=1, logger_name: str='logger',
+        steptime_num_accum: int=100,
         tensorboard: bool=False, tb_folder: str|None=None
     ) -> None:
 
@@ -191,6 +192,8 @@ class Status:
 
         # timer
         self._step_start = time.time()
+        self._steptime_num_accum = steptime_num_accum
+        self._steptimes = []
 
         # tensorboard
         self._tb_writer = SummaryWriter(tb_folder) if tensorboard else None
@@ -290,14 +293,36 @@ class Status:
 
         self.update_collector(**kwargs)
 
+        _print_rolling_eta = False
+        if len(self._steptimes) == self._steptime_num_accum:
+            self._steptimes = self._steptimes[1:]
+            _print_rolling_eta = True
+        self._steptimes.append(time.time() - self._step_start)
+
         # log
-        if self._log_file is not None \
-            and self.batches_done % self._log_interval == 0:
-            # FIXME: this ETA is not exact.
-            duration = time.time() - self._step_start
-            eta_sec = int((self.max_iters - self.batches_done) * duration)
-            eta = datetime.timedelta(seconds=eta_sec)
-            self.log(f'STEP: {self.batches_done} / {self.max_iters} INFO: {kwargs} ETA: {eta}')
+        if self._log_file is not None and self.batches_done % self._log_interval == 0:
+            message_parts = [
+                f'STEP: {self.batches_done} / {self.max_iters}',
+                f'INFO: {kwargs}']
+            # ETA
+            # NOTE: this ETA is not exact.
+            #       dealed by avging multiple steps. (see rolling eta)
+            duration = self._steptimes[-1]
+            eta_sec  = int((self.max_iters - self.batches_done) * duration)
+            eta      = datetime.timedelta(seconds=eta_sec)
+            message_parts.append(f'ETA(sec): {eta}')
+            # peak memory
+            if torch.cuda.is_available():
+                peak_mem_byte = torch.cuda.max_memory_allocated()
+                peak_mem_M    = peak_mem_byte / 1024 / 1024
+                message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
+            # rolling eta for more stable ETA
+            if _print_rolling_eta:
+                rolling_duration = mean(self._steptimes)
+                rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
+                rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
+                message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
+            self.log(' '.join(message_parts))
         if self.batches_done == 0:
             # print gpu on first step
             # for checking memory usage
@@ -337,6 +362,7 @@ class Status:
         # load
         self._collector = state_dict['collector']
         self.batches_done = state_dict['batches_done']
+        self._steptimes = state_dict['steptimes']
         if self.batches_done > 0:
             # fastforward progress bar if present
             if self._bar:
@@ -345,7 +371,8 @@ class Status:
     def state_dict(self) -> dict:
         return dict(
             collector=self._collector,
-            batches_done=self.batches_done)
+            batches_done=self.batches_done,
+            steptimes=self._steptimes)
 
 
     def plot(self, filename='loss'):
