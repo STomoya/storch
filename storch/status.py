@@ -265,9 +265,7 @@ class Status:
 
     def log_gpu(self):
         if torch.cuda.is_available():
-            nvidia_smi_output = subprocess.run(
-                'nvidia-smi', shell=True, capture_output=True, universal_newlines=True)
-            self.log(f'\n{nvidia_smi_output.stdout}')
+            self.log(f'\n{torch.cuda.memory_summary()}')
         else:
             self.log('No GPU available on your enviornment.')
 
