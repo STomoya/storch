@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable
 import glob
 import os
+import shutil
 import re
 import datetime
 
@@ -34,18 +35,19 @@ class Path(str):
     def name(self) -> str:
         return os.path.basename(self) if self.isfile() else ''
 
-    def __truediv__(self, other: str) -> "Path":
+    # "/" operator joins paths like pathlib.Path
+    def __div__(self, other: str) -> "Path":
         if not isinstance(other, str):
             raise TypeError(f'unsupported operand type(s) for /: "{self.__class__.__name__}" and "{other.__class__.__name__}"')
         return type(self)(os.path.join(self, other))
+
+    # also enable when true div
+    __truediv__ = __div__
 
     def mkdir(self) -> None:
         '''make directory if self not exists'''
         if not os.path.exists(self):
             os.makedirs(self)
-
-    def exists(self) -> bool:
-        return os.path.exists(self)
 
     def expanduser(self) -> "Path":
         return type(self)(os.path.expanduser(self))
@@ -53,7 +55,7 @@ class Path(str):
     def glob(self,
         recursive: bool=False, filter_fn: Callable|None=None,
         sort: bool=False, sortkey: Callable|None=None
-    ) -> list[str]:
+    ) -> list["Path"]:
         '''calls glob.glob on self, and optionally sort the result
 
         Arguments:
@@ -72,7 +74,11 @@ class Path(str):
             paths = [path for path in paths if filter_fn(path)]
         if sort:
             paths = sorted(paths, key=sortkey)
+        paths = [type(self)(path) for path in paths]
         return paths
+
+    def exists(self) -> bool:
+        return os.path.exists(self)
 
     def isdir(self) -> bool:
         return os.path.isdir(self)
@@ -82,6 +88,15 @@ class Path(str):
 
     def resolve(self) -> "Path":
         return type(self)(os.path.realpath(os.path.abspath(self)))
+
+    def dirname(self) -> "Path":
+        return type(self)(os.path.dirname(self))
+
+    # functions from shutil
+    # Path('./somewhere').rmtree() == shutile.rmtree('./somewhere')
+    copy   = shutil.copy
+    move   = shutil.move
+    rmtree = shutil.rmtree
 
 
 class Folder(object):
@@ -106,10 +121,10 @@ class Folder(object):
         # list all directories as dict
         folder.list()
     '''
-    def __init__(self, root: str, identify: bool=False, id: str=None) -> None:
+    def __init__(self, root: str, identify: bool=False, identifier: str=None) -> None:
         if identify:
-            id = id if id is not None else datetime.datetime.now().strftime('%Y.%m.%d.%H.%M.%S')
-            root += '_'+id
+            identifier = identifier if identifier is not None else datetime.datetime.now().strftime('%Y.%m.%d.%H.%M.%S')
+            root += '_'+identifier
 
         self._roots = storch.EasyDict()
         self._roots.root = Path(root)
