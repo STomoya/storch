@@ -134,3 +134,20 @@ def optimizer_step(
     else:
         loss.backward()
         optimizer.step()
+
+
+def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list):
+    '''assert shape of tensor
+
+    Arguments:
+        tensor: torch.Tensor
+            tensor to check the shape of
+        shape: torch.Size|tuple|list
+            expected shape of tensor.
+            pass -1 or None for arbitrary size.
+    '''
+    assert tensor.ndim == len(shape), f'Wrong number of dimensions: got {tensor.ndim} expected {len(shape)}'
+    for i, (size, exp_size) in enumerate(zip(tensor.size(), shape)):
+        if exp_size is None or exp_size == -1:
+            continue
+        assert size == exp_size, f'Wrong size for dimension {i}: got {size} expected {exp_size}'
