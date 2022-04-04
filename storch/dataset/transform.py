@@ -42,58 +42,14 @@ def make_simple_transform(
     return T.Compose(transform)
 
 
-@dataclass
-class TransformConfig:
-    '''Config for transforms
+def build_transform(name: str, **params):
+    if hasattr(T, name):
+        return getattr(T, name)(**params)
+    raise UserWarning(f'torchvision.transforms.{name} does not exist.')
 
-    Arguments:
-        name: str
-            name of the transform implemented in torchvision.transforms
-        params: dict
-            keyword arguments for the transform
-    '''
-    name: str
-    params: dict=field(default_factory=dict)
-
-    @classmethod
-    def from_dict(cls, config: dict):
-        '''make config from a dict
-
-        Required shape (yaml):
-            - name: Resize
-              size: 128
-            - name: ToTensor
-            - name: Normalize
-              mean: 0.5
-              std: 0.5
-
-            # or
-
-            - name: Resize
-              params:
-                size: 128
-            - name: ToTensor
-            - name: Normalize
-              params:
-                mean: 0.5
-                std: 0.5
-        '''
-        name = config['name']
-        if 'params' in config:
-            params = config['params']
-        else:
-            params = {key: value for key, value in config.items() if key != 'name'}
-        return cls(name, params)
-
-    def exists(self):
-        return hasattr(T, self.name)
-
-def make_transform_from_config(configs: list[TransformConfig]):
+def make_transform_from_config(configs: list[dict]):
     '''make transform from list of TransformConfigs'''
     transform = []
     for config in configs:
-        if not config.exists():
-            raise UserWarning(f'torchvision.transoforms.{config.name} does not exist.')
-        tcls = getattr(T, config.name)
-        transform.append(tcls(**config.params))
+        transform.append(build_transform(**config))
     return T.Compose(transform)
