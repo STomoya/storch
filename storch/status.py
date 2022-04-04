@@ -292,6 +292,7 @@ class Status:
         if not self._collector.initialized:
             self.initialize_collector(*list(kwargs.keys()))
 
+        self.batches_done += 1
         self.update_collector(**kwargs)
 
         _print_rolling_eta = False
@@ -301,7 +302,12 @@ class Status:
         self._steptimes.append(time.time() - self._step_start)
 
         # log
-        if self._log_file is not None and self.batches_done % self._log_interval == 0:
+        if (self._log_file is not None
+            and (
+            (self.batches_done == 1) or
+            (self.batches_done % self._log_interval == 0) or
+            (self.batches_done <= 100 and self.batches_done % 5 == 0))
+        ):
             message_parts = [
                 f'STEP: {self.batches_done} / {self.max_iters}',
                 f'INFO: {kwargs}']
@@ -336,7 +342,6 @@ class Status:
 
         self.tb_add_scalars(**kwargs)
 
-        self.batches_done += 1
         self._step_start = time.time()
 
     def initialize_collector(self, *keys):
