@@ -12,3 +12,4 @@ rich
 ninja
 torchdata
 tensorboard
+pyyaml

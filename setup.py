@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='storch',
-    version='0.0.9',
+    version='0.0.10',
     license='MIT',
     description='PyTorch utilities for STomoya.',
     author='Tomoya Sawada (STomoya)',
@@ -17,6 +17,7 @@ setup(
         'pillow',
         'matplotlib',
         'scikit-learn',
-        'scikit-image'
+        'scikit-image',
+        'pyyaml'
     ]
 )
