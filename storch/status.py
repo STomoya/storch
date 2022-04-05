@@ -330,7 +330,7 @@ class Status:
                 rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
                 message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
             self.log(' '.join(message_parts))
-        if self.batches_done == 0:
+        if self.batches_done == 10:
             # print gpu on first step
             # for checking memory usage
             self.log_gpu_memory()
