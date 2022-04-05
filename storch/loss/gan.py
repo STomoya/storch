@@ -16,7 +16,7 @@ class Adversarial(Loss):
         rl = self.real_loss(real_prob)
         fl = self.fake_loss(fake_prob)
         loss = rl + fl
-        if self.return_all:
+        if self._return_all:
             return loss, rl, fl
         return loss
 
@@ -55,7 +55,7 @@ class LSGANLoss(GANLoss):
         rl = self.real_loss(real_prob) * 0.5
         fl = self.fake_loss(fake_prob) * 0.5
         loss = rl + fl
-        if self.return_all:
+        if self._return_all:
             return loss, rl, fl
         return loss
 
