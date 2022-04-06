@@ -2,8 +2,6 @@
 from __future__ import annotations
 from typing import Callable
 
-from dataclasses import dataclass, field
-
 import torchvision.transforms as T
 
 def make_simple_transform(
