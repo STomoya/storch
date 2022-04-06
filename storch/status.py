@@ -17,9 +17,15 @@ from contextlib import contextmanager
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader, RandomSampler
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.collect_env import get_pretty_env_info
 from tqdm import tqdm
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+    tb_available = True
+except ImportError:
+    SummaryWriter = None
+    tb_available = False
 
 '''Value Collector'''
 
@@ -197,7 +203,9 @@ class Status:
         self._steptimes = []
 
         # tensorboard
-        self._tb_writer = SummaryWriter(tb_folder) if tensorboard else None
+        # if tensorboard and not tb_available:
+        self.log(f'\nTensorboard not installed. Install Tensorboard via:\n\n\tpip3 install tensorboard\n\nNo summary will be written.', level='warning')
+        self._tb_writer = SummaryWriter(tb_folder) if tensorboard and tb_available else None
 
 
     @property
