@@ -203,8 +203,8 @@ class Status:
         self._steptimes = []
 
         # tensorboard
-        # if tensorboard and not tb_available:
-        self.log(f'\nTensorboard not installed. Install Tensorboard via:\n\n\tpip3 install tensorboard\n\nNo summary will be written.', level='warning')
+        if tensorboard and not tb_available:
+            self.log(f'\nTensorboard not installed. Install Tensorboard via:\n\n\tpip3 install tensorboard\n\nNo summary will be written.', level='warning')
         self._tb_writer = SummaryWriter(tb_folder) if tensorboard and tb_available else None
 
 
