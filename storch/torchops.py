@@ -3,12 +3,40 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import random
+import warnings
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
 import numpy as np
+
+
+def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn'):
+    '''automatically return a torch.device object.
+    'cuda' if torch.cuda.is_available() else 'cpu'
+
+    Argumnets:
+        force_cpu: bool (default: False)
+            force device to be CPU
+        no_gpu_msg_type: str (default: 'warn')
+            How this function tells you, you do not have any GPUs. Ignored when force_cpu=True.
+            - 'warn': warnings.warn
+            - 'except': raise an exception
+            - any other str: does nothing
+    '''
+    if torch.cuda.is_available() or not force_cpu:
+        return torch.device('cuda')
+    if force_cpu:
+        return torch.device('cpu')
+
+    no_gpu_msg = f'No GPU found on your environment.'
+    if no_gpu_msg_type == 'warn':
+        warnings.warn(no_gpu_msg + ' Falling back to CPU.')
+    elif no_gpu_msg_type == 'except':
+        raise Exception(no_gpu_msg)
+
+    return torch.device('cpu')
 
 
 @torch.no_grad()
