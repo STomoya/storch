@@ -142,7 +142,8 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
 
 
 def optimizer_step(
-    loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None
+    loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
+    zero_grad: bool=True, set_to_none: bool=True, update_scaler: bool=False
 ) -> None:
     '''optimization step which supports gradient scaling for AMP.
 
@@ -154,11 +155,23 @@ def optimizer_step(
         scaler: GradScaler (default: None)
             Optional GradScaler object.
             If specified, uses it to scale the loss and call .step()
+        zero_grad: bool (default: True)
+            Call .zero_grad() on optimizer before calling .backward() on loss
+        set_no_none: bool (default: True)
+            Set None to .grad instead of setting them to 0.
+        update_scaler: bool (default: False)
+            Update the scaler if not None.
     '''
     assert scaler is None or isinstance(scaler, GradScaler)
+
+    if zero_grad:
+        optimizer.zero_grad(set_to_none)
+
     if scaler is not None:
         scaler.scale(loss).backward()
         scaler.step(optimizer)
+        if update_scaler:
+            scaler.update()
     else:
         loss.backward()
         optimizer.step()
