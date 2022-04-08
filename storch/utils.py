@@ -1,5 +1,6 @@
 
 from __future__ import annotations
+import glob
 import json
 import os
 
@@ -12,6 +13,7 @@ __all__=[
     'check_folder',
     'dynamic_default',
     'EasyDict',
+    'glob_inside',
     'prod',
     'save_command_args'
 ]
@@ -63,3 +65,9 @@ def check_folder(folder: str, make: bool=False):
     if make and not exists:
         os.makedirs(folder)
     return exists
+
+
+def glob_inside(folder: str, pattern: str='*', recursive: bool=True):
+    '''glob for files/dirs that matches pattern.'''
+    pattern = f'**/{pattern}' if recursive else pattern
+    return glob.glob(os.path.join(folder, pattern), recursive=recursive)
