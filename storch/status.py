@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from typing import Any
 
 import logging
+import subprocess
 import time, datetime
 from statistics import mean
 import warnings
@@ -192,7 +193,7 @@ class Status:
             _root_logger.removeHandler(hdlr)
         if log_file is not None:
             logging.basicConfig(filename=log_file, filemode='w',
-                format='%(asctime)s:%(filename)s:%(levelname)s: %(message)s')
+                format='%(asctime)s | %(filename)s | %(levelname)s | - %(message)s')
             self._logger = logging.getLogger(logger_name)
             self._logger.setLevel(logging.DEBUG)
         self._log_interval = log_interval
@@ -281,6 +282,15 @@ class Status:
         else:
             self.log('No GPU available on your enviornment.')
 
+    def log_nvidia_smi(self):
+        if torch.cuda.is_available():
+            nvidia_smi_output = subprocess.run(
+                'nvidia-smi', shell=True,
+                capture_output=True, universal_newlines=True)
+            self.log(f'\n{nvidia_smi_output.stdout}')
+        else:
+            self.log('No GPU available on your enviornment.')
+
     def log_stuff(self, *to_log):
         '''log information in one function'''
         self.log_env()
@@ -339,9 +349,9 @@ class Status:
                 message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
             self.log(' '.join(message_parts))
         if self.batches_done == 10:
-            # print gpu on first step
+            # print gpu after some batches
             # for checking memory usage
-            self.log_gpu_memory()
+            self.log_nvidia_smi()
 
         if self._bar:
             postfix = [f'{k} : {v:.5f}' for k, v in kwargs.items()]
