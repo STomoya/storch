@@ -1,14 +1,15 @@
 
 from __future__ import annotations
 
-import os
 import glob
+import os
 from typing import Callable
 
-from torch.utils.data import Dataset, DataLoader
 from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 
 from storch.dataset.utils import get_loader_kwargs, is_image_file
+
 
 class DatasetBase(Dataset):
     def __init__(self) -> None:

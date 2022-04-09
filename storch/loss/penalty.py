@@ -3,10 +3,11 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-from torch.autograd import grad, Variable
-from torch.cuda.amp import autocast, GradScaler
+from torch.autograd import Variable, grad
+from torch.cuda.amp import GradScaler, autocast
 
 from storch.loss._base import Loss
+
 
 @autocast(enabled=False)
 def calc_grad(

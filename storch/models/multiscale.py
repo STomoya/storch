@@ -1,9 +1,11 @@
 
 from __future__ import annotations
+
 from typing import Callable
 
 import torch
 import torch.nn as nn
+
 
 class MultiScale(nn.Module):
     '''Multi Scale

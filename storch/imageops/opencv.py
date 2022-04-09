@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from functools import wraps
 
-from PIL import Image
-import numpy as np
 import cv2
+import numpy as np
+from PIL import Image
 from skimage import segmentation
 from skimage.color import label2rgb
 

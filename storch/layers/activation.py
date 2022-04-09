@@ -1,6 +1,7 @@
 
 import torch.nn as nn
 
+
 def get_activation(name):
     if   name == 'relu':  return nn.ReLU(True)
     elif name == 'lrelu': return nn.LeakyReLU(0.2, True)

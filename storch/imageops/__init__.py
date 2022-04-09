@@ -6,8 +6,7 @@ import torchvision.transforms.functional as TF
 
 from storch.imageops.opencv import *
 from storch.imageops.pillow import *
-from storch.imageops.torch  import *
-
+from storch.imageops.torch import *
 
 INUGAMI_URL = 'https://stomoya.sakura.ne.jp/images/inugami-512pix.jpg'
 '''

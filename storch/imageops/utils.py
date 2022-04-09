@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 def random_box(size: tuple, min_size: float=0, max_size: float=1., margin: int=0):
     width, height = size
     min_x = min_y = margin

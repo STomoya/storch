@@ -1,6 +1,7 @@
 
 import torch
 
+
 class MinibatchStdDev(torch.nn.Module):
     def __init__(self, group_size, num_channels=1):
         super().__init__()

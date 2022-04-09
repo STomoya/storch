@@ -7,10 +7,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from torch.cuda.amp import autocast
 import torchvision.transforms.functional as TF
+from torch.cuda.amp import autocast
 
 from storch.loss._base import Loss
+
 
 class VGG(nn.Module):
     '''VGG with only feature layers'''

@@ -1,15 +1,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import random
 import warnings
+from collections.abc import Callable
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
-import numpy as np
 
 
 def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn'):

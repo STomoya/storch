@@ -17,15 +17,17 @@ Differences:
 '''
 
 from __future__ import annotations
+
 from contextlib import contextmanager
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, RandomSampler
-from torch.cuda.amp import autocast, GradScaler
+from torch.cuda.amp import GradScaler, autocast
+from torch.utils.data import DataLoader, Dataset, RandomSampler
 
 from storch.utils import EasyDict
+
 
 class MiniAcceleratedOptimizer(optim.Optimizer):
     '''Optimizer wrapper'''

@@ -1,11 +1,10 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 import urllib.request
+from io import BytesIO
 
 import torch
-
 from PIL import Image
 
 __all__=[

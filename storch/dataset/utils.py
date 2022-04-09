@@ -1,8 +1,10 @@
 
-from functools import partial
 import os
+from functools import partial
+
 import torch
 from torch.utils.data import default_collate
+
 import storch
 
 # from https://github.com/pytorch/vision/blob/6512146e447b69cc9fb379eb05e447a17d7f6d1c/torchvision/datasets/folder.py#L242

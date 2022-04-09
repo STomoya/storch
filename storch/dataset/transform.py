@@ -1,8 +1,10 @@
 
 from __future__ import annotations
+
 from typing import Callable
 
 import torchvision.transforms as T
+
 
 def make_simple_transform(
     image_size: tuple[int]|int, crop: str='center', hflip: bool=True,

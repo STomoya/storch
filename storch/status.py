@@ -4,21 +4,21 @@ Collect training status.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Any
-
+import datetime
 import logging
 import subprocess
-import time, datetime
-from statistics import mean
+import time
 import warnings
 from argparse import ArgumentParser, Namespace
+from collections.abc import Iterable
 from contextlib import contextmanager
+from statistics import mean
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
-from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.collect_env import get_pretty_env_info
+from torch.utils.data import DataLoader, RandomSampler
 from tqdm import tqdm
 
 try:

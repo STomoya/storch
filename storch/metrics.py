@@ -2,8 +2,9 @@
 from collections.abc import Callable
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
+from sklearn.metrics import classification_report, confusion_matrix
+
 
 def test_classification(
     targets: np.ndarray, predictions: np.ndarray, labels: list=None,

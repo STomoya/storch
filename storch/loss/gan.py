@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 from storch.loss._base import Loss
 
+
 class Adversarial(Loss):
     def real_loss(self, prob: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError()

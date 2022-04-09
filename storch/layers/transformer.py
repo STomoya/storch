@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 
+
 class TransformerBlock(nn.Module):
     '''Pass in nn.Module objects to construct a transformer block'''
     def __init__(self,

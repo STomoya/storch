@@ -1,7 +1,9 @@
 
 import torch
 import torch.nn as nn
+
 import storch
+
 
 def get_normalization2d(name, channels, affine=None):
     if   name == 'bn': return nn.BatchNorm2d(channels,    affine=storch.dynamic_default(affine, True))

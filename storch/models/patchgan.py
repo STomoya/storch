@@ -1,6 +1,8 @@
 
 import torch.nn as nn
+
 from storch import layers
+
 
 class PatchDiscriminator(nn.Sequential):
     '''PatchGAN D'''
