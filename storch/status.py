@@ -355,8 +355,8 @@ class Status:
 
         if self._bar:
             postfix = [f'{k} : {v:.5f}' for k, v in kwargs.items()]
-            self.bar.set_postfix_str(' '.join(postfix))
-            self.bar.update(1)
+            self._bar.set_postfix_str(' '.join(postfix))
+            self._bar.update(1)
 
         self.tb_add_scalars(**kwargs)
 
