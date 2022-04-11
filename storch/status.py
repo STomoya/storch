@@ -4,6 +4,7 @@ Collect training status.
 
 from __future__ import annotations
 
+import atexit
 import datetime
 import logging
 import subprocess
@@ -191,6 +192,7 @@ class Status:
         _root_logger = logging.getLogger()
         for hdlr in _root_logger.handlers:
             _root_logger.removeHandler(hdlr)
+        self._logger = None
         if log_file is not None:
             logging.basicConfig(filename=log_file, filemode='w',
                 format='%(asctime)s | %(filename)s | %(levelname)s | - %(message)s')
@@ -208,6 +210,7 @@ class Status:
             self.log(f'\nTensorboard not installed. Install Tensorboard via:\n\n\tpip3 install tensorboard\n\nNo summary will be written.', level='warning')
         self._tb_writer = SummaryWriter(tb_folder) if tensorboard and tb_available else None
 
+        atexit.register(self._shutdown_logger)
 
     @property
     def max_iters(self):
@@ -229,7 +232,7 @@ class Status:
         else:
             print(*args, **kwargs)
     def log(self, message, level='info'):
-        if hasattr(self, '_logger'):
+        if self._logger:
             getattr(self._logger, level)(message)
         else:
             warnings.warn('No Logger. Printing to stdout.')
@@ -401,7 +404,15 @@ class Status:
 
     def is_end(self):
         '''have reached last batch?'''
-        return self.batches_done >= self.max_iters
+        return self.batches_done >= self.max_iter
+
+    def _shutdown_logger(self):
+        if self._logger:
+            self.log('LOGGER: shutting down logger...')
+            handlers = self._logger.handlers
+            for handler in handlers:
+                self._logger.removeHandler(handler)
+                handler.close()
 
 
     def load_state_dict(self, state_dict: dict) -> None:
