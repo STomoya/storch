@@ -377,7 +377,7 @@ class Status:
 
 
     @contextmanager
-    def stop_timer(self):
+    def stop_timer(self, verbose=False):
         '''context manager to stop the timer.
 
         Example usage:
@@ -394,7 +394,10 @@ class Status:
         '''
         stop_start = time.time()
         yield
-        self._step_start += time.time() - stop_start
+        duration = time.time() - stop_start
+        if verbose:
+            self.log(f'TIMER[STOPPED]: duration: {duration}')
+        self._step_start += duration
 
     def is_end(self):
         '''have reached last batch?'''
