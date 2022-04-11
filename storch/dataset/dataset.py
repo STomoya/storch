@@ -34,8 +34,9 @@ class ImageFolder(DatasetBase):
     ) -> None:
         super().__init__()
         images = glob.glob(os.path.join(data_root, '**', '*'), recursive=True)
+        images = [file for file in images if is_image_file(file)]
         if isinstance(filter_fn, Callable):
-            images = [file for file in images if is_image_file(file) and filter_fn(file)]
+            images = [file for file in images if filter_fn(file)]
         if num_images is not None and len(images) > num_images:
             images = images[:num_images]
         self.images    = images
