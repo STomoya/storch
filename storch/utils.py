@@ -5,6 +5,7 @@ import glob
 import json
 import math
 import os
+import re
 from collections.abc import Iterable
 from typing import Any
 
@@ -14,7 +15,9 @@ __all__=[
     'dynamic_default',
     'EasyDict',
     'glob_inside',
+    'natural_sort',
     'prod',
+    'recursive_apply',
     'save_command_args'
 ]
 
@@ -71,3 +74,34 @@ def glob_inside(folder: str, pattern: str='*', recursive: bool=True):
     '''glob for files/dirs that matches pattern.'''
     pattern = f'**/{pattern}' if recursive else pattern
     return glob.glob(os.path.join(folder, pattern), recursive=recursive)
+
+
+# from: https://github.com/google/flax/blob/2387439a6f5c88627754905e6feadac4f33d9800/flax/training/checkpoints.py
+UNSIGNED_FLOAT_RE = re.compile(r'[-+]?((?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)')
+def natural_sort(iter):
+    '''sort files by numbers'''
+    def maybe_num(s):
+        return float(s) if UNSIGNED_FLOAT_RE.match(s) else s
+    def split_keys(s):
+        return [maybe_num(c) for c in UNSIGNED_FLOAT_RE.split(s)]
+    return sorted(iter, key=split_keys)
+
+
+def recursive_apply(func, data, cond_fn):
+    '''recursively apply func to data that satisfies cond_fn
+
+    Arguments:
+        func: Callable
+            the function to apply
+        data: Any
+            data to be applied
+        cond_fn: Callable
+            a function that returns a bool, which decides whether to apply the func or not.
+    '''
+    if isinstance(data, (tuple, list)):
+        return type(data)(recursive_apply(func, element, cond_fn) for element in data)
+    elif isinstance(data, dict):
+        return {key: recursive_apply(func, value, cond_fn) for key, value in data.items()}
+    elif cond_fn(data):
+        data = func(data)
+    return data

@@ -25,20 +25,12 @@ def get_loader_kwargs():
     loader_kwargs.generator      = None
     return loader_kwargs
 
-
-def recursive_apply(func, data):
-    if isinstance(data, (tuple, list)):
-        return type(data)(recursive_apply(func, element) for element in data)
-    elif isinstance(data, dict):
-        return {key: recursive_apply(func, value) for key, value in data.items()}
-    elif isinstance(data, torch.Tensor):
-        data = func(data)
-    return data
-
+def is_tensor(data):
+    return isinstance(data, torch.Tensor)
 def to(data, device):
     return data.to(device)
 
 def device_placement_collate_fn(batch, device):
     batch = default_collate(batch)
-    batch = recursive_apply(partial(to, device=device), batch)
+    batch = storch.recursive_apply(partial(to, device=device), batch, is_tensor)
     return batch
