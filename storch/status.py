@@ -404,7 +404,7 @@ class Status:
 
     def is_end(self):
         '''have reached last batch?'''
-        return self.batches_done >= self.max_iter
+        return self.batches_done >= self.max_iters
 
     def _shutdown_logger(self):
         if self._logger:
