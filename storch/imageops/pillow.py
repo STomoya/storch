@@ -5,12 +5,20 @@ import urllib.request
 from io import BytesIO
 
 import torch
-from PIL import Image
+from PIL import Image, ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 __all__=[
+    'download',
     'gif_from_files',
-    'download'
+    'pil_load_image'
 ]
+
+
+def pil_load_image(path: str):
+    return Image.open(path).convert('RGB')
+
 
 @torch.no_grad()
 def gif_from_files(

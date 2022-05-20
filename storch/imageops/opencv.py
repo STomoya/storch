@@ -14,6 +14,7 @@ from storch.imageops.utils import random_box
 __all__=[
     'color_hints',
     'color_palette',
+    'cv2_load_image',
     'mosaic',
     'mosaic_area',
     'slic',
@@ -35,6 +36,15 @@ def pil_io(func):
             image = image.convert('RGB')
         return image
     return inner
+
+
+def cv2_load_image(path: str, rgb=True, dtype=np.uint8):
+    image = cv2.imread(path, cv2.IMREAD_COLOR)
+    if rgb:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    if image.dtype != dtype:
+        image = image.astype(dtype)
+    return image
 
 
 @pil_io

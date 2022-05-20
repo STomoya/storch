@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 from PIL import Image
+from torchvision.io.image import ImageReadMode, read_image
 from torchvision.utils import save_image
 
 from storch.imageops.utils import random_box
@@ -18,10 +19,16 @@ __all__=[
     'to_tensor',
     'tensor2heatmap',
     'tensor2heatmap_cv2',
+    'torch_load_image',
     'make_mask',
     'make_masks',
     'apply_mask'
 ]
+
+
+def torch_load_image(path: str, mode: ImageReadMode=ImageReadMode.RGB):
+    return read_image(path, mode)
+
 
 def make_image_grid(*image_tensors, num_images=None):
     '''align images

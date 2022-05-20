@@ -8,6 +8,9 @@ try:
 except ImportError:
     import json
 
+from storch.imageops import cv2_load_image, pil_load_image, torch_load_image
+
+
 def load_json(path: str):
     '''Load a JSON format file'''
     with open(path, 'r') as fin:
