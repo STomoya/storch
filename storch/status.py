@@ -222,6 +222,9 @@ class Status:
     def batches_done(self, value):
         self._batches_done = value
 
+    def get_kbatches(self, format='{kbatches:.2f}k'):
+        kbatches = self._batches_done / 1000
+        return format.format(kbatches=kbatches)
 
     '''print functions'''
 

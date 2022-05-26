@@ -11,6 +11,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
 
+__all__ = [
+    'auto_get_device',
+    'freeze',
+    'unfreeze',
+    'update_ema',
+    'deterministic',
+    'shuffle_batch',
+    'optimizer_step',
+    'assert_shape'
+]
+
 
 def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn'):
     '''automatically return a torch.device object.
