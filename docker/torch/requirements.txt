@@ -1,15 +1,7 @@
-einops
-kornia
-loguru
+hydra-core
 matplotlib
-ninja
 opencv-python
-opt_einsum
-pyyaml
-rich
 scikit-image
 scikit-learn
 scipy
-tensorboard
-torchdata
 tqdm
