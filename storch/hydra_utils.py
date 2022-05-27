@@ -2,7 +2,7 @@
 
 NOTE: This implementation disables hydra's convenient functions like logging
       and autosaving config files. Use @hydra.main() instead if you want full
-      functionality.
+      functionality. This was needed to avoid conflicts with logging in storch.status.Status.
 '''
 
 from __future__ import annotations
