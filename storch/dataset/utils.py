@@ -11,6 +11,7 @@ import storch
 IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp"}
 
 def is_image_file(path):
+    '''Returns true if the path is a PIL.Image.Image openable file'''
     ext = set([os.path.splitext(os.path.basename(path))[-1].lower()])
     return ext.issubset(IMG_EXTENSIONS)
 
