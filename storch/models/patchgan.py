@@ -5,7 +5,18 @@ from storch import layers
 
 
 class PatchDiscriminator(nn.Sequential):
-    '''PatchGAN D'''
+    '''PatchGAN D
+
+    Arguments:
+        in_channels: int
+            Channel width of the input image.
+        num_layers: int (default: 3)
+            Number of strided convolution layers.
+        norm_name: str (default: 'bn')
+            Normalization layer name.
+        act_name: str (default: 'lrelu')
+            Activation function name
+    '''
     def __init__(self,
         in_channels: int, num_layers: int=3, channels: int=64, norm_name: str='bn', act_name: str='lrelu'
     ) -> None:

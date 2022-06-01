@@ -28,6 +28,20 @@ def test_model(
     device: str|torch.device='cpu',
     input_sampler: Callable=torch.randn
 ) -> None:
+    '''Test is the model works properly by forwarding dummy tensors (and optionally backward.)
+
+    Arguments:
+        models: nn.Module|list[nn.Module]
+            nn.Module or a list of nn.Module to be tested.
+        input_shapes: tuple|Iterable[tuple]
+            tuple of iterable of tuples, each presenting the input shape of the model.
+        batch_size: int (default: 3)
+            Size of the batch dimension.
+        device: str|torch.device (default: 'cpu')
+            The device to perform the test on.
+        input_sampler: Callable (default: torch.randn)
+            A callable which is used to sample the dummy inputs.
+    '''
     if isinstance(models, (list, tuple)):
         assert len(models) == len(input_shapes)
     else: models, input_shapes = [models], [input_shapes]

@@ -43,12 +43,34 @@ def make_simple_transform(
 
 
 def build_transform(name: str, **params):
+    '''Build a transform inside torchvision.transforms by their class name
+
+    Arguments:
+        name: str
+            The name of the transform. ex) ToTenor, Normalize
+        **params: Any
+            Keyword arguments of passed to the transform.
+    '''
     if hasattr(T, name):
         return getattr(T, name)(**params)
     raise UserWarning(f'torchvision.transforms.{name} does not exist.')
 
 def make_transform_from_config(configs: list[dict]):
-    '''make transform from list of TransformConfigs'''
+    '''make transform from list of TransformConfigs
+
+    Usage:
+        transforms = make_transform_from_config(
+            [
+                {'name': 'Resize', 'size': (224, 224)},
+                {'name': 'ToTensor'},
+                {'name': 'Normalize', 'mean': 0.5, 'std': 0.5}
+            ]
+        )
+
+    Arguments:
+        configs: list[dict]
+            List of dicts containing a least 'name' key.
+    '''
     transform = []
     for config in configs:
         transform.append(build_transform(**config))

@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,7 +20,12 @@ def _make_blur_kernel(filter_size: int):
     return filter2d.unsqueeze(0).unsqueeze(0)
 
 class Blur(nn.Module):
-    '''Blur layer used in StyleGANs'''
+    '''Blur layer used in StyleGANs
+
+    Arguments:
+        filter_size: int (default: 4)
+            Size of the low pass filter.
+    '''
     def __init__(self, filter_size: int=4) -> None:
         super().__init__()
         self._filter_size = filter_size
@@ -40,6 +47,18 @@ class Blur(nn.Module):
         return f'filter_size={self._filter_size}'
 
 class BlurUpsample(nn.Sequential):
+    '''Upsample then blur.
+
+    Arguments:
+        filter_size: int (default: 4)
+            Size of the low pass filter.
+        scale_factor: int (default: 2)
+            Scale factor for upsampling
+        mode: str (default: 'bilinear')
+            Upsampling mode
+        align_corners: bool (default: True)
+            Align corners.
+    '''
     def __init__(self,
         filter_size: int=4, scale_factor: int=2, mode: str='bilinear', align_corners: bool=True
     ) -> None:
@@ -48,6 +67,14 @@ class BlurUpsample(nn.Sequential):
             Blur(filter_size))
 
 class BlurDownsample(nn.Sequential):
+    '''Blur then downsample
+
+    Arguments:
+        filter_size: int (default: 4)
+            Size of the low pass filter.
+        scale: int (default: 2)
+            Scale for downsampling
+    '''
     def __init__(self,
         filter_size: int=4, scale: int=2
     ) -> None:
@@ -55,9 +82,16 @@ class BlurDownsample(nn.Sequential):
 
 
 class AABilinearInterp(nn.Module):
-    '''Bilinear interpolation with antialias option enabled'''
+    '''Bilinear interpolation with antialias option enabled
+
+    Arguments:
+        size: int|None (default: None)
+            The output size.
+        scale_factor: int|None (default: None)
+            Scale factor.
+    '''
     def __init__(self,
-        size=None, scale_factor=None
+        size: int|None=None, scale_factor: int|None=None
     ) -> None:
         super().__init__()
         assert size is not None or scale_factor is not None

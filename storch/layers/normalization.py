@@ -6,6 +6,16 @@ import storch
 
 
 def get_normalization2d(name, channels, affine=None):
+    '''Get 2d normalization layers by name
+
+    Arguments:
+        name: str
+            Name of the normalization layer
+        channels: int
+            Input tensor channel width
+        affine: bool (default: None)
+            Whether to enable trainability. If None, uses the default behaviour
+    '''
     if   name == 'bn': return nn.BatchNorm2d(channels,    affine=storch.dynamic_default(affine, True))
     elif name == 'in': return nn.InstanceNorm2d(channels, affine=storch.dynamic_default(affine, False))
     elif name == 'ln': return nn.GroupNorm(1, channels,   affine=storch.dynamic_default(affine, True))
@@ -13,6 +23,16 @@ def get_normalization2d(name, channels, affine=None):
     raise Exception(f'Normalization: {name}')
 
 def get_normalization1d(name, channels, affine=None):
+    '''Get 1d normalization layers by name
+
+    Arguments:
+        name: str
+            Name of the normalization layer
+        channels: int
+            Input tensor channel width
+        affine: bool (default: None)
+            Whether to enable trainability. If None, uses the default behaviour
+    '''
     if   name == 'bn': return nn.BatchNorm1d(channels,    affine=storch.dynamic_default(affine, True))
     elif name == 'in': return nn.InstanceNorm1d(channels, affine=storch.dynamic_default(affine, False))
     elif name == 'ln': return nn.LayerNorm(channels,      affine=storch.dynamic_default(affine, True))
@@ -21,7 +41,20 @@ def get_normalization1d(name, channels, affine=None):
 
 
 class AdaptiveNorm2d(nn.Module):
-    '''Adaptive Normalization Layer'''
+    '''Adaptive Normalization Layer
+
+    Arguments:
+        norm_name: str
+            Name of the base normalization layer.
+        style_dim: int
+            Dimension of the style vector
+        channels: int
+            Input tensor channel width
+        affine_layer: nn.Module (default: nn.Linear)
+            nn.Module to transform style vector.
+        biasfree: bool (default: False)
+            Bias free.
+    '''
     def __init__(self,
         norm_name, style_dim, channels, affine_layer=nn.Linear, biasfree=False
     ) -> None:
