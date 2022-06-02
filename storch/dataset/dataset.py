@@ -57,12 +57,56 @@ class ImageFolder(DatasetBase):
     ) -> None:
         super().__init__()
         images = glob.glob(os.path.join(data_root, '**', '*'), recursive=True)
-        images = [file for file in images if is_image_file(file)]
+        images = [file for file in images if is_image_file(file) and os.path.exists(file)]
         if isinstance(filter_fn, Callable):
             images = [file for file in images if filter_fn(file)]
         if num_images is not None and len(images) > num_images:
             images = images[:num_images]
         self.images    = images
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        image = self.images[index]
+        image = Image.open(image).convert('RGB')
+        image = self.transform(image)
+        return image
+
+
+class ImagePathFile(DatasetBase):
+    '''Dataset expecting a file with paths to images.
+
+    Format:
+        [path_to_images.txt]
+            ./path/to/image/000.jpg
+            ./path/to/image/001.jpg
+            ./path/to/image/002.jpg
+            ...
+
+    Arguments:
+        path: str
+            Path to a file with path to images.
+        transform: Callable
+            A callable that transforms the image.
+        num_images: int|None (default: None)
+            If given, the dataset will be reduced to have at most num_images samples.
+        filter_fn: Callable|None (default: None)
+            A callable that inputs a path and returns a bool to filter the files.
+    '''
+    def __init__(self,
+        path: str, transform: Callable, num_images: int|None=None, filter_fn: Callable|None=None
+    ) -> None:
+        super().__init__()
+        with open(path, 'r') as fin:
+            lines = fin.read().strip().split('\n')
+        images = [path for path in lines if is_image_file(path) and os.path.exists(path)]
+        if isinstance(filter_fn, Callable):
+            images = [file for file in images if filter_fn(file)]
+        if num_images is not None and len(images) > num_images:
+            images = images[:num_images]
+        self.images = images
         self.transform = transform
 
     def __len__(self):
