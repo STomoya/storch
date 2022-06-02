@@ -316,13 +316,18 @@ class Status:
     def log_stuff(self, *to_log):
         '''log information in one function'''
         self.log_env()
+        self.log_command_line()
         for obj in to_log:
             if isinstance(obj, DataLoader):
                 self.log_dataset(obj)
             elif isinstance(obj, torch.nn.Module):
                 self.log_model(obj)
+            elif isinstance(obj, Optimizer):
+                self.log_optimizer(obj)
             elif isinstance(obj, Namespace):
                 self.log_args(obj)
+            elif isinstance(obj, OmegaConf):
+                self.log_omegaconf(obj)
 
 
     '''information acculation funcs'''
