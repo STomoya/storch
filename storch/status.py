@@ -18,6 +18,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
+from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
 from tqdm import tqdm
@@ -274,6 +275,9 @@ class Status:
             message += '{:>25}: {:<30}\n'.format(str(k), str(v))
         message += '------------------------- End ---------------------------'
         self.log(f'Dataset\n{message}')
+
+    def log_optimizer(self, optimizer: Optimizer):
+        self.log(f'Optimizer:\n{optimizer}')
 
     def log_env(self):
         env = get_pretty_env_info()
