@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import datetime
 import glob
 import importlib
 import json
@@ -18,6 +19,7 @@ __all__=[
     'construct_class_by_name',
     'dynamic_default',
     'EasyDict',
+    'get_now_string',
     'glob_inside',
     'natural_sort',
     'prod',
@@ -193,3 +195,7 @@ def construct_class_by_name(*args: Any, class_name: str = None, **kwargs: Any) -
             Keyword arguments of the class
     '''
     return _call_func_by_name(*args, func_name=class_name, **kwargs)
+
+
+def get_now_string(format: str='%Y%m%d%H%M%S'):
+    return datetime.datetime.now().strftime(format)
