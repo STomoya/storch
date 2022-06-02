@@ -7,7 +7,9 @@ from __future__ import annotations
 import atexit
 import datetime
 import logging
+import pprint
 import subprocess
+import sys
 import time
 import warnings
 from argparse import ArgumentParser, Namespace
@@ -244,6 +246,11 @@ class Status:
 
 
     '''Information loggers'''
+
+    def log_command_line(self):
+        command_line = sys.argv
+        command_line = pprint.pformat(command_line)
+        self.log(f'Execution command\n{command_line}')
 
     def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None):
         message = '------------------------- Options -----------------------\n'
