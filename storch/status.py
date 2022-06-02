@@ -20,6 +20,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
+from omegaconf import OmegaConf
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
@@ -266,6 +267,10 @@ class Status:
             with open(filename, 'w') as fout:
                 fout.write(message)
                 fout.write('\n')
+
+    def log_omegaconf(self, config: OmegaConf):
+        yamlconfig = OmegaConf.to_yaml(config)
+        self.log(f'Config:\n{yamlconfig}')
 
     def log_dataset(self, dataloader: DataLoader):
         loader_kwargs = dict(
