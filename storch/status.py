@@ -7,7 +7,9 @@ from __future__ import annotations
 import atexit
 import datetime
 import logging
+import pprint
 import subprocess
+import sys
 import time
 import warnings
 from argparse import ArgumentParser, Namespace
@@ -18,6 +20,8 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
+from omegaconf import OmegaConf
+from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
 from tqdm import tqdm
@@ -244,6 +248,11 @@ class Status:
 
     '''Information loggers'''
 
+    def log_command_line(self):
+        command_line = sys.argv
+        command_line = pprint.pformat(command_line)
+        self.log(f'Execution command\n{command_line}')
+
     def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None):
         message = '------------------------- Options -----------------------\n'
         for k, v in sorted(vars(args).items()):
@@ -258,6 +267,10 @@ class Status:
             with open(filename, 'w') as fout:
                 fout.write(message)
                 fout.write('\n')
+
+    def log_omegaconf(self, config: OmegaConf):
+        yamlconfig = OmegaConf.to_yaml(config)
+        self.log(f'Config:\n{yamlconfig}')
 
     def log_dataset(self, dataloader: DataLoader):
         loader_kwargs = dict(
@@ -274,6 +287,9 @@ class Status:
             message += '{:>25}: {:<30}\n'.format(str(k), str(v))
         message += '------------------------- End ---------------------------'
         self.log(f'Dataset\n{message}')
+
+    def log_optimizer(self, optimizer: Optimizer):
+        self.log(f'Optimizer:\n{optimizer}')
 
     def log_env(self):
         env = get_pretty_env_info()
@@ -300,13 +316,18 @@ class Status:
     def log_stuff(self, *to_log):
         '''log information in one function'''
         self.log_env()
+        self.log_command_line()
         for obj in to_log:
             if isinstance(obj, DataLoader):
                 self.log_dataset(obj)
             elif isinstance(obj, torch.nn.Module):
                 self.log_model(obj)
+            elif isinstance(obj, Optimizer):
+                self.log_optimizer(obj)
             elif isinstance(obj, Namespace):
                 self.log_args(obj)
+            elif isinstance(obj, OmegaConf):
+                self.log_omegaconf(obj)
 
 
     '''information acculation funcs'''
