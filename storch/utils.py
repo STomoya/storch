@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import functools
 import glob
 import importlib
 import json
@@ -9,6 +10,7 @@ import math
 import os
 import re
 import sys
+import traceback
 import types
 from collections.abc import Iterable
 from typing import Any, Tuple
@@ -24,7 +26,8 @@ __all__=[
     'natural_sort',
     'prod',
     'recursive_apply',
-    'save_command_args'
+    'save_command_args',
+    'save_exec_status'
 ]
 
 
@@ -199,3 +202,87 @@ def construct_class_by_name(*args: Any, class_name: str = None, **kwargs: Any) -
 
 def get_now_string(format: str='%Y%m%d%H%M%S'):
     return datetime.datetime.now().strftime(format)
+
+
+def save_exec_status(path: str='./execstatus.txt', mode: str='a'):
+    '''Decorator that saves execution status to a file.
+    Useful if you cannot access traceback messages like inside detached docker containers.
+
+    basic code is from huggingface/knockknock,
+    but save message to a file instead of sending e-mails etc.
+
+    Usage:
+        @storch.save_exec_status('./path/to/output.txt', 'a')
+        def hello():
+            print('hello')
+        hello()
+        # OR
+        def hello():
+            print('hello')
+        storch.save_exec_status('./path/to/output.txt', 'a')(hello)()
+
+    Arguments:
+        path: str (default: './execstatus.txt')
+            File to save the output to.
+        mode: str (default: 'a')
+            File open mode. 'w' will overwrite previous outputs.
+    '''
+
+    messgae_format = '' \
+    + '**  MAIN CALL   **: {func_name}\n' \
+    + '**  STATUS      **: {status}\n' \
+    + '**  START TIME  **: {start_time}\n' \
+    + '**  END TIME    **: {end_time}\n' \
+    + '**  DURATION    **: {duration}'
+
+    date_format = "%Y-%m-%d %H:%M:%S"
+
+    def _save(message):
+        with open(path, mode) as fp:
+            fp.write(message)
+
+
+    def decorator(func):
+
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+
+            start_time = datetime.datetime.now()
+            func_name = func.__qualname__
+
+            try:
+                retval = func(*args, **kwargs)
+
+                # successful run
+                end_time = datetime.datetime.now()
+                duration = end_time - start_time
+                message = messgae_format.format(
+                    func_name=func_name,
+                    status='FINISHED 🐈',
+                    start_time=start_time.strftime(date_format),
+                    end_time=end_time.strftime(date_format),
+                    duration=str(duration)
+                )
+                _save(message)
+
+                return retval
+
+            except Exception as ex:
+                # error
+                end_time = datetime.datetime.now()
+                duration = end_time - start_time
+                message = messgae_format.format(
+                    func_name=func_name,
+                    status='CRASHED 👿',
+                    start_time=start_time.strftime(date_format),
+                    end_time=end_time.strftime(date_format),
+                    duration=str(duration)
+                ) + '\n' \
+                + f'**  ERROR       **: {ex}\n' \
+                + f'**  TRACEBACK   **: \n{traceback.format_exc()}' # add traceback and error message
+                _save(message)
+
+                raise ex
+        return inner
+
+    return decorator
