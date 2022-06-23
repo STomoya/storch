@@ -1,3 +1,3 @@
 
-from multiscale import MultiScale
-from patchgan import PatchDiscriminator
+from storch.models.multiscale import MultiScale
+from storch.models.patchgan import PatchDiscriminator
