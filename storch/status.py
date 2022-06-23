@@ -20,7 +20,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
@@ -268,7 +268,7 @@ class Status:
                 fout.write(message)
                 fout.write('\n')
 
-    def log_omegaconf(self, config: OmegaConf):
+    def log_omegaconf(self, config: DictConfig):
         yamlconfig = OmegaConf.to_yaml(config)
         self.log(f'Config:\n{yamlconfig}')
 
@@ -326,7 +326,7 @@ class Status:
                 self.log_optimizer(obj)
             elif isinstance(obj, Namespace):
                 self.log_args(obj)
-            elif isinstance(obj, OmegaConf):
+            elif isinstance(obj, DictConfig):
                 self.log_omegaconf(obj)
 
 
