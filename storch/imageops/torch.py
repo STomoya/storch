@@ -11,6 +11,7 @@ from PIL import Image
 from torchvision.io.image import ImageReadMode, read_image
 from torchvision.utils import save_image
 
+from storch.helpers import to_2tuple
 from storch.imageops.utils import random_box
 
 __all__=[
@@ -22,7 +23,14 @@ __all__=[
     'torch_load_image',
     'make_mask',
     'make_masks',
-    'apply_mask'
+    'apply_mask',
+    'gaussian_1d',
+    'gaussian_2d',
+    'pascal_1d',
+    'pascal_2d',
+    'laplacian_1d',
+    'laplacian_2d',
+    'sobel_2d'
 ]
 
 
@@ -241,3 +249,117 @@ def apply_mask(
         mask_filler = mask_filler(image.size(), device=image.device)
     masked = image * mask + mask_filler * (1 - mask)
     return masked
+
+
+'''filters'''
+
+
+def gaussian_1d(kernel_size: int, sigma: float=1.0):
+    '''1-D Gaussian filter
+
+    Arguments:
+        kernel_size: int
+            Size of the filter.
+        sigma: float (default: 1.0)
+            Sigma.
+    '''
+    x = torch.arange(kernel_size) - kernel_size // 2
+    if kernel_size % 2 == 0:
+        x = x + 0.5
+    gauss = torch.exp(- x.pow(2.0) / (2 * sigma ** 2))
+    return gauss / gauss.sum()
+
+
+def gaussian_2d(kernel_size: int|tuple[int], sigma: float|tuple[float]=1.0):
+    '''2-D Gaussian filter
+
+    Arguments:
+        kernel_size: int|tuple[int]
+            Size of the filter.
+        sigma: float|tuple[float] (default: 1.0)
+            Sigma.
+    '''
+    kernel_size = to_2tuple(kernel_size)
+    sigma = to_2tuple(sigma)
+    ksize_x, ksize_y = kernel_size
+    sigma_x, sigma_y = sigma
+
+    kernel_x = gaussian_1d(ksize_x, sigma_x)
+    kernel_y = gaussian_1d(ksize_y, sigma_y)
+    return torch.outer(kernel_x, kernel_y)
+
+
+def _pascal_triangle(size: int):
+    '''return binomial filter from size.'''
+    def c(n, k):
+        if k <= 0 or n <= k: return 1
+        else: return c(n - 1, k - 1) + c(n - 1, k)
+    return [c(size-1, j) for j in range(size)]
+
+
+def pascal_1d(kernel_size: int):
+    '''1-D discrete aproximation of Gaussian filter
+
+    Arguments:
+        kernel_size: int
+            Size of the filter.
+    '''
+    kernel = torch.tensor(_pascal_triangle(kernel_size), dtype=torch.float32)
+    return kernel / kernel.sum()
+
+
+def pascal_2d(kernel_size: int|tuple[int]):
+    '''2-D discrete aproximation of Gaussian filter
+
+    Arguments:
+        kernel_size: int|tuple[int]
+            Size of the filter.
+    '''
+    kernel_size = to_2tuple(kernel_size)
+    ksize_x, ksize_y = kernel_size
+    kernel_x = pascal_1d(ksize_x)
+    kernel_y = pascal_1d(ksize_y)
+    return torch.outer(kernel_x, kernel_y)
+
+
+def laplacian_1d(kernel_size: int):
+    '''1-D Laplacian filter
+
+    Arguments:
+        kernel_size: int
+            Size of the filter.
+    '''
+    if kernel_size % 2 != 1:
+        raise Exception(f'kernel_size must be odd but got {kernel_size}')
+    kernel = torch.ones(kernel_size)
+    kernel[kernel_size//2] = - (kernel_size - 1)
+    return kernel
+
+
+def laplacian_2d(kernel_size: int|tuple[int]):
+    '''2-D Laplacian filter
+
+    Arguments:
+        kernel_size: int|tuple[int]
+            Size of the filter.
+    '''
+    kernel_size = to_2tuple(kernel_size)
+    kernel = torch.ones(kernel_size)
+    kernel[kernel_size[0]//2, kernel_size[1]//2] = - (kernel.sum() - 1)
+    return kernel
+
+
+def sobel_2d(kernel_size: int, direction: int=0):
+    '''2-D Sobel filter
+
+    Arguments:
+        kernel_size: int
+            Size of the filter.
+        direction: int (default: 1)
+            0: vertical
+            1: horizontal
+    '''
+    dx, dy = direction, 1-direction
+    kernel_x, kernel_y = cv2.getDerivKernels(dx, dy, kernel_size)
+    kernel_x, kernel_y = torch.from_numpy(kernel_x), torch.from_numpy(kernel_y)
+    return torch.outer(kernel_x.view(-1), kernel_y.view(-1))

@@ -3,6 +3,18 @@ import numpy as np
 
 
 def random_box(size: tuple, min_size: float=0, max_size: float=1., margin: int=0):
+    '''sample a random rectangle.
+
+    Arguments:
+        size: tuple
+            Size of the region.
+        min_size: float (default: 0.0)
+            Minimum size of the box, relative to size.
+        max_size: float (default: 1.0)
+            Maximum size of the box, relative to size.
+        margin: int (default: 0)
+            Margin.
+    '''
     width, height = size
     min_x = min_y = margin
     max_x, max_y = width - margin, height - margin
