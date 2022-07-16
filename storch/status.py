@@ -459,3 +459,110 @@ class Status:
 
     def plot(self, filename='loss'):
         self._collector.plot(filename)
+
+
+class ThinStatus:
+    '''Thin implementation of Status.
+    We will always have to check if the rank is 0 when printing or logging.
+    This class is for avoiding this tiresome coding.
+
+    difference:
+        - no logging.
+        - no loss accumulation.
+
+    Usage:
+        from storch.status import Status, ThinStatus
+        from storch.dist_helper import DistributedHelper
+        disthelper = DistributedHelper(rank, world_size)
+        Status = Status if disthelper.is_primary() else ThinSatus
+        status = Status(max_iter, ...)
+
+        # then use the rest should work like Status.
+
+    Arguments:
+        max_iters: int
+            maximum iteration to train
+    '''
+    def __init__(self,
+        max_iters: int, *_args,  **_kwargs
+    ) -> None:
+        self._max_iters = max_iters
+        self._batches_done = 0
+
+    @property
+    def max_iters(self):
+        return self._max_iters
+    @property
+    def batches_done(self):
+        return self._batches_done
+    @batches_done.setter
+    def batches_done(self, value):
+        self._batches_done = value
+
+    def print(self, *args, **kwargs):
+        '''print function'''
+        print(*args, **kwargs)
+
+    def log(self, message: str, level: str='info'):
+        self.print(message)
+
+    def log_command_line(self):
+        pass
+
+    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None):
+        pass
+
+    def log_omegaconf(self, config: DictConfig):
+        pass
+
+    def log_dataset(self, dataloader: DataLoader):
+        pass
+
+    def log_optimizer(self, optimizer: Optimizer):
+        pass
+
+    def log_env(self):
+        pass
+
+    def log_model(self, model):
+        pass
+
+    def log_gpu_memory(self):
+        pass
+
+    def log_nvidia_smi(self):
+        pass
+
+    def log_stuff(self, *args):
+        pass
+
+    def update(self, **kwargs):
+        self._batches_done += 1
+
+    def initialize_collector(self, *keys):
+        pass
+
+    def update_collector(self, **kwargs):
+        pass
+
+    def tb_add_scalars(self, **kwargs):
+        pass
+
+    @contextmanager
+    def stop_timer(self, verbose=False):
+        yield
+
+    def is_end(self):
+        '''have reached last batch?'''
+        return self.batches_done >= self.max_iters
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        '''fast forward'''
+        # load
+        self.batches_done = state_dict['batches_done']
+
+    def state_dict(self) -> dict:
+        raise NotImplementedError()
+
+    def plot(self, filename='loss'):
+        pass
