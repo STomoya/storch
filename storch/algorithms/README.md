@@ -15,7 +15,7 @@
 ## mixup
 
 ```bibtex
-@inproceedings{mixup_zhang,
+@inproceedings{zhang2018mixup,
     title={mixup: Beyond Empirical Risk Management},
     author={Zhang, H and Cisse, M and Dauphin, Y and Lopez-Paz, D},
     booktitle={International Conference on Learning Representations (ICLR)},
@@ -34,5 +34,20 @@
     booktitle={IEEE/CVF International Conference on Computer Vision (ICCV)},
     pages={6023--6032},
     year={2019}
+}
+```
+
+## Trapped-ball segmentation
+
+```bibtex
+@article{zhang2009trappedball,
+    title={Vectorizing Cartoon Animations},
+    author={Zhang, Song-Hai and Chen, Tao and Zhang, Yi-Fei and Hu, Shi-Min and Martin, Ralph R.},
+    journal={IEEE Transactions on Visualization and Computer Graphics},
+    volume={15},
+    number={4},
+    pages={618-629},
+    year={2009},
+    doi={10.1109/TVCG.2009.9}
 }
 ```
