@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='storch',
-    version='0.1.9',
+    version='0.1.10',
     license='MIT',
     description='PyTorch utilities for STomoya.',
     author='Tomoya Sawada (STomoya)',
