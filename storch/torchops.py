@@ -21,7 +21,9 @@ __all__ = [
     'deterministic',
     'shuffle_batch',
     'optimizer_step',
-    'assert_shape'
+    'assert_shape',
+    'print_module_summary',
+    'grad_nan_to_num'
 ]
 
 
