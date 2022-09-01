@@ -1,6 +1,3 @@
-'''
-Collect training status.
-'''
 
 from __future__ import annotations
 
@@ -13,206 +10,146 @@ import sys
 import time
 import warnings
 from argparse import ArgumentParser, Namespace
-from collections.abc import Iterable
 from contextlib import contextmanager
 from statistics import mean
-from typing import Any
+from typing import Any, Union
 
-import matplotlib.pyplot as plt
 import torch
 from omegaconf import DictConfig, OmegaConf
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-try:
-    from torch.utils.tensorboard import SummaryWriter
-    tb_available = True
-except ImportError:
-    SummaryWriter = None
-    tb_available = False
 
-'''Value Collector'''
+class Logger(object):
+    '''Redirect stderr to stdout, optionally print stdout to a file, and optionally force flushing on both stdout and the file.
+    from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/dnnlib/util.py#L56-L112
+    '''
 
-class Meter(list):
-    '''collect values'''
-    def __init__(self, name: str):
-        self._name = name
+    def __init__(self, file_name: str = None, file_mode: str = "w", should_flush: bool = True):
+        self.file = None
 
-    @property
-    def name(self) -> str:
-        return self._name
+        if file_name is not None:
+            self.file = open(file_name, file_mode)
 
-    def x(self, total: int=None):
-        '''return x axis for plot
+        self.should_flush = should_flush
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
 
-        Arguments:
-            total: int (default: None)
-                total length of x axis
-                if given, x will be evenly distributed.
-        '''
-        if total is None:
-            return range(1, self.__len__()+1)
-        per_element = total // self.__len__()
-        return range(per_element, total+1, per_element)
+        sys.stdout = self
+        sys.stderr = self
 
-class Group(dict):
-    def max_length(self):
-        return max([len(v) for v in self.values()])
+    def write(self, text: Union[str, bytes]) -> None:
+        '''Write text to stdout (and a file) and optionally flush.'''
+        if isinstance(text, bytes):
+            text = text.decode()
+        if len(text) == 0: # workaround for a bug in VSCode debugger: sys.stdout.write(''); sys.stdout.flush() => crash
+            return
+
+        if self.file is not None:
+            self.file.write(text)
+
+        self.stdout.write(text)
+
+        if self.should_flush:
+            self.flush()
+
+    def flush(self) -> None:
+        '''Flush written text to both stdout and a file, if open.'''
+        if self.file is not None:
+            self.file.flush()
+
+        self.stdout.flush()
+
+    def close(self) -> None:
+        '''Flush, close possible files, and remove stdout/stderr mirroring.'''
+        self.flush()
+
+        # if using multiple loggers, prevent closing in wrong order
+        if sys.stdout is self:
+            sys.stdout = self.stdout
+        if sys.stderr is self:
+            sys.stderr = self.stderr
+
+        if self.file is not None:
+            self.file.close()
+            self.file = None
+
+
 
 class Collector:
-    '''Collect scalar values and plot them
-
-    Structure:
-        {
-            'group1': {
-                'key1' : [...],
-                'key2' : [...]},
-            ...
-        }
-    same group => will be plotted in same graph.
-
-    Usage:
-        key1 = 'Loss/train/g'
-        key2 = 'Loss/train/d'
-        #      |----------|-|
-        #         group   | key
-
-        collector = Collector()
-        # initialize collector
-        collector.initialize(key1, key2)
-        # add values
-        collector['Loss/train/g'].append(random.random())
-        collector['Loss/train/d'].append(random.random())
-        # plot
-        collector.plot()
-        # => image of 1x<number of groups> graph
-    '''
     def __init__(self) -> None:
-        self._groups = {}
-        self._initialized = False
+        self._deltas = dict()
 
-    @property
-    def initialized(self):
-        return self._initialized
+    @torch.no_grad()
+    def report(self, name, value):
+        if value is None:
+            return
 
-    def _split_key(self, key: str) -> tuple[str, str]:
-        key = key.split('/')
-        return '/'.join(key[:-1]), key[-1]
+        if name not in self._deltas:
+            self._deltas[name] = [0, 0]
 
-    def initialize(self, *keys) -> None:
-        for key in keys:
-            self[key] = Meter(key)
-        self._initialized = True
+        if torch.is_tensor(value):
+            value = value.detach().cpu()
+            num = value.numel()
+            total = value.sum().item()
+        else:
+            num, total = 1, value
 
-    def update_by_dict(self, step: dict):
-        for key, value in step.items():
-            self[key].append(value)
+        self._deltas[name][0] += num
+        self._deltas[name][1] += total
 
-    def plot(self, filename: str='graph.jpg') -> None:
-        col = self.__len__()
 
-        fig, axes = plt.subplots(1, col, figsize=(7*col, 5), tight_layout=True)
+    def report_by_dict(self, step: dict[str, Any]):
+        for name, value in step.items():
+            self.report(name, value)
 
-        for i, group_name in enumerate(self):
-            if col == 1: ax = axes
-            else:        ax = axes[i]
 
-            group = self[group_name]
-            length = group.max_length()
-            legends = []
-            for key in group:
-                legends.append(key)
-                x, y = group[key].x(length), group[key]
-                ax.plot(x, y)
+    def mean(self, name):
+        if name not in self._deltas or self._deltas[name][0] == 0:
+            return float('inf')
+        return self._deltas[name][1] / self._deltas[name][0]
 
-            ax.set_title(group_name)
-            ax.legend(legends, loc='upper right')
-            ax.set_xlabel('iterations')
 
-        plt.savefig(filename)
-        plt.close()
+    def update(self):
+        output = {}
+        for name in self._deltas.keys():
+            mean = self.mean(name)
+            if mean != float('inf'):
+                output[name] = self.mean(name)
+            self._deltas[name] = [0, 0]
+        return output
 
-    '''magic funcs'''
-
-    def __getitem__(self, key: str) -> Any:
-        if key in self._groups:
-            return self._groups[key]
-        group, key = self._split_key(key)
-        return self._groups[group][key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        group, key = self._split_key(key)
-        if group not in self._groups:
-            self._groups[group] = Group()
-        self._groups[group][key] = value
-
-    def __iter__(self) -> Iterable:
-        return self._groups.__iter__()
-
-    def __len__(self) -> int:
-        return self._groups.__len__()
-
-    def __str__(self) -> str:
-        return self._groups.__str__()
-
-'''Training Status'''
 
 class Status:
-    '''Status
-    A class for keeping training status
-
-    Arguments:
-        max_iters: int
-            maximum iteration to train
-        bar: bool (default: True)
-            if True, show bar by tqdm
-        log_file: str (default: None)
-            path to the log file
-            if given, log status to a file
-        log_interval: int (default: 1)
-            interval for writing to log file
-        logger_name: str (default: 'logger')
-            name for logger
-    '''
     def __init__(self,
-        max_iters: int, bar: bool=True,
+        max_iters: int, bar: bool,
         log_file: str=None, log_interval: int=1, logger_name: str='logger',
-        steptime_num_accum: int=100,
-        tensorboard: bool=False, tb_folder: str|None=None
+        steptime_num_accum: int=300, tb_folder: str|None=None
     ) -> None:
 
-        self._bar = tqdm(total=max_iters) if bar else None
-        self._max_iters    = max_iters
+        self._bar = tqdm(total=max_iters, disable=not bar)
+        self._max_iters = max_iters
         self._batches_done = 0
-        self._collector    = Collector()
-        self._log_file     = log_file
-
-        # logger
-        # Remove handlers.
-        # NOTE: This does not support two or more Status object at the same time,
-        #       but supports when Status objects exists at different time.
-        _root_logger = logging.getLogger()
-        for hdlr in _root_logger.handlers:
-            _root_logger.removeHandler(hdlr)
-        self._logger = None
-        if log_file is not None:
-            logging.basicConfig(filename=log_file, filemode='w',
-                format='%(asctime)s | %(filename)s | %(levelname)s | - %(message)s')
-            self._logger = logging.getLogger(logger_name)
-            self._logger.setLevel(logging.DEBUG)
+        self._log_file = log_file
         self._log_interval = log_interval
 
-        # timer
+
+        self._std_logger = Logger(log_file)
+        logging.basicConfig(
+            format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s',
+            level=logging.INFO, stream=self._std_logger)
+        self._logger = logging.getLogger(logger_name)
+
+        self._collector = Collector()
+
         self._step_start = time.time()
         self._steptime_num_accum = steptime_num_accum
         self._steptimes = []
 
-        # tensorboard
-        if tensorboard and not tb_available:
-            self.log(f'\nTensorboard not installed. Install Tensorboard via:\n\n\tpip3 install tensorboard\n\nNo summary will be written.', level='warning')
-        self._tb_writer = SummaryWriter(tb_folder) if tensorboard and tb_available else None
+        self._tbwriter = SummaryWriter(tb_folder)
 
         atexit.register(self._shutdown_logger)
 
@@ -233,17 +170,13 @@ class Status:
     '''print functions'''
 
     def print(self, *args, **kwargs):
-        '''print function'''
-        if self._bar:
+        if not self._bar.disable:
             tqdm.write(*args, **kwargs)
         else:
             print(*args, **kwargs)
+
     def log(self, message, level='info'):
-        if self._logger:
-            getattr(self._logger, level)(message)
-        else:
-            warnings.warn('No Logger. Printing to stdout.')
-            self.print(message)
+        getattr(self._logger, level)(message)
 
 
     '''Information loggers'''
@@ -334,11 +267,8 @@ class Status:
 
     def update(self, **kwargs) -> None:
         '''update status'''
-        if not self._collector.initialized:
-            self.initialize_collector(*list(kwargs.keys()))
-
+        self._collector.report_by_dict(kwargs)
         self.batches_done += 1
-        self.update_collector(**kwargs)
 
         _print_rolling_eta = False
         if len(self._steptimes) == self._steptime_num_accum:
@@ -353,9 +283,10 @@ class Status:
             (self.batches_done % self._log_interval == 0) or
             (self.batches_done <= 100 and self.batches_done % 5 == 0))
         ):
+            delta = self._collector.update()
             message_parts = [
                 f'STEP: {self.batches_done} / {self.max_iters}',
-                f'INFO: {kwargs}']
+                f'INFO: {delta}']
             # ETA
             # NOTE: this ETA is not exact.
             #       dealed by avging multiple steps. (see rolling eta)
@@ -375,32 +306,40 @@ class Status:
                 rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
                 message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
             self.log(' '.join(message_parts))
+            self.tb_add_scalars(**delta)
         if self.batches_done == 10:
             # print gpu after some batches
             # for checking memory usage
             self.log_nvidia_smi()
 
-        if self._bar:
-            postfix = [f'{k} : {v:.5f}' for k, v in kwargs.items()]
-            self._bar.set_postfix_str(' '.join(postfix))
+        if not self._bar.disable:
             self._bar.update(1)
-
-        self.tb_add_scalars(**kwargs)
 
         self._step_start = time.time()
 
+    def tb_add_scalars(self, **kwargs):
+        for key, value in kwargs.items():
+            self._tbwriter.add_scalar(key, value, self.batches_done)
+
+    def tb_add_images(self, tag, images):
+        self._tbwriter.add_images(tag, images, self.batches_done)
+
+
     def initialize_collector(self, *keys):
-        if not self._collector.initialized:
-            self._collector.initialize(*keys)
+        warnings.warn(
+            'initialize_collector is no logger needed due to full migration to SummaryWriter. This function will be eraised in the future version.',
+            DeprecationWarning)
 
     def update_collector(self, **kwargs):
-        self._collector.update_by_dict(kwargs)
-        self.tb_add_scalars(**kwargs)
+        warnings.warn(
+            'update_collector is renamed to dry_update for disambiguation. This function will be eraised in the future version. Please use dry_update()',
+            DeprecationWarning)
+        self.dry_update(**kwargs)
 
-    def tb_add_scalars(self, **kwargs):
-        if self._tb_writer:
-            for key, value in kwargs.items():
-                self._tb_writer.add_scalar(key, value, self.batches_done)
+    def dry_update(self, **kwargs):
+        '''Update accumulation values without updating iteration counts.'''
+        self._collector.report_by_dict(kwargs)
+        self.tb_add_scalars(**kwargs)
 
 
     @contextmanager
@@ -431,13 +370,12 @@ class Status:
         return self.batches_done >= self.max_iters
 
     def _shutdown_logger(self):
-        if self._logger:
-            self.log('LOGGER: shutting down logger...')
-            handlers = self._logger.handlers
-            for handler in handlers:
-                self._logger.removeHandler(handler)
-                handler.close()
-
+        self.log('LOGGER: shutting down logger...')
+        handlers = self._logger.handlers
+        for handler in handlers:
+            self._logger.removeHandler(handler)
+            handler.close()
+        self._std_logger.close()
 
     def load_state_dict(self, state_dict: dict) -> None:
         '''fast forward'''
@@ -458,7 +396,9 @@ class Status:
 
 
     def plot(self, filename='loss'):
-        self._collector.plot(filename)
+        warnings.warn(
+            'plot is no logger supported due to full migration to SummaryWriter. This function will be eraised in the future version.',
+            DeprecationWarning)
 
 
 class ThinStatus:
