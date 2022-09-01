@@ -200,7 +200,7 @@ def optimizer_step(
     assert scaler is None or isinstance(scaler, GradScaler)
 
     if zero_grad:
-        optimizer.zero_grad(set_to_none)
+        optimizer.zero_grad(set_to_none=set_to_none)
 
     if scaler is not None:
         scaler.scale(loss).backward()
