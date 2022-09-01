@@ -80,11 +80,21 @@ class Logger(object):
 
 
 class Collector:
+    '''Collect values by summing values until .update() is called, then reset.
+    '''
     def __init__(self) -> None:
         self._deltas = dict()
 
     @torch.no_grad()
-    def report(self, name, value):
+    def report(self, name: str, value: float|int|torch.Tensor):
+        '''Report a value with an identical name to trace.
+
+        Arguments:
+            name: str
+                Key for the value. This name will be used at .add_scalar() of SummaryWriter.
+            value: float|int|torch.Tensor
+                The value to collect.
+        '''
         if value is None:
             return
 
@@ -103,17 +113,20 @@ class Collector:
 
 
     def report_by_dict(self, step: dict[str, Any]):
+        '''report values using a dict object. See .report() for details.'''
         for name, value in step.items():
             self.report(name, value)
 
 
     def mean(self, name):
+        '''Return the mean value of the collected value. If not exist or total is 0, returns inf.'''
         if name not in self._deltas or self._deltas[name][0] == 0:
             return float('inf')
         return self._deltas[name][1] / self._deltas[name][0]
 
 
     def update(self):
+        '''Reaturn mean of all collected values and reset.'''
         output = {}
         for name in self._deltas.keys():
             mean = self.mean(name)
