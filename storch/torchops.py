@@ -154,6 +154,26 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
     return shuffled
 
 
+def grad_nan_to_num(module: nn.Module, nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
+    '''set nan gardients to a number.
+
+    Arguments:
+        module: nn.Module
+            The module with parameters holding .grad attribute.
+        nan: float (default: 0)
+            Value to replace nan.
+        posinf, neginf: float (default: 1e5, 1e-5)
+            Value to replace positive/negative inf.
+    '''
+    params = [param for param in module.parameters() if param.grad is not None]
+    if len(params):
+        flat = torch.cat([param.grad.flatten() for param in params])
+        flat = torch.nan_to_num(flat, nan, posinf, neginf)
+        grads = flat.split([param.numel() for param in params])
+        for param, grad in zip(params, grads):
+            param.grad = grad.reshape(param.shape)
+
+
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
     zero_grad: bool=True, set_to_none: bool=True, update_scaler: bool=False
