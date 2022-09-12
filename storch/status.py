@@ -129,7 +129,7 @@ class Collector:
 
 
     def update(self):
-        '''Reaturn mean of all collected values and reset.'''
+        '''Return mean of all collected values and reset.'''
         output = {}
         for name in self._deltas.keys():
             mean = self.mean(name)
@@ -140,6 +140,29 @@ class Collector:
 
 
 class Status:
+    '''Class for logging training status.
+
+    Arguments:
+        max_iters: int
+            Maximum iterations to train.
+        log_file: str
+            Path to file for output logging to.
+        bar: bool (default: False)
+            Enable tqdm progress bar.
+        log_interval: int (default: 1)
+            Interval for logging status.
+        logger_name: str (default: 'logger')
+            The name of the logger.
+        steptime_num_accum: int (default: 300)
+            Number of iterations to accumulate for calculating the rolling ETA.
+        tb_folder: str|None (default: None)
+            Folder to save the tensorboard event.
+            If not given, the parent folder of 'log_file' will be used.
+        delta_format: str (default: '{key}: {value: 10.5f}')
+            The format used to print the collected values.
+              - key: The name used to identify the value.
+              - value: The value.
+    '''
     def __init__(self,
         max_iters: int, log_file: str,
         bar: bool=False, log_interval: int=1, logger_name: str='logger',
@@ -202,11 +225,13 @@ class Status:
     '''Information loggers'''
 
     def log_command_line(self):
+        '''log command line used to execute the python script.'''
         command_line = sys.argv
         command_line = pprint.pformat(command_line)
         self.log(f'Execution command\n{command_line}')
 
     def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None):
+        '''log argparse.Namespace obj.'''
         message = '------------------------- Options -----------------------\n'
         for k, v in sorted(vars(args).items()):
             comment = ''
@@ -222,10 +247,12 @@ class Status:
                 fout.write('\n')
 
     def log_omegaconf(self, config: DictConfig):
+        '''log omegaconf.DictConfig obj.'''
         yamlconfig = OmegaConf.to_yaml(config)
         self.log(f'Config:\n{yamlconfig}')
 
     def log_dataset(self, dataloader: DataLoader):
+        '''log dataset.'''
         loader_kwargs = dict(
             TYPE           = dataloader.dataset.__class__.__name__,
             num_samples    = len(dataloader.dataset),
@@ -242,22 +269,27 @@ class Status:
         self.log(f'Dataset\n{message}')
 
     def log_optimizer(self, optimizer: Optimizer):
+        '''log optimizer.'''
         self.log(f'Optimizer:\n{optimizer}')
 
     def log_env(self):
+        '''log pytorch build enviornment.'''
         env = get_pretty_env_info()
         self.log(f'PyTorch environment:\n{env}')
 
     def log_model(self, model):
+        '''log nn.Module obj.'''
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
     def log_gpu_memory(self):
+        '''log memory summary.'''
         if torch.cuda.is_available():
             self.log(f'\n{torch.cuda.memory_summary()}')
         else:
             self.log('No GPU available on your enviornment.')
 
     def log_nvidia_smi(self):
+        '''log nvidia-smi output.'''
         if torch.cuda.is_available():
             nvidia_smi_output = subprocess.run(
                 'nvidia-smi', shell=True,
@@ -283,7 +315,7 @@ class Status:
                 self.log_omegaconf(obj)
 
 
-    '''information acculation funcs'''
+    '''information accumulation funcs'''
 
     def update(self, **kwargs) -> None:
         '''update status'''
