@@ -18,6 +18,7 @@ setup(
         'matplotlib',
         'scikit-learn',
         'scikit-image',
-        'hydra-core'
+        'hydra-core',
+        'tensorboard'
     ]
 )
