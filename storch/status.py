@@ -20,7 +20,10 @@ from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
 from tqdm import tqdm
+
+from storch.path import Path
 
 
 class Logger(object):
@@ -138,9 +141,10 @@ class Collector:
 
 class Status:
     def __init__(self,
-        max_iters: int, bar: bool,
-        log_file: str=None, log_interval: int=1, logger_name: str='logger',
-        steptime_num_accum: int=300, tb_folder: str|None=None
+        max_iters: int, log_file: str,
+        bar: bool=False, log_interval: int=1, logger_name: str='logger',
+        steptime_num_accum: int=300, tb_folder: str|None=None,
+        delta_format: str='{key}: {value: 10.5f}'
     ) -> None:
 
         self._bar = tqdm(total=max_iters, disable=not bar)
@@ -150,11 +154,13 @@ class Status:
         self._log_interval = log_interval
 
 
+        log_file = Path(log_file)
         self._std_logger = Logger(log_file)
         logging.basicConfig(
             format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s',
             level=logging.INFO, stream=self._std_logger)
         self._logger = logging.getLogger(logger_name)
+        self._delta_format = delta_format
 
         self._collector = Collector()
 
@@ -162,6 +168,7 @@ class Status:
         self._steptime_num_accum = steptime_num_accum
         self._steptimes = []
 
+        tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
         self._tbwriter = SummaryWriter(tb_folder)
 
         atexit.register(self._shutdown_logger)
@@ -297,9 +304,12 @@ class Status:
             (self.batches_done <= 100 and self.batches_done % 5 == 0))
         ):
             delta = self._collector.update()
+            delta_str = []
+            for key, value in delta.items():
+                delta_str.append(self._delta_format.format(key=key, value=value))
             message_parts = [
                 f'STEP: {self.batches_done} / {self.max_iters}',
-                f'INFO: {delta}']
+                f'INFO: {", ".join(delta_str)}']
             # ETA
             # NOTE: this ETA is not exact.
             #       dealed by avging multiple steps. (see rolling eta)
@@ -325,8 +335,7 @@ class Status:
             # for checking memory usage
             self.log_nvidia_smi()
 
-        if not self._bar.disable:
-            self._bar.update(1)
+        self._bar.update(1)
 
         self._step_start = time.time()
 
@@ -334,18 +343,19 @@ class Status:
         for key, value in kwargs.items():
             self._tbwriter.add_scalar(key, value, self.batches_done)
 
-    def tb_add_images(self, tag, images):
+    def tb_add_images(self, tag, image_tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs):
+        images = make_grid(image_tensor, normalize=normalize, value_range=value_range, nrow=nrow, **mkgridkwargs)
         self._tbwriter.add_images(tag, images, self.batches_done)
 
 
     def initialize_collector(self, *keys):
         warnings.warn(
-            'initialize_collector is no logger needed due to full migration to SummaryWriter. This function will be eraised in the future version.',
+            'initialize_collector is no logger needed due to full migration to SummaryWriter. This function will be erased in the future version.',
             DeprecationWarning)
 
     def update_collector(self, **kwargs):
         warnings.warn(
-            'update_collector is renamed to dry_update for disambiguation. This function will be eraised in the future version. Please use dry_update()',
+            'update_collector is renamed to dry_update for disambiguation. This function will be erased in the future version. Please use dry_update()',
             DeprecationWarning)
         self.dry_update(**kwargs)
 
@@ -410,7 +420,7 @@ class Status:
 
     def plot(self, filename='loss'):
         warnings.warn(
-            'plot is no logger supported due to full migration to SummaryWriter. This function will be eraised in the future version.',
+            'plot is no logger supported due to full migration to SummaryWriter. This function will be erased in the future version.',
             DeprecationWarning)
 
 
