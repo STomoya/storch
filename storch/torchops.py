@@ -11,6 +11,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
 
+import storch
+
 __all__ = [
     'auto_get_device',
     'freeze',
@@ -19,7 +21,9 @@ __all__ = [
     'deterministic',
     'shuffle_batch',
     'optimizer_step',
-    'assert_shape'
+    'assert_shape',
+    'print_module_summary',
+    'grad_nan_to_num'
 ]
 
 
@@ -152,6 +156,26 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
     return shuffled
 
 
+def grad_nan_to_num(module: nn.Module, nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
+    '''set nan gardients to a number.
+
+    Arguments:
+        module: nn.Module
+            The module with parameters holding .grad attribute.
+        nan: float (default: 0)
+            Value to replace nan.
+        posinf, neginf: float (default: 1e5, 1e-5)
+            Value to replace positive/negative inf.
+    '''
+    params = [param for param in module.parameters() if param.grad is not None]
+    if len(params):
+        flat = torch.cat([param.grad.flatten() for param in params])
+        flat = torch.nan_to_num(flat, nan, posinf, neginf)
+        grads = flat.split([param.numel() for param in params])
+        for param, grad in zip(params, grads):
+            param.grad = grad.reshape(param.shape)
+
+
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
     zero_grad: bool=True, set_to_none: bool=True, update_scaler: bool=False
@@ -176,7 +200,7 @@ def optimizer_step(
     assert scaler is None or isinstance(scaler, GradScaler)
 
     if zero_grad:
-        optimizer.zero_grad(set_to_none)
+        optimizer.zero_grad(set_to_none=set_to_none)
 
     if scaler is not None:
         scaler.scale(loss).backward()
@@ -203,3 +227,87 @@ def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list):
         if exp_size is None or exp_size == -1:
             continue
         assert size == exp_size, f'Wrong size for dimension {i}: got {size} expected {exp_size}'
+
+
+def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int=3, skip_redundant: bool=True, print_fn: Callable=print):
+    '''Print module summary.
+    Taken from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/torch_utils/misc.py#L196-L264
+
+    Arguments:
+        module: nn.Module
+            The module to summrize.
+        inputs: list|tuple
+            List of input tensors.
+        max_nesting: int (default: 3)
+        skip_redundant: bool (default: True)
+        print_fn: Callable (default: print)
+            Function for printing the summary.
+    '''
+    assert isinstance(module, torch.nn.Module)
+    assert not isinstance(module, torch.jit.ScriptModule)
+    assert isinstance(inputs, (tuple, list))
+
+    # Register hooks.
+    entries = []
+    nesting = [0]
+    def pre_hook(_mod, _inputs):
+        nesting[0] += 1
+    def post_hook(mod, _inputs, outputs):
+        nesting[0] -= 1
+        if nesting[0] <= max_nesting:
+            outputs = list(outputs) if isinstance(outputs, (tuple, list)) else [outputs]
+            outputs = [t for t in outputs if isinstance(t, torch.Tensor)]
+            entries.append(storch.EasyDict(mod=mod, outputs=outputs))
+    hooks = [mod.register_forward_pre_hook(pre_hook) for mod in module.modules()]
+    hooks += [mod.register_forward_hook(post_hook) for mod in module.modules()]
+
+    # Run module.
+    outputs = module(*inputs)
+    for hook in hooks:
+        hook.remove()
+
+    # Identify unique outputs, parameters, and buffers.
+    tensors_seen = set()
+    for e in entries:
+        e.unique_params = [t for t in e.mod.parameters() if id(t) not in tensors_seen]
+        e.unique_buffers = [t for t in e.mod.buffers() if id(t) not in tensors_seen]
+        e.unique_outputs = [t for t in e.outputs if id(t) not in tensors_seen]
+        tensors_seen |= {id(t) for t in e.unique_params + e.unique_buffers + e.unique_outputs}
+
+    # Filter out redundant entries.
+    if skip_redundant:
+        entries = [e for e in entries if len(e.unique_params) or len(e.unique_buffers) or len(e.unique_outputs)]
+
+    # Construct table.
+    rows = [[type(module).__name__, 'Parameters', 'Buffers', 'Output shape', 'Datatype']]
+    rows += [['---'] * len(rows[0])]
+    param_total = 0
+    buffer_total = 0
+    submodule_names = {mod: name for name, mod in module.named_modules()}
+    for e in entries:
+        name = '<top-level>' if e.mod is module else submodule_names[e.mod]
+        param_size = sum(t.numel() for t in e.unique_params)
+        buffer_size = sum(t.numel() for t in e.unique_buffers)
+        output_shapes = [str(list(t.shape)) for t in e.outputs]
+        output_dtypes = [str(t.dtype).split('.')[-1] for t in e.outputs]
+        rows += [[
+            name + (':0' if len(e.outputs) >= 2 else ''),
+            str(param_size) if param_size else '-',
+            str(buffer_size) if buffer_size else '-',
+            (output_shapes + ['-'])[0],
+            (output_dtypes + ['-'])[0],
+        ]]
+        for idx in range(1, len(e.outputs)):
+            rows += [[name + f':{idx}', '-', '-', output_shapes[idx], output_dtypes[idx]]]
+        param_total += param_size
+        buffer_total += buffer_size
+    rows += [['---'] * len(rows[0])]
+    rows += [['Total', str(param_total), str(buffer_total), '-', '-']]
+
+    # Print table.
+    widths = [max(len(cell) for cell in column) for column in zip(*rows)]
+    print_fn()
+    for row in rows:
+        print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths)))
+    print_fn()
+    return outputs
