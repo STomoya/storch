@@ -233,7 +233,7 @@ def save_exec_status(path: str='./execstatus.txt', mode: str='a'):
     + '**  STATUS      **: {status}\n' \
     + '**  START TIME  **: {start_time}\n' \
     + '**  END TIME    **: {end_time}\n' \
-    + '**  DURATION    **: {duration}'
+    + '**  DURATION    **: {duration}\n'
 
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -277,7 +277,7 @@ def save_exec_status(path: str='./execstatus.txt', mode: str='a'):
                     start_time=start_time.strftime(date_format),
                     end_time=end_time.strftime(date_format),
                     duration=str(duration)
-                ) + '\n' \
+                ) + \
                 + f'**  ERROR       **: {ex}\n' \
                 + f'**  TRACEBACK   **: \n{traceback.format_exc()}' # add traceback and error message
                 _save(message)
