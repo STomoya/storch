@@ -27,7 +27,8 @@ __all__=[
     'prod',
     'recursive_apply',
     'save_command_args',
-    'save_exec_status'
+    'save_exec_status',
+    'import_all_modules',
 ]
 
 
@@ -286,3 +287,21 @@ def save_exec_status(path: str='./execstatus.txt', mode: str='a'):
         return inner
 
     return decorator
+
+
+def import_all_modules(root: str, base_module: str) -> None:
+    '''import all modules under root.
+    from: https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/generic/registry_utils.py#L14-L20
+
+    Argumnets:
+        root: str
+            Full path to the directory of the module to import.
+        base_module: str
+            Name of the base module.
+    '''
+    for file in os.listdir(root):
+        if file.endswith((".py", ".pyc")) and not file.startswith("_"):
+            module = file[: file.find(".py")]
+            if module not in sys.modules:
+                module_name = ".".join([base_module, module])
+                importlib.import_module(module_name)
