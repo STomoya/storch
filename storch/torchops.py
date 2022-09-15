@@ -171,13 +171,16 @@ def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf
     if isinstance(input, nn.Module):
         input = input.parameters()
     params = [param for param in input if param.grad is not None]
-    if len(params):
-        flat = torch.cat([param.grad.flatten() for param in params])
-        flat = torch.nan_to_num(flat, nan, posinf, neginf)
-        grads = flat.split([param.numel() for param in params])
-        for param, grad in zip(params, grads):
-            param.grad = grad.reshape(param.shape)
+    for param in params:
+        param.grad = torch.nan_to_num(param.grad, nan, posinf, neginf)
 
+    '''from: https://github.com/NVlabs/stylegan3/blob/1c6608208cb51b7773da32f40ee2232f684c3a21/training/training_loop.py#L283-L292'''
+    # if len(params):
+    #     flat = torch.cat([param.grad.flatten() for param in params])
+    #     flat = torch.nan_to_num(flat, nan, posinf, neginf)
+    #     grads = flat.split([param.numel() for param in params])
+    #     for param, grad in zip(params, grads):
+    #         param.grad = grad.reshape(param.shape)
 
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
