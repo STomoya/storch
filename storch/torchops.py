@@ -182,7 +182,7 @@ def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
     zero_grad: bool=True, set_to_none: bool=True,
-    clip_grad_norm: bool=False, max_norm: float=1.0,
+    clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
     update_scaler: bool=False
 ) -> None:
     '''optimization step which supports gradient scaling for AMP.
@@ -210,10 +210,14 @@ def optimizer_step(
     if scaler is not None:
         scaler.scale(loss).backward()
 
-        if clip_grad_norm:
+        if clip_grad_norm or grad_nan_to_num:
             scaler.unscale_(optimizer)
             for param_group in optimizer.param_groups:
-                torch.nn.utils.clip_grad_norm_(param_group.get('params'), max_norm)
+                params = param_group.get('params')
+                if grad_nan_to_num:
+                    grad_nan_to_num_(params)
+                if clip_grad_norm:
+                    torch.nn.utils.clip_grad_norm_(params, max_norm)
 
         scaler.step(optimizer)
         if update_scaler:
@@ -221,9 +225,13 @@ def optimizer_step(
     else:
         loss.backward()
 
-        if clip_grad_norm:
+        if clip_grad_norm or grad_nan_to_num:
             for param_group in optimizer.param_groups:
-                torch.nn.utils.clip_grad_norm_(param_group.get('params'), max_norm)
+                params = param_group.get('params')
+                if grad_nan_to_num:
+                    grad_nan_to_num_(params)
+                if clip_grad_norm:
+                    torch.nn.utils.clip_grad_norm_(params, max_norm)
 
         optimizer.step()
 
