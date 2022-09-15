@@ -73,5 +73,14 @@ def make_transform_from_config(configs: list[dict]):
     '''
     transform = []
     for config in configs:
-        transform.append(build_transform(**config))
+        if config.get('name') in ['RandomChoice', 'RandomOrder', 'RandomApply']:
+            inner_transform = []
+            for inner_config in config.get('transforms'):
+                inner_transform.append(build_transform(**inner_config))
+            params = dict(transforms=inner_transform)
+            if config.get('p', None) is not None:
+                params.update(dict(p=config.get('p')))
+            transform.append(build_transform(config.get('name'), **params))
+        else:
+            transform.append(build_transform(**config))
     return T.Compose(transform)
