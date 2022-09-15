@@ -178,7 +178,9 @@ def grad_nan_to_num(module: nn.Module, nan: float=0.0, posinf: float=1e5, neginf
 
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
-    zero_grad: bool=True, set_to_none: bool=True, update_scaler: bool=False
+    zero_grad: bool=True, set_to_none: bool=True,
+    clip_grad_norm: bool=False, max_norm: float=1.0,
+    update_scaler: bool=False
 ) -> None:
     '''optimization step which supports gradient scaling for AMP.
 
@@ -204,11 +206,22 @@ def optimizer_step(
 
     if scaler is not None:
         scaler.scale(loss).backward()
+
+        if clip_grad_norm:
+            scaler.unscale_(optimizer)
+            for param_group in optimizer.param_groups:
+                torch.nn.utils.clip_grad_norm_(param_group.get('params'), max_norm)
+
         scaler.step(optimizer)
         if update_scaler:
             scaler.update()
     else:
         loss.backward()
+
+        if clip_grad_norm:
+            for param_group in optimizer.param_groups:
+                torch.nn.utils.clip_grad_norm_(param_group.get('params'), max_norm)
+
         optimizer.step()
 
 
