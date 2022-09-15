@@ -156,8 +156,9 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
     return shuffled
 
 
-def grad_nan_to_num(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
+def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
     '''set nan gardients to a number.
+    This is an inplace operation.
 
     Arguments:
         input: nn.Module|list[torch.Tensor]
