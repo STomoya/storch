@@ -156,29 +156,37 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
     return shuffled
 
 
-def grad_nan_to_num(module: nn.Module, nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
+def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
     '''set nan gardients to a number.
+    This is an inplace operation.
 
     Arguments:
-        module: nn.Module
-            The module with parameters holding .grad attribute.
+        input: nn.Module|list[torch.Tensor]
+            Module or list of tensors with .grad attribute.
         nan: float (default: 0)
             Value to replace nan.
         posinf, neginf: float (default: 1e5, 1e-5)
             Value to replace positive/negative inf.
     '''
-    params = [param for param in module.parameters() if param.grad is not None]
-    if len(params):
-        flat = torch.cat([param.grad.flatten() for param in params])
-        flat = torch.nan_to_num(flat, nan, posinf, neginf)
-        grads = flat.split([param.numel() for param in params])
-        for param, grad in zip(params, grads):
-            param.grad = grad.reshape(param.shape)
+    if isinstance(input, nn.Module):
+        input = input.parameters()
+    params = [param for param in input if param.grad is not None]
+    for param in params:
+        param.grad = torch.nan_to_num(param.grad, nan, posinf, neginf)
 
+    '''from: https://github.com/NVlabs/stylegan3/blob/1c6608208cb51b7773da32f40ee2232f684c3a21/training/training_loop.py#L283-L292'''
+    # if len(params):
+    #     flat = torch.cat([param.grad.flatten() for param in params])
+    #     flat = torch.nan_to_num(flat, nan, posinf, neginf)
+    #     grads = flat.split([param.numel() for param in params])
+    #     for param, grad in zip(params, grads):
+    #         param.grad = grad.reshape(param.shape)
 
 def optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
-    zero_grad: bool=True, set_to_none: bool=True, update_scaler: bool=False
+    zero_grad: bool=True, set_to_none: bool=True,
+    clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
+    update_scaler: bool=False
 ) -> None:
     '''optimization step which supports gradient scaling for AMP.
 
@@ -204,11 +212,30 @@ def optimizer_step(
 
     if scaler is not None:
         scaler.scale(loss).backward()
+
+        if clip_grad_norm or grad_nan_to_num:
+            scaler.unscale_(optimizer)
+            for param_group in optimizer.param_groups:
+                params = param_group.get('params')
+                if grad_nan_to_num:
+                    grad_nan_to_num_(params)
+                if clip_grad_norm:
+                    torch.nn.utils.clip_grad_norm_(params, max_norm)
+
         scaler.step(optimizer)
         if update_scaler:
             scaler.update()
     else:
         loss.backward()
+
+        if clip_grad_norm or grad_nan_to_num:
+            for param_group in optimizer.param_groups:
+                params = param_group.get('params')
+                if grad_nan_to_num:
+                    grad_nan_to_num_(params)
+                if clip_grad_norm:
+                    torch.nn.utils.clip_grad_norm_(params, max_norm)
+
         optimizer.step()
 
 
