@@ -5,6 +5,8 @@ from typing import Callable
 
 import torchvision.transforms as T
 
+import storch
+
 
 def make_simple_transform(
     image_size: tuple[int]|int, crop: str='center', hflip: bool=True,
@@ -53,7 +55,11 @@ def build_transform(name: str, **params):
     '''
     if hasattr(T, name):
         return getattr(T, name)(**params)
-    raise UserWarning(f'torchvision.transforms.{name} does not exist.')
+    else:
+        transform = storch.construct_class_by_name(class_name=name, **params)
+        assert callable(transform), f'User defined tranform {name} is not callable'
+        return transform
+
 
 def make_transform_from_config(configs: list[dict]):
     '''make transform from list of TransformConfigs
