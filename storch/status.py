@@ -24,6 +24,7 @@ from torchvision.utils import make_grid
 from tqdm import tqdm
 
 from storch.path import Path
+from storch.profiler import get_tb_profile, record_function
 
 
 class Logger(object):
@@ -191,8 +192,9 @@ class Status:
         self._steptime_num_accum = steptime_num_accum
         self._steptimes = []
 
-        tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
-        self._tbwriter = SummaryWriter(tb_folder)
+        self._tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
+        self._tbwriter = SummaryWriter(self._tb_folder)
+        self._profiler = None
 
         atexit.register(self._shutdown_logger)
 
@@ -365,9 +367,13 @@ class Status:
         if self.batches_done == 10:
             # print gpu after some batches
             # for checking memory usage
-            self.log_nvidia_smi()
+            with record_function('nvidia-smi'):
+                self.log_nvidia_smi()
 
         self._bar.update(1)
+
+        if self._profiler is not None:
+            self._profiler.step()
 
         self._step_start = time.time()
 
@@ -395,6 +401,19 @@ class Status:
         '''Update accumulation values without updating iteration counts.'''
         self._collector.report_by_dict(kwargs)
         self.tb_add_scalars(**kwargs)
+
+
+    @contextmanager
+    def profile(self, enabled=True):
+        if enabled:
+            self._profiler = get_tb_profile(self._tb_folder)
+            self._profiler.start()
+
+        yield
+
+        if enabled:
+            self._profiler.stop()
+            self._profiler = None
 
 
     @contextmanager
