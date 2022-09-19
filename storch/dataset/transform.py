@@ -12,20 +12,18 @@ def make_simple_transform(
     image_size: tuple[int]|int, crop: str='center', hflip: bool=True,
     mean: tuple[float]|float=0.5, std: tuple[float]|float=0.5
 ) -> Callable:
-    '''make a simple transform
+    """make a simple transform
 
-    Arguments:
-        image_size: tuple|int
-            size of the image to be resized to. if a single int value, (image_size, image_size) will be used.
-        crop: str (default: 'center')
-            'center': CenterCrop
-            'random': RandomResizedCrop
-        hflip: bool (default: True)
-            If True, add RandomHorizontalFlip
-        mean, std: tuple|float (default: 0.5)
-            mean and std used to normalize the image.
-            mean=0.0, std=1.0 for no normalization.
-    '''
+    Args:
+        image_size (tuple[int] | int): size of the image to be resized to. if a single int value, (image_size, image_size) will be used.
+        crop (str, optional): 'center': CenterCrop, 'random': RandomResizedCrop. Default: 'center'.
+        hflip (bool, optional): If True, add RandomHorizontalFlip. Default: True.
+        mean (tuple[float] | float, optional): mean used to normalize the image. Default: 0.5.
+        std (tuple[float] | float, optional): std used to normalize the image. Default: 0.5.
+
+    Returns:
+        Callable: transforms
+    """
     if isinstance(image_size, int):
         image_size = (image_size, image_size)
 
@@ -44,15 +42,16 @@ def make_simple_transform(
     return T.Compose(transform)
 
 
-def build_transform(name: str, **params):
-    '''Build a transform inside torchvision.transforms by their class name
+def build_transform(name: str, **params) -> Callable:
+    """Build a transform inside torchvision.transforms by their class name
 
-    Arguments:
-        name: str
-            The name of the transform. ex) ToTenor, Normalize
-        **params: Any
-            Keyword arguments of passed to the transform.
-    '''
+    Args:
+        name (str): The name of the transform. ex) ToTenor, Normalize
+        **params: Keyword arguments of passed to the transform.
+
+    Returns:
+        Callable: the built transform
+    """
     if hasattr(T, name):
         return getattr(T, name)(**params)
     else:
@@ -61,22 +60,24 @@ def build_transform(name: str, **params):
         return transform
 
 
-def make_transform_from_config(configs: list[dict]):
-    '''make transform from list of TransformConfigs
+def make_transform_from_config(configs: list[dict]) -> Callable:
+    """make transform from list of TransformConfigs
 
-    Usage:
-        transforms = make_transform_from_config(
-            [
-                {'name': 'Resize', 'size': (224, 224)},
-                {'name': 'ToTensor'},
-                {'name': 'Normalize', 'mean': 0.5, 'std': 0.5}
-            ]
-        )
+    Args:
+        configs (list[dict]): List of dicts containing a least 'name' key.
 
-    Arguments:
-        configs: list[dict]
-            List of dicts containing a least 'name' key.
-    '''
+    Returns:
+        Callable: transforms
+
+    Examples::
+        >>> transforms = make_transform_from_config(
+        >>>     [
+        >>>         {'name': 'Resize', 'size': (224, 224)},
+        >>>         {'name': 'ToTensor'},
+        >>>         {'name': 'Normalize', 'mean': 0.5, 'std': 0.5}
+        >>>     ]
+        >>> )
+    """
     transform = []
     for config in configs:
         if config.get('name') in ['RandomChoice', 'RandomOrder', 'RandomApply']:
