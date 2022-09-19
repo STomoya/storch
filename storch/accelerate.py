@@ -18,6 +18,7 @@ Differences:
 
 from __future__ import annotations
 
+import warnings
 from contextlib import contextmanager
 
 import torch
@@ -27,6 +28,12 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 
 from storch.utils import EasyDict
+
+warnings.warn(
+    'storch.accelerate is deprecated and will be removed in future versions.' + \
+    'Use huggingface/accelerate, where this code is originally taken from.',
+    DeprecationWarning
+)
 
 
 class MiniAcceleratedOptimizer(optim.Optimizer):
