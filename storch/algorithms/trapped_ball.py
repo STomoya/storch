@@ -449,21 +449,20 @@ def thinning(fillmap: np.ndarray, max_iter: int=100) -> np.ndarray:
 def trappedball_segmentation(
     line_image: np.ndarray, color_image: np.ndarray=None, max_radius: int=3, method: str='max', threshold: int=220
 ) -> tuple[np.ndarray, np.ndarray]|np.ndarray:
-    '''Trapped-ball segmentation
+    """Trapped-ball segmentation
 
-    Arguments:
-        line_image: np.ndarray
-            Image of line drawings.
-        color_image: np.ndarray (default: None)
-            Color image used to colorize the segments.
-            If given, returns the colorized segment image.
-        max_radius: int (default: 3)
-            Maximum radius size.
-        method: str (default: 'max')
-            method for filtering the fills.
-        threshold: int (default: 220)
-            threshold used to binarize line_image.
-    '''
+    Args:
+        line_image (np.ndarray): Image of line drawings.
+        color_image (np.ndarray, optional): Color image used to colorize the segments.
+            If given, returns the colorized segment image. Default: None.
+        max_radius (int, optional): Maximum radius size. Default: 3.
+        method (str, optional): method for filtering the fills. Default: 'max'.
+        threshold (int, optional): threshold used to binarize line_image. Default: 220.
+
+    Returns:
+        np.ndarray: segment map
+        np.ndarray: the filled image.
+    """
     _, result = cv2.threshold(line_image, threshold, 255, cv2.THRESH_BINARY)
 
     radius_list = list(range(1, max_radius+1))
