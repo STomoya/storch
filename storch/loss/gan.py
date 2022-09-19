@@ -8,12 +8,37 @@ from storch.loss._base import Loss
 
 class Adversarial(Loss):
     def real_loss(self, prob: torch.Tensor) -> torch.Tensor:
+        """Classify logits as real images.
+
+        Args:
+            prob (torch.Tensor): D output to classify as real.
+
+        Returns:
+            torch.Tensor: The loss
+        """
         raise NotImplementedError()
 
     def fake_loss(self, prob: torch.Tensor) -> torch.Tensor:
+        """Classify logits as fake images.
+
+        Args:
+            prob (torch.Tensor): D output to classify as fake.
+
+        Returns:
+            torch.Tensor: The loss
+        """
         raise NotImplementedError()
 
     def d_loss(self, real_prob: torch.Tensor, fake_prob: torch.Tensor) -> torch.Tensor:
+        """discriminator loss
+
+        Args:
+            real_prob (torch.Tensor): D output of real inputs
+            fake_prob (torch.Tensor): D output of fake inputs
+
+        Returns:
+            torch.Tensor: The loss
+        """
         rl = self.real_loss(real_prob)
         fl = self.fake_loss(fake_prob)
         loss = rl + fl
@@ -22,6 +47,14 @@ class Adversarial(Loss):
         return loss
 
     def g_loss(self, fake_prob: torch.Tensor) -> torch.Tensor:
+        """generator loss
+
+        Args:
+            fake_prob (torch.Tensor): D output of fake inputs.
+
+        Returns:
+            torch.Tensor: The loss
+        """
         return self.real_loss(fake_prob)
 
 class GANLoss(Adversarial):

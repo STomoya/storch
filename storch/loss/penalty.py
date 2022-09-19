@@ -14,16 +14,16 @@ def calc_grad(
     outputs: torch.Tensor, inputs: torch.Tensor,
     scaler: Optional[GradScaler]=None
 ) -> torch.Tensor:
-    '''calculate gradients with AMP support
+    """calculate gradients with AMP support
 
-    Arguments:
-        - outputs: torch.Tensor
-            Output tensor from a model
-        - inputs: torch.Tensor
-            Input tensor to a model
-        - scaler: GradScaler (default: None)
-            GradScaler object if using AMP
-    '''
+    Args:
+        outputs (torch.Tensor): Output tensor from a model
+        inputs (torch.Tensor): Input tensor to a model
+        scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Defaults to None.
+
+    Returns:
+        torch.Tensor: The gradients of the input.
+    """
     if isinstance(scaler, GradScaler):
         outputs = scaler.scale(outputs)
     ones = torch.ones(outputs.size(), device=outputs.device)
@@ -36,50 +36,47 @@ def calc_grad(
     return gradients
 
 class Penalty(Loss):
-    '''Penalty
+    """Penalty
 
-    Usage:
-        gp = Penalty()
+    Examples:
+        >>> gp = Penalty()
 
-        # Examples for when your D has multiple outputs
-        # 1. Use only first output
-        gp.filter_output = lambda d_output: d_output[0]
-        # 2. Sum all outputs
-        gp.filter_output = lambda d_output: sum(list(map(lambda x:x.sum(), d_output)))
-        # ...etc.
-        # It should be a callable that receives outputs from D and outputs a scalar torch.Tensor.
-        # Penalty().filter_output defaults to lambda x:x
+        >>> # Examples for when your D has multiple outputs
+        >>> # 1. Use only first output
+        >>> gp.filter_output = lambda d_output: d_output[0]
+        >>> # 2. Sum all outputs
+        >>> gp.filter_output = lambda d_output: sum(list(map(lambda x:x.sum(), d_output)))
+        >>> # ...etc.
+        >>> # It should be a callable that receives outputs from D and outputs a scalar torch.Tensor.
+        >>> # Penalty().filter_output defaults to lambda x:x
 
-        # calculate penalty
-        loss = gp(...)
-        loss.backward()
-    '''
+        >>> # calculate penalty
+        >>> loss = gp(...)
+        >>> loss.backward()
+    """
     def __init__(self, return_all: bool = False) -> None:
         super().__init__(return_all=return_all)
         self.filter_output = lambda x: x
 
 class gradient_penalty(Penalty):
-    '''gradient penalty + 0-centered gradient penalty
-
-    Arguments:
-        - real: torch.Tensor
-            Real samples
-        - fake: torch.Tensor
-            Fake samples
-        - D: torch.nn.Module
-            Discriminator
-        - scaler: GradScaler (default: None)
-            GradScaler object if using AMP
-        - center: float
-            <center>-centered gradient penalty
-        - d_aux_input: tuple (default: tuple())
-            Auxiliary inputs to discriminator
-    '''
     def __call__(self,
         real: torch.Tensor, fake: torch.Tensor,
         D: nn.Module, scaler: Optional[GradScaler]=None, center: float=1.,
         d_aux_input: tuple=tuple()
     ) -> torch.Tensor:
+        """gradient penalty + 0-centered gradient penalty
+
+        Args:
+            real (torch.Tensor): Real samples
+            fake (torch.Tensor): Fake samples
+            D (nn.Module): Discriminator
+            scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
+            center (float, optional): <center>-centered gradient penalty. Default: 1.
+            d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
+
+        Returns:
+            torch.Tensor: The loss
+        """
 
         assert center in [1., 0.]
 
@@ -99,25 +96,23 @@ class gradient_penalty(Penalty):
         return penalty
 
 class dragan_penalty(Penalty):
-    '''DRAGAN gradient penalty
-
-    Arguments:
-        - real: torch.Tensor
-            Real samples
-        - D: torch.nn.Module
-            Discriminator
-        - center: float
-            <center>-centered gradient penalty
-        - scaler: GradScaler (default: None)
-            GradScaler object if using AMP
-        - d_aux_input: tuple (default: tuple())
-            Auxiliary inputs to discriminator
-    '''
     def __call__(self,
         real: torch.Tensor, D: nn.Module,
         scaler: Optional[GradScaler]=None, center: float=1.,
         d_aux_input: tuple=tuple()
     ) -> torch.Tensor:
+        """DRAGAN gradient penalty
+
+        Args:
+            real (torch.Tensor): Real samples
+            D (nn.Module): Discriminator
+            scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
+            center (float, optional): <center>-centered gradient penalty. Default: 1.
+            d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
+
+        Returns:
+            torch.Tensor: The loss.
+        """
 
         device = real.device
 
@@ -136,22 +131,21 @@ class dragan_penalty(Penalty):
         return penalty
 
 class r1_regularizer(Penalty):
-    '''R1 Regularizer
-
-    Arguments:
-        - real: torch.Tensor
-            Real samples
-        - D: torch.nn.Module
-            Discriminator
-        - scaler: GradScaler (default: None)
-            GradScaler object if using AMP
-        - d_aux_input: tuple (default: tuple())
-            Auxiliary inputs to discriminator
-    '''
     def __call__(self,
         real: torch.Tensor, D: nn.Module,
         scaler: Optional[GradScaler]=None, d_aux_input: tuple=tuple()
     ) -> torch.Tensor:
+        """R1 Regularizer
+
+        Args:
+            real (torch.Tensor): Real samples
+            D (nn.Module): Discriminator
+            scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
+            d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
+
+        Returns:
+            torch.Tensor: The loss.
+        """
         real_loc = Variable(real, requires_grad=True)
 
         d_real_loc = self.filter_output(D(real_loc, *d_aux_input))
@@ -164,20 +158,19 @@ class r1_regularizer(Penalty):
         return penalty
 
 class r2_regularizer(r1_regularizer):
-    '''R2 Regularizer
-
-    Arguments:
-        - fake: torch.Tensor
-            Fake samples
-        - D: torch.nn.Module
-            Discriminator
-        - scaler: GradScaler (default: None)
-            GradScaler object if using AMP
-        - d_aux_input: tuple (default: tuple())
-            Auxiliary inputs to discriminator
-    '''
     def __call__(self,
         fake: torch.Tensor, D: nn.Module,
         scaler: Optional[GradScaler], d_aux_input: tuple=tuple()
     ) -> torch.Tensor:
+        """R2 Regularizer
+
+        Args:
+            fake (torch.Tensor): Fake samples
+            D (nn.Module): Discriminator
+            scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
+            d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
+
+        Returns:
+            torch.Tensor: The loss.
+        """
         return super().__call__(fake, D, scaler, d_aux_input)

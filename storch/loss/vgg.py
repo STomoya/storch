@@ -67,22 +67,15 @@ def gram_matrix(x):
     return G.div(C*H*W)
 
 class VGGLoss(Loss):
-    '''loss using vgg
+    """loss using vgg
 
-    args:
-        device: torch.device
-            the device working on.
-        vgg: int (default: 16)
-            layers of VGG model. 16 or 19.
-        p: int (default: 2)
-            Lp. 1: L1, 2: L2
-        normalized: bool (default: True)
-            if the input is normalized or not.
-        return_all: bool (default: False)
-            return all intermediate results
-
-    NOTE: all loss in one class to avoid loading VGG several times to device.
-    '''
+    Args:
+        device (_type_): the device working on.
+        vgg (int, optional): layers of VGG model. 16 or 19. Default: 16.
+        p (int, optional): Lp. 1: L1, 2: L2. Default: 2.
+        normalized (bool, optional): if the input is normalized or not. Default: True.
+        return_all (bool, optional): return all intermediate results Default: False.
+    """
     def __init__(self,
         device,
         vgg: int=16,
