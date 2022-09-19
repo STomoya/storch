@@ -21,7 +21,7 @@ def pil_load_image(path: str, color_mode='RGB') -> Image.Image:
 
     Args:
         path (str): The path of to the image.
-        color_mode (str, optional): color mode. Defaults to 'RGB'.
+        color_mode (str, optional): color mode. Default: 'RGB'.
 
     Returns:
         Image.Image: The loaded image.
@@ -38,10 +38,10 @@ def gif_from_files(
 
     Args:
         image_paths (list[str]): List of images to contain in the gif.
-        filename (str, optional): filename of the save gif file. Defaults to 'out.gif'.
-        optimize (bool, optional): optimize. Defaults to False.
-        duration (int, optional): duration of each image. Defaults to 500.
-        loop (int, optional): loop mode. Defaults to infinite loop. Defaults to 0.
+        filename (str, optional): filename of the save gif file. Default: 'out.gif'.
+        optimize (bool, optional): optimize. Default: False.
+        duration (int, optional): duration of each image. Default: 500.
+        loop (int, optional): loop mode. Default: infinite loop. Default: 0.
     """
     images = [Image.open(str(path)) for path in image_paths]
     images[0].save(filename,
@@ -54,7 +54,7 @@ def download(url: str, filename: str=None) -> Image.Image:
 
     Args:
         url (str): URL.
-        filename (str, optional): filename. Defaults to None.
+        filename (str, optional): filename. Default: None.
 
     Returns:
         Image.Image: The loaded image.

@@ -7,9 +7,9 @@ def random_box(size: tuple, min_size: float=0, max_size: float=1., margin: int=0
 
     Args:
         size (tuple): Size of the region.
-        min_size (float, optional): Minimum size of the box, relative to size. Defaults to 0.
-        max_size (float, optional): Maximum size of the box, relative to size. Defaults to 1..
-        margin (int, optional): Margin. Defaults to 0.
+        min_size (float, optional): Minimum size of the box, relative to size. Default: 0.
+        max_size (float, optional): Maximum size of the box, relative to size. Default: 1..
+        margin (int, optional): Margin. Default: 0.
 
     Returns:
         _type_: _description_

@@ -39,7 +39,7 @@ def torch_load_image(path: str, mode: ImageReadMode=ImageReadMode.RGB):
 
     Args:
         path (str): path to image
-        mode (ImageReadMode, optional): mode. Defaults to ImageReadMode.RGB.
+        mode (ImageReadMode, optional): mode. Default: ImageReadMode.RGB.
 
     Returns:
         _type_: loaded image.
@@ -52,7 +52,7 @@ def make_image_grid(*image_tensors, num_images: int=None):
 
     Args:
         *args: image tensors.
-        num_images (int, optional): _description_. Defaults to None.
+        num_images (int, optional): _description_. Default: None.
 
     Returns:
         torch.Tensor: aligned images.
@@ -88,10 +88,10 @@ def save_images(
     Args:
         *image_tensors: Image tensors.
         filename (str): Where to save the images to.
-        num_images (int, optional): Number of samples to save. Defaults to None.
-        nrow (int, optional): torchvision.utils.save_image() argument. Defaults to 8.
-        normalize (bool, optional): torchvision.utils.save_image() argument. Defaults to True.
-        value_range (tuple[float], optional): torchvision.utils.save_image() argument. Defaults to (-1, 1).
+        num_images (int, optional): Number of samples to save. Default: None.
+        nrow (int, optional): torchvision.utils.save_image() argument. Default: 8.
+        normalize (bool, optional): torchvision.utils.save_image() argument. Default: True.
+        value_range (tuple[float], optional): torchvision.utils.save_image() argument. Default: (-1, 1).
     """
     images = make_image_grid(*image_tensors, num_images=num_images)
     save_image(
@@ -106,8 +106,8 @@ def to_tensor(
 
     Args:
         image (Image.Image): Image to convert to torch.Tensor
-        mean (float | tuple, optional): Mean used to normalize the image.. Defaults to 0.5.
-        std (float | tuple, optional): Standard used to normalize the image.. Defaults to 0.5.
+        mean (float | tuple, optional): Mean used to normalize the image.. Default: 0.5.
+        std (float | tuple, optional): Standard used to normalize the image.. Default: 0.5.
 
     Returns:
         torch.Tensor: image as tensor.
@@ -126,9 +126,9 @@ def tensor2heatmap_cv2(tensor, size, normalize=True, cmap=cv2.COLORMAP_JET) -> t
     Args:
         tensor (_type_): image tensor of shape [BHW] or [B1HW]
         size (_type_): output size of heatmap
-        normalize (bool, optional):  normalize output to [-1, 1]. Defaults to True.
+        normalize (bool, optional):  normalize output to [-1, 1]. Default: True.
         cmap (_type_, optional): colormap to apply. supports any colormap type implemented in opencv.
-            Defaults to cv2.COLORMAP_JET.
+            Default: cv2.COLORMAP_JET.
 
     Returns:
         torch.Tensor: heatmap as image.
@@ -179,7 +179,7 @@ def tensor2heatmap(tensor: torch.Tensor, size: tuple[int], normalize: bool=True)
     Args:
         tensor (torch.Tensor): image tensor of shape [BHW] or [B1HW]
         size (tuple[int]): output size of heatmap
-        normalize (bool, optional): normalize output to [-1, 1]. Defaults to True.
+        normalize (bool, optional): normalize output to [-1, 1]. Default: True.
 
     Returns:
         torch.Tensor: heatmap as image.
@@ -209,9 +209,9 @@ def make_mask(
 
     Args:
         image_size (tuple[int]): image size (H, W)
-        num_boxes (int, optional): number of boxes to create. Defaults to 1.
-        min_size (float, optional): relative minimum size of the box. Defaults to 0.1.
-        max_size (float, optional): relative maximum size of the box. Defaults to 0.5.
+        num_boxes (int, optional): number of boxes to create. Default: 1.
+        min_size (float, optional): relative minimum size of the box. Default: 0.1.
+        max_size (float, optional): relative maximum size of the box. Default: 0.5.
 
     Returns:
         torch.Tensor: _description_
@@ -230,9 +230,9 @@ def make_masks(
 
     Args:
         image (torch.Tensor): image tensor
-        num_boxes (int, optional): number of boxes to create. Defaults to 1.
-        min_size (float, optional): relative minimum size of the box. Defaults to 0.1.
-        max_size (float, optional): relative maximum size of the box. Defaults to 0.5.
+        num_boxes (int, optional): number of boxes to create. Default: 1.
+        min_size (float, optional): relative minimum size of the box. Default: 0.1.
+        max_size (float, optional): relative maximum size of the box. Default: 0.5.
 
     Returns:
         torch.Tensor: _description_
@@ -253,7 +253,7 @@ def apply_mask(
     Args:
         image (torch.Tensor): image tensor
         mask (torch.Tensor): mask tensor
-        mask_filler (Callable | torch.Tensor, optional): A callable which creates a tensor or another image tensor. Defaults to torch.zeros.
+        mask_filler (Callable | torch.Tensor, optional): A callable which creates a tensor or another image tensor. Default: torch.zeros.
 
     Returns:
         torch.Tensor: _description_
@@ -272,7 +272,7 @@ def gaussian_1d(kernel_size: int, sigma: float=1.0) -> torch.Tensor:
 
     Args:
         kernel_size (int): Size of the filter.
-        sigma (float, optional): Sigma. Defaults to 1.0.
+        sigma (float, optional): Sigma. Default: 1.0.
 
     Returns:
         torch.Tensor: 1d-gaussian filter.
@@ -289,7 +289,7 @@ def gaussian_2d(kernel_size: int|tuple[int], sigma: float|tuple[float]=1.0) -> t
 
     Args:
         kernel_size (int | tuple[int]): Size of the filter.
-        sigma (float | tuple[float], optional): Sigma. Defaults to 1.0.
+        sigma (float | tuple[float], optional): Sigma. Default: 1.0.
 
     Returns:
         torch.Tensor: 2d-gaussian filter
@@ -380,7 +380,7 @@ def sobel_2d(kernel_size: int, direction: int=0) -> torch.Tensor:
 
     Args:
         kernel_size (int): Size of the filter.
-        direction (int, optional): 0: vertical 1: horizontal. Defaults to 0.
+        direction (int, optional): 0: vertical 1: horizontal. Default: 0.
 
     Returns:
         torch.Tensor: 2-D Sobel filter
