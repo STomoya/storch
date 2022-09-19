@@ -9,21 +9,16 @@ from sklearn.metrics import classification_report, confusion_matrix
 def test_classification(
     targets: np.ndarray, predictions: np.ndarray, labels: list=None,
     filename: str=None, print_fn: Callable=print
-):
-    '''Calculate and visualizing scores for classification (mostly using sklearn).
+) -> None:
+    """Calculate and visualizing scores for classification (mostly using sklearn).
 
-    Arguments:
-        target: np.ndarray
-            Ground truth.
-        predictions: np.ndarray
-            Predictions
-        labels: list (default: None)
-            List containing names of the classes.
-        filename: str (default: None)
-            If provided, visualize the confusion matrix via matplotlib.
-        print_fn: Callable (default: print)
-            A callable for printing the results.
-    '''
+    Args:
+        targets (np.ndarray): Ground truth.
+        predictions (np.ndarray): Predictions.
+        labels (list, optional): List containing names of the classes.. Defaults to None.
+        filename (str, optional): If provided, visualize the confusion matrix via matplotlib. Defaults to None.
+        print_fn (Callable, optional): A callable for printing the results. Defaults to print.
+    """
     if labels is not None:
         labels = np.array(labels)
         targets = labels[targets]

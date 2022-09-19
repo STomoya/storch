@@ -6,8 +6,17 @@ import torch
 import torch.nn.functional as F
 
 
-def random_box(size: tuple, lambda_: float):
-    '''Make a random box within size'''
+def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
+    """Make a random box within size
+
+    Args:
+        size (tuple): size of the image.
+        lambda_ (float): lambda sampled from beta.
+
+    Returns:
+        tuple[int]: xyxy
+        float: adjusted lambda
+    """
     W = size[0]
     H = size[1]
     cut_rat = np.sqrt(1. - lambda_)
@@ -30,29 +39,21 @@ def random_box(size: tuple, lambda_: float):
 def cutmix(
     images: torch.Tensor, targets: torch.Tensor, alpha: float=0.2, p: float=1.0, sample_wise: bool=True
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    '''CutMix augmentation
+    """CutMix augmentation
 
-    Arguments:
-        images: torch.Tensor
-            Tensor of images to apply CutMix to.
-        targets: torch.Tensor
-            Tensor of targets.
-        alpha: float (default: 1.0)
-            Parameter for sampling random numbers from the Beta distribution.
-        p: float (default: 0.5)
-            Probability to apply CutMix to images.
-            If sample_wise is true, determined on every sample.
-        sample_wise: bool (default: True)
-            Make a mask for each samples in the batch.
+    Args:
+        images (torch.Tensor): Tensor of images to apply CutMix to.
+        targets (torch.Tensor): Tensor of targets.
+        alpha (float, optional): Parameter for sampling random numbers from the Beta distribution. Default: 0.2.
+        p (float, optional): Probability to apply CutMix to images. If sample_wise is true, determined on every sample.
+            Default: 1.0.
+        sample_wise (bool, optional): Make a mask for each samples in the batch. Default: True.
 
     Returns:
-        mixed: torch.Tensor
-            The mixed image.
-        target: torch.Tensor
-            The target in the order of the shuffled images.
-        lambdas: torch.Tensor
-            The lambda used to make the mask.
-    '''
+        torch.Tensor: The mixed image.
+        torch.Tensor: The target in the order of the shuffled images.
+        torch.Tensor: The lambda used to make the mask.
+    """
     B, _, W, H = images.size()
 
     mask = torch.ones(B, 1, W, H, device=images.device)
@@ -81,23 +82,20 @@ def cutmix(
     return mixed, targets[permutation], lambdas
 
 
-def mixed_cross_entropy_loss(logits, targets_a, targets_b, lambdas):
-    '''Cross entropy loss for mixed images
+def mixed_cross_entropy_loss(
+    logits: torch.Tensor, targets_a: torch.Tensor, targets_b: torch.Tensor, lambdas: torch.Tensor
+) -> torch.Tensor:
+    """Cross entropy loss for mixed images
 
-    Arguments:
-        logits: torch.Tensor
-            Output logits of the model.
-        targets_a: torch.Tensor
-            targets of the original batch.
-        targets_b: torch.Tensor
-            targets returned by cutmix()
-        lambdas: torch.Tensor
-            lambdas returned by cutmix()
+    Args:
+        logits (torch.Tensor): Output logits of the model.
+        targets_a (torch.Tensor): targets of the original batch.
+        targets_b (torch.Tensor): targets returned by cutmix()
+        lambdas (torch.Tensor): lambdas returned by cutmix()
 
     Returns:
-        loss: torch.Tensor
-            The calculated loss.
-    '''
+        torch.Tensor: the loss
+    """
     ce_loss_a = F.cross_entropy(logits, targets_a, reduction='none') * lambdas
     ce_loss_b = F.cross_entropy(logits, targets_b, reduction='none') * (1 - lambdas)
     loss = (ce_loss_a + ce_loss_b).mean()

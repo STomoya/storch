@@ -3,15 +3,13 @@ import torch
 
 
 class MinibatchStdDev(torch.nn.Module):
-    '''Mini-batch standard deviation
+    """Mini-batch standard deviation
 
-    Arguments:
-        group_size: int
-            Size of the group to calculate the statistics.
-        num_channels: int (default: 1)
-            Number of channels to be appended.
-    '''
-    def __init__(self, group_size: int, num_channels: int=1):
+    Args:
+        group_size (int): Size of the group to calculate the statistics.
+        num_channels (int, optional): Number of channels to be appended. Defaults to 1.
+    """
+    def __init__(self, group_size: int, num_channels: int=1) -> None:
         super().__init__()
         self._group_size = group_size
         self._num_channels = num_channels

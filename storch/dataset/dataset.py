@@ -22,22 +22,26 @@ class DatasetBase(Dataset):
         self.kwargs = get_loader_kwargs()
 
     def setup_loader(self, batch_size: int, **kwargs):
-        '''Setup keyword arguments for DataLoader
+        """Setup keyword arguments for DataLoader
 
-        Arguments:
-            batch_size: int
-                Batch size
-            **kwargs: Any
-                Other keyword arguments to be passed to the DataLoader class
-        '''
+        Args:
+            batch_size (int): Batch size
+
+        Returns:
+            Self: Other keyword arguments to be passed to the DataLoader class
+        """
         self.kwargs.batch_size = batch_size
         for key, value in kwargs.items():
             assert key in self.kwargs, f'Unknown keyword argument {key}.'
             self.kwargs[key] = value
         return self
 
-    def toloader(self):
-        '''Transform dataset to DataLoader object'''
+    def toloader(self) -> DataLoader:
+        """Transform dataset to DataLoader object
+
+        Returns:
+            DataLoader: data loader object.
+        """
         return DataLoader(self, **self.kwargs)
 
 
@@ -50,18 +54,16 @@ def _collect_image_paths(root, filter_fn):
 
 
 class ImageFolder(DatasetBase):
-    '''ImageFolder, but w/o class labels
+    """ImageFolder, but w/o class labels
 
-    Arguments:
-        data_root: str
-            Root directory of images. Images are searched recursively inside this folder.
-        transform: Callable
-            A callable that transforms the image.
-        num_images: int|None (default: None)
-            If given, the dataset will be reduced to have at most num_images samples.
-        filter_fn: Callable|None (default: None)
-            A callable that inputs a path and returns a bool to filter the files.
-    '''
+    Args:
+        data_root (str): Root directory of images. Images are searched recursively inside this folder.
+        transform (Callable): A callable that transforms the image.
+        num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
+            Defaul: None.
+        filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
+            Defaul: None.
+    """
     def __init__(self,
         data_root: str, transform: Callable, num_images: int|None =None, filter_fn: Callable|None=None
     ) -> None:
@@ -84,18 +86,16 @@ class ImageFolder(DatasetBase):
 
 
 class ImageFolders(DatasetBase):
-    '''ImageFolder, but w/o class labels and w/ multiple folder support.
+    """ImageFolder, but w/o class labels and w/ multiple folder support.
 
-    Arguments:
-        data_roots: list[str]
-            Root directory of images. Images are searched recursively inside this folder.
-        transforms: list[Callable]
-            A callable that transforms the image.
-        num_images: int|None (default: None)
-            If given, the dataset will be reduced to have at most num_images samples.
-        filter_fn: Callable|None (default: None)
-            A callable that inputs a path and returns a bool to filter the files.
-    '''
+    Args:
+        data_roots (list[str]): Root directory of images. Images are searched recursively inside this folder.
+        transforms (Callable | list[Callable]): A callable that transforms the image.
+        num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
+            Defaul: None.
+        filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
+            Defaul: None.
+    """
     def __init__(self,
         data_roots: list[str], transforms: Callable|list[Callable], num_images: int|None=None, filter_fn: Callable|None=None
     ) -> None:
@@ -139,7 +139,7 @@ def _extract_image_paths(file: str, filter_fn: Callable):
 
 
 class ImagePathFile(DatasetBase):
-    '''Dataset expecting a file with paths to images.
+    """Dataset expecting a file with paths to images.
 
     Format:
         [path_to_images.txt]
@@ -148,21 +148,19 @@ class ImagePathFile(DatasetBase):
             ./path/to/image/002.jpg
             ...
 
-    Arguments:
-        path: str
-            Path to a file with path to images.
-        transform: Callable
-            A callable that transforms the image.
-        num_images: int|None (default: None)
-            If given, the dataset will be reduced to have at most num_images samples.
-        filter_fn: Callable|None (default: None)
-            A callable that inputs a path and returns a bool to filter the files.
-    '''
+    Args:
+        path (str): Path to a file with path to images.
+        transform (Callable): A callable that transforms the image.
+        num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
+            Defaul: None.
+        filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
+            Defaul: None.
+    """
     def __init__(self,
         path: str, transform: Callable, num_images: int|None=None, filter_fn: Callable|None=None
     ) -> None:
         super().__init__()
-        images = _extract_image_paths(path)
+        images = _extract_image_paths(path, filter_fn)
         if num_images is not None and len(images) > num_images:
             images = images[:num_images]
         self.images = images
@@ -179,7 +177,7 @@ class ImagePathFile(DatasetBase):
 
 
 class ImagePathFiles(DatasetBase):
-    '''Dataset expecting a file with paths to images w/ multiple files support.
+    """Dataset expecting a file with paths to images w/ multiple files support.
 
     Format:
         [path_to_images.txt]
@@ -188,18 +186,16 @@ class ImagePathFiles(DatasetBase):
             ./path/to/image/002.jpg
             ...
 
-    Arguments:
-        paths: list[str]
-            Path to a file with path to images.
-        transforms: list[Callable]
-            A callable that transforms the image.
-        num_images: int|None (default: None)
-            If given, the dataset will be reduced to have at most num_images samples.
-        filter_fn: Callable|None (default: None)
-            A callable that inputs a path and returns a bool to filter the files.
-    '''
+    Args:
+        path (list[str]): Path to a file with path to images.
+        transform (Callable | list[Callable]): A callable that transforms the image.
+        num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
+            Defaul: None.
+        filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
+            Defaul: None.
+    """
     def __init__(self,
-        paths: str, transforms: Callable, num_images: int|None=None, filter_fn: Callable|None=None
+        paths: list[str], transforms: Callable|list[Callable], num_images: int|None=None, filter_fn: Callable|None=None
     ) -> None:
         super().__init__()
         self.images = {index: _extract_image_paths(path, filter_fn) for index, path in enumerate(paths)}

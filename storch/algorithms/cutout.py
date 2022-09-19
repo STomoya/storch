@@ -1,12 +1,23 @@
 
+from __future__ import annotations
+
 from typing import Callable
 
 import numpy as np
 import torch
 
 
-def random_box(size: tuple, lambda_: float):
-    '''Make a random box within size'''
+def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
+    """Make a random box within size
+
+    Args:
+        size (tuple): size of the image.
+        lambda_ (float): lambda sampled from beta.
+
+    Returns:
+        tuple[int]: xyxy
+        float: adjusted lambda
+    """
     W = size[0]
     H = size[1]
     cut_rat = np.sqrt(1. - lambda_)
@@ -27,22 +38,20 @@ def random_box(size: tuple, lambda_: float):
 def cutout(
     images: torch.Tensor, alpha: float=1.0, p: float=0.5, filler: Callable=torch.zeros, sample_wise: bool=True
 ) -> torch.Tensor:
-    '''Cutout augmentation
+    """Cutout augmentation
 
-    Arguments:
-        images: torch.Tensor
-            Tensor of images to apply Cutout to.
-        alpha: float (default: 1.0)
-            Parameter for sampling random numbers from the Beta distribution.
-        p: float (default: 0.5)
-            Probability to apply Cutout to images.
-            If sample_wise is true, determined on every sample.
-        filler: Callable (default: torch.zeros)
-            A function which ganerates a tensor to fill the cropped out box.
-            Requires the function to follow the argument format of tensor making functions in PyTorch.
-        sample_wise: bool (default: True)
-            Make a mask for each samples in the batch.
-    '''
+    Args:
+        images (torch.Tensor): Tensor of images to apply Cutout to.
+        alpha (float, optional): Parameter for sampling random numbers from the Beta distribution. Default: 1.0.
+        p (float, optional): Probability to apply Cutout to images.
+            If sample_wise is true, determined on every sample. Default: 0.5.
+        filler (Callable, optional): A function which ganerates a tensor to fill the cropped out box.
+            Requires the function to follow the argument format of tensor making functions in PyTorch. Default: torch.zeros.
+        sample_wise (bool, optional): Make a mask for each samples in the batch. Default: True.
+
+    Returns:
+        torch.Tensor: The mixed image.
+    """
     B, C, W, H = images.size()
 
     mask = torch.ones(B, 1, W, H, device=images.device)

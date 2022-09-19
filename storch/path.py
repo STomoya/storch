@@ -10,17 +10,10 @@ from typing import Any, Callable
 
 import storch
 
-_float_pattern = re.compile(f'[0-9]+.[0-9]*')
-def find_last_float(path):
-    return float(_float_pattern.findall(path)[-1])
-
-_int_pattern   = re.compile(f'[0-9]')
-def find_last_int(path):
-    return int(_int_pattern.findall(path)[-1])
-
 
 class Path(str):
-    '''pathlib.Path like class but is a string object and with additional methods'''
+    """pathlib.Path like class but is a string object and with additional methods.
+    """
 
     @property
     def stem(self) -> str:
@@ -51,22 +44,20 @@ class Path(str):
     def expanduser(self) -> "Path":
         return type(self)(os.path.expanduser(self))
 
-    def glob(self,
-        recursive: bool=False, filter_fn: Callable|None=None,
+    def glob(self, recursive: bool=False, filter_fn: Callable|None=None,
         sort: bool=False, sortkey: Callable|None=None
-    ) -> list["Path"]:
-        '''calls glob.glob on self, and optionally sort the result
+    ) -> list:
+        """calls glob.glob on self, and optionally sort the result
 
-        Arguments:
-            recursive: bool (default: False)
-                If True, recursively glob inside subfolders
-            filter_fn: Callable (default: None)
-                Func to filter the globed result
-            sort: bool (default: False)
-                If True, sort the result
-            sortkey: Callable (default: None)
-                Func for key argument of sorted()
-        '''
+        Args:
+            recursive (bool, optional): If True, recursively glob inside subfolders. Default: False.
+            filter_fn (Callable | None, optional): Func to filter the glob-ed result. Default: None.
+            sort (bool, optional): If True, sort the result. Default: False.
+            sortkey (Callable | None, optional): Func for key argument of sorted(). Default: None.
+
+        Returns:
+            list[Path]: list of glob-ed paths.
+        """
         glob_pattern = self / ('**/*' if recursive else '*')
         paths = glob.glob(glob_pattern, recursive=recursive)
         if isinstance(filter_fn, Callable):
@@ -99,27 +90,32 @@ class Path(str):
 
 
 class Folder(object):
-    '''Class for easily handling paths inside a root directory.
+    """Class for easily handling paths inside a root directory.
 
-    Usage:
-        folder = Folder('./checkpoint')
-        print(folder.root) # >>> './checkpoint'
+    Args:
+        root (str): root directory.
+        identify (bool, optional): make root folder identifiable. Default: False.
+        identifier (str, optional): identifier. Default: None.
 
-        # add subfolders
-        folder.add_children(image='subfolder1', model='subfolder2/subsubfolder')
-        # subfolders can be accessed by name like attrs
-        print(folder.image) # >>> './checkpoint/subfolder1'
-        print(folder.model) # >>> './checkpoint/subfolder2/subsubfolder'
+    Examples::
+        >>> folder = Folder('./checkpoint')
+        >>> print(folder.root) # > './checkpoint'
 
-        # "/" operator can be used to join file/folder to root/sub folder
-        print(folder.image / 'image.jpg') # >>> './checkpoint/subfolder1/image.jpg'
+        >>> # add subfolders
+        >>> folder.add_children(image='subfolder1', model='subfolder2/subsubfolder')
+        >>> # subfolders can be accessed by name like attrs
+        >>> print(folder.image) # > './checkpoint/subfolder1'
+        >>> print(folder.model) # > './checkpoint/subfolder2/subsubfolder'
 
-        # make all directories
-        folder.make()
+        >>> # "/" operator can be used to join file/folder to root/sub folder
+        >>> print(folder.image / 'image.jpg') # > './checkpoint/subfolder1/image.jpg'
 
-        # list all directories as dict
-        folder.list()
-    '''
+        >>> # make all folders and subfolders if not exists.
+        >>> folder.make()
+
+        >>> # list all directories as dict
+        >>> folder.list()
+    """
     def __init__(self, root: str, identify: bool=False, identifier: str=None) -> None:
         if identify:
             identifier = identifier if identifier is not None else datetime.datetime.now().strftime('%Y.%m.%d.%H.%M.%S')
@@ -137,12 +133,21 @@ class Folder(object):
             raise AttributeError(__name)
 
     def add_children(self, **kwargs) -> None:
+        """add subfolders to root directory
+        """
         for name, folder in kwargs.items():
             self._roots[name] = self._roots.root / folder
 
     def mkdir(self) -> None:
+        """make folders and subfolders if not exists.
+        """
         for name in self._roots:
             self._roots[name].mkdir()
 
     def list(self) -> dict:
+        """List all folders as dict.
+
+        Returns:
+            dict: Listed folders.
+        """
         return self._roots

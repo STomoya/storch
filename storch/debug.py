@@ -1,6 +1,6 @@
 '''Import stuff for debug
-Usage:
-    from storch.debug import *
+Examples::
+    >>> from storch.debug import *
 '''
 
 from __future__ import annotations
@@ -28,20 +28,16 @@ def test_model(
     device: str|torch.device='cpu',
     input_sampler: Callable=torch.randn
 ) -> None:
-    '''Test is the model works properly by forwarding dummy tensors (and optionally backward.)
+    """Test if the model works properly by forwarding dummy tensors (and optionally backward.)
 
-    Arguments:
-        models: nn.Module|list[nn.Module]
-            nn.Module or a list of nn.Module to be tested.
-        input_shapes: tuple|Iterable[tuple]
-            tuple of iterable of tuples, each presenting the input shape of the model.
-        batch_size: int (default: 3)
-            Size of the batch dimension.
-        device: str|torch.device (default: 'cpu')
-            The device to perform the test on.
-        input_sampler: Callable (default: torch.randn)
-            A callable which is used to sample the dummy inputs.
-    '''
+    Args:
+        models (nn.Module | Iterable[nn.Module]): nn.Module or a list of nn.Module to be tested.
+        input_shapes (tuple | Iterable[tuple]): tuple of iterable of tuples, each presenting the input shape of the model.
+        batch_size (int, optional): Size of the batch dimension. Defaults to 3.
+        call_backward (bool, optional): The device to perform the test on. Defaults to False.
+        device (str | torch.device, optional): _description_. Defaults to 'cpu'.
+        input_sampler (Callable, optional): A callable which is used to sample the dummy inputs. Defaults to torch.randn.
+    """
     if isinstance(models, (list, tuple)):
         assert len(models) == len(input_shapes)
     else: models, input_shapes = [models], [input_shapes]

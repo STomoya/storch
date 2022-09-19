@@ -35,23 +35,39 @@ __all__=[
 
 
 def torch_load_image(path: str, mode: ImageReadMode=ImageReadMode.RGB):
+    """load image using torchvision.
+
+    Args:
+        path (str): path to image
+        mode (ImageReadMode, optional): mode. Default: ImageReadMode.RGB.
+
+    Returns:
+        _type_: loaded image.
+    """
     return read_image(path, mode)
 
 
-def make_image_grid(*image_tensors, num_images=None):
-    '''align images
+def make_image_grid(*image_tensors, num_images: int=None):
+    """align images
 
-    Usage:
-        img1, img2 = [torch.randn(3, 3, 128, 128) for _ in range(2)]
-        aligned = make_image_grid(img1, img2)
-        # aligned.size() == [6, 3, 128, 128]
-        # aligned        == [img1[0], img2[0], img1[1], img2[1], img1[2], img2[2]]
+    Args:
+        *args: image tensors.
+        num_images (int, optional): _description_. Default: None.
 
-        # Any number of tensors can be passed to this function
-        # as long as the sizes are equal except for the batch dimension
-        img_tensors = [torch.randn(random.randint(1, 10), 3, 128, 128) for _ in range(24)]
-        aligned = make_image_grid(*img_tensors)
-    '''
+    Returns:
+        torch.Tensor: aligned images.
+
+    Examples::
+        >>> img1, img2 = [torch.randn(3, 3, 128, 128) for _ in range(2)]
+        >>> aligned = make_image_grid(img1, img2)
+        >>> # aligned.size() == [6, 3, 128, 128]
+        >>> # aligned        == [img1[0], img2[0], img1[1], img2[1], img1[2], img2[2]]
+
+        >>> # Any number of tensors can be passed to this function
+        >>> # as long as the sizes are equal except for the batch dimension
+        >>> img_tensors = [torch.randn(random.randint(1, 10), 3, 128, 128) for _ in range(24)]
+        >>> aligned = make_image_grid(*img_tensors)
+    """
     _split = lambda x: x.chunk(x.size(0), 0)
     image_tensor_lists = map(_split, image_tensors)
     images = []
@@ -67,18 +83,16 @@ def save_images(
     *image_tensors, filename: str, num_images: int=None,
     nrow: int=8, normalize: bool=True, value_range: tuple[float]=(-1, 1), **kwargs
 ) -> None:
-    '''Create image grid and save
+    """Create image grid and save
 
-    Arguments:
-        image_tensors: torch.Tensor
-            Image tensors.
-        filename: str
-            Where to save.
-        num_images: int (default: None)
-            Number of samples to save.
-
-        ... others are arguments for torchvision.utils.save_image
-    '''
+    Args:
+        *image_tensors: Image tensors.
+        filename (str): Where to save the images to.
+        num_images (int, optional): Number of samples to save. Default: None.
+        nrow (int, optional): torchvision.utils.save_image() argument. Default: 8.
+        normalize (bool, optional): torchvision.utils.save_image() argument. Default: True.
+        value_range (tuple[float], optional): torchvision.utils.save_image() argument. Default: (-1, 1).
+    """
     images = make_image_grid(*image_tensors, num_images=num_images)
     save_image(
         images, filename, nrow=nrow, normalize=normalize,
@@ -88,36 +102,37 @@ def save_images(
 def to_tensor(
     image: Image.Image, mean: float|tuple=0.5, std: float|tuple=0.5
 ) -> torch.Tensor:
-    '''convert image to torch.Tensor
+    """convert image to torch.Tensor
 
-    Arguments:
-        image: Image.Image
-            Image to convert to torch.Tensor
-        mean, std: float|tuple (default: 0.5)
-            Mean and standard used to normalize the image.
-            mean=0., std=1. for no normalization.
-    '''
+    Args:
+        image (Image.Image): Image to convert to torch.Tensor
+        mean (float | tuple, optional): Mean used to normalize the image.. Default: 0.5.
+        std (float | tuple, optional): Standard used to normalize the image.. Default: 0.5.
+
+    Returns:
+        torch.Tensor: image as tensor.
+    """
     image = TF.to_tensor(image)
     image = TF.normalize(image, mean, std)
     return image
 
 
 @torch.no_grad()
-def tensor2heatmap_cv2(tensor, size, normalize=True, cmap=cv2.COLORMAP_JET):
-    '''apply color map to 1 channel batched image tensor using opencv
+def tensor2heatmap_cv2(tensor, size, normalize=True, cmap=cv2.COLORMAP_JET) -> torch.Tensor:
+    """apply color map to 1 channel batched image tensor using opencv
     slower than tensor2heatmap(), but supports various cmap.
     It converts the image to np.ndarray, apply colormap and convert back to torch.Tensor
 
-    Arguments:
-        tensor: torch.Tensor
-            image tensor of shape [BHW] or [B1HW]
-        size: tuple[int]
-            output size of heatmap
-        normalize: bool (default: True)
-            normalize output to [-1, 1]
-        cmap: cv2.COLORMAP_* (default: cv2.COLORMAP_JET)
-            colormap to apply. supports any colormap type implemented in opencv.
-    '''
+    Args:
+        tensor (_type_): image tensor of shape [BHW] or [B1HW]
+        size (_type_): output size of heatmap
+        normalize (bool, optional):  normalize output to [-1, 1]. Default: True.
+        cmap (_type_, optional): colormap to apply. supports any colormap type implemented in opencv.
+            Default: cv2.COLORMAP_JET.
+
+    Returns:
+        torch.Tensor: heatmap as image.
+    """
     assert tensor.size(1) == 1 and tensor.ndim == 4, 'Expects 1 channel batched image tensor.'
     b, dtype, device = tensor.size(0), tensor.dtype, tensor.device
     # numpy, cv2 image channel format
@@ -157,18 +172,18 @@ colormap_jet = torch.tensor(
 
 
 @torch.no_grad()
-def tensor2heatmap(tensor: torch.Tensor, size: tuple[int], normalize: bool=True):
-    '''apply cv2.COLORMAP_JET to 1 channel batched image tensor.
+def tensor2heatmap(tensor: torch.Tensor, size: tuple[int], normalize: bool=True) -> torch.Tensor:
+    """apply cv2.COLORMAP_JET to 1 channel batched image tensor.
     Fast, but only supports JET colormap.
 
-    Arguments:
-        tensor: torch.Tensor
-            image tensor of shape [BHW] or [B1HW]
-        size: tuple[int]
-            output size of heatmap
-        normalize: bool (default: True)
-            normalize output to [-1, 1]
-    '''
+    Args:
+        tensor (torch.Tensor): image tensor of shape [BHW] or [B1HW]
+        size (tuple[int]): output size of heatmap
+        normalize (bool, optional): normalize output to [-1, 1]. Default: True.
+
+    Returns:
+        torch.Tensor: heatmap as image.
+    """
     assert tensor.ndim == 3 or (tensor.ndim == 4 and tensor.size(1) == 1)
     if tensor.ndim == 4:
         tensor = tensor.squeeze(1)
@@ -190,18 +205,17 @@ def tensor2heatmap(tensor: torch.Tensor, size: tuple[int], normalize: bool=True)
 def make_mask(
     image_size: tuple[int], num_boxes: int=1, min_size: float=0.1, max_size: float=0.5
 ) -> torch.Tensor:
-    '''Make a randomly sampled mask
+    """Make a randomly sampled mask
 
-    Arguments:
-        image_size: tuple[int]
-            image size (H, W)
-        num_boxes: int (default: 1)
-            number of boxes to create
-        min_size: float (default: 0.1)
-            relative minimum size of the box
-        max_size: float (default: 0.5)
-            relative maximum size of the box
-    '''
+    Args:
+        image_size (tuple[int]): image size (H, W)
+        num_boxes (int, optional): number of boxes to create. Default: 1.
+        min_size (float, optional): relative minimum size of the box. Default: 0.1.
+        max_size (float, optional): relative maximum size of the box. Default: 0.5.
+
+    Returns:
+        torch.Tensor: _description_
+    """
     mask = torch.ones(1, 1, *image_size)
     margin = - int(min(*image_size) * min_size)
     for _ in range(num_boxes):
@@ -212,18 +226,17 @@ def make_mask(
 def make_masks(
     image: torch.Tensor, num_boxes: int=1, min_size: float=0.1, max_size: float=0.5
 ) -> torch.Tensor:
-    '''Make a batch of randomly sampled masks
+    """Make a batch of randomly sampled masks
 
-    Arguments:
-        image: torch.Tensor
-            image tensor
-        num_boxes: int (default: 1)
-            number of boxes to create
-        min_size: float (default: 0.1)
-            relative minimum size of the box
-        max_size: float (default: 0.5)
-            relative maximum size of the box
-    '''
+    Args:
+        image (torch.Tensor): image tensor
+        num_boxes (int, optional): number of boxes to create. Default: 1.
+        min_size (float, optional): relative minimum size of the box. Default: 0.1.
+        max_size (float, optional): relative maximum size of the box. Default: 0.5.
+
+    Returns:
+        torch.Tensor: _description_
+    """
     B, _, H, W = image.size()
     masks = torch.ones(B, 1, H, W)
     for i in range(B):
@@ -235,16 +248,16 @@ def apply_mask(
     image: torch.Tensor, mask: torch.Tensor,
     mask_filler: Callable|torch.Tensor=torch.zeros
 ) -> torch.Tensor:
-    '''Apply generated mask to image.
+    """Apply generated mask to image.
 
-    Arguments:
-        image: torch.Tensor
-            image tensor
-        mask: torch.Tensor
-            mask tensor
-        mask_filler: Callable|torch.Tensor (default: torch.zeros)
-            A callable which creates a tensor or another image tensor.
-    '''
+    Args:
+        image (torch.Tensor): image tensor
+        mask (torch.Tensor): mask tensor
+        mask_filler (Callable | torch.Tensor, optional): A callable which creates a tensor or another image tensor. Default: torch.zeros.
+
+    Returns:
+        torch.Tensor: _description_
+    """
     if isinstance(mask_filler, Callable):
         mask_filler = mask_filler(image.size(), device=image.device)
     masked = image * mask + mask_filler * (1 - mask)
@@ -254,15 +267,16 @@ def apply_mask(
 '''filters'''
 
 
-def gaussian_1d(kernel_size: int, sigma: float=1.0):
-    '''1-D Gaussian filter
+def gaussian_1d(kernel_size: int, sigma: float=1.0) -> torch.Tensor:
+    """1-D Gaussian filter
 
-    Arguments:
-        kernel_size: int
-            Size of the filter.
-        sigma: float (default: 1.0)
-            Sigma.
-    '''
+    Args:
+        kernel_size (int): Size of the filter.
+        sigma (float, optional): Sigma. Default: 1.0.
+
+    Returns:
+        torch.Tensor: 1d-gaussian filter.
+    """
     x = torch.arange(kernel_size) - kernel_size // 2
     if kernel_size % 2 == 0:
         x = x + 0.5
@@ -270,15 +284,16 @@ def gaussian_1d(kernel_size: int, sigma: float=1.0):
     return gauss / gauss.sum()
 
 
-def gaussian_2d(kernel_size: int|tuple[int], sigma: float|tuple[float]=1.0):
-    '''2-D Gaussian filter
+def gaussian_2d(kernel_size: int|tuple[int], sigma: float|tuple[float]=1.0) -> torch.Tensor:
+    """2-D Gaussian filter
 
-    Arguments:
-        kernel_size: int|tuple[int]
-            Size of the filter.
-        sigma: float|tuple[float] (default: 1.0)
-            Sigma.
-    '''
+    Args:
+        kernel_size (int | tuple[int]): Size of the filter.
+        sigma (float | tuple[float], optional): Sigma. Default: 1.0.
+
+    Returns:
+        torch.Tensor: 2d-gaussian filter
+    """
     kernel_size = to_2tuple(kernel_size)
     sigma = to_2tuple(sigma)
     ksize_x, ksize_y = kernel_size
@@ -297,24 +312,28 @@ def _pascal_triangle(size: int):
     return [c(size-1, j) for j in range(size)]
 
 
-def pascal_1d(kernel_size: int):
-    '''1-D discrete aproximation of Gaussian filter
+def pascal_1d(kernel_size: int) -> torch.Tensor:
+    """1-D discrete aproximation of Gaussian filter
 
-    Arguments:
-        kernel_size: int
-            Size of the filter.
-    '''
+    Args:
+        kernel_size (int): filter size.
+
+    Returns:
+        torch.Tensor: 1-d gaussian filter.
+    """
     kernel = torch.tensor(_pascal_triangle(kernel_size), dtype=torch.float32)
     return kernel / kernel.sum()
 
 
-def pascal_2d(kernel_size: int|tuple[int]):
-    '''2-D discrete aproximation of Gaussian filter
+def pascal_2d(kernel_size: int|tuple[int]) -> torch.Tensor:
+    """2-D discrete aproximation of Gaussian filter
 
-    Arguments:
-        kernel_size: int|tuple[int]
-            Size of the filter.
-    '''
+    Args:
+        kernel_size (int | tuple[int]): Size of the filter.
+
+    Returns:
+        torch.Tensor: 2-d gaussian filter
+    """
     kernel_size = to_2tuple(kernel_size)
     ksize_x, ksize_y = kernel_size
     kernel_x = pascal_1d(ksize_x)
@@ -322,13 +341,18 @@ def pascal_2d(kernel_size: int|tuple[int]):
     return torch.outer(kernel_x, kernel_y)
 
 
-def laplacian_1d(kernel_size: int):
-    '''1-D Laplacian filter
+def laplacian_1d(kernel_size: int) -> torch.Tensor:
+    """1-D Laplacian filter
 
-    Arguments:
-        kernel_size: int
-            Size of the filter.
-    '''
+    Args:
+        kernel_size (int): size of the filter
+
+    Raises:
+        Exception: kernel_size is not an odd number.
+
+    Returns:
+        torch.Tensor: 1-D Laplacian filter
+    """
     if kernel_size % 2 != 1:
         raise Exception(f'kernel_size must be odd but got {kernel_size}')
     kernel = torch.ones(kernel_size)
@@ -336,29 +360,31 @@ def laplacian_1d(kernel_size: int):
     return kernel
 
 
-def laplacian_2d(kernel_size: int|tuple[int]):
-    '''2-D Laplacian filter
+def laplacian_2d(kernel_size: int|tuple[int]) -> torch.Tensor:
+    """1-D Laplacian filter
 
-    Arguments:
-        kernel_size: int|tuple[int]
-            Size of the filter.
-    '''
+    Args:
+        kernel_size (int | tuple[int]): size of the filter
+
+    Returns:
+        torch.Tensor: 2-D Laplacian filter
+    """
     kernel_size = to_2tuple(kernel_size)
     kernel = torch.ones(kernel_size)
     kernel[kernel_size[0]//2, kernel_size[1]//2] = - (kernel.sum() - 1)
     return kernel
 
 
-def sobel_2d(kernel_size: int, direction: int=0):
-    '''2-D Sobel filter
+def sobel_2d(kernel_size: int, direction: int=0) -> torch.Tensor:
+    """2-D Sobel filter
 
-    Arguments:
-        kernel_size: int
-            Size of the filter.
-        direction: int (default: 1)
-            0: vertical
-            1: horizontal
-    '''
+    Args:
+        kernel_size (int): Size of the filter.
+        direction (int, optional): 0: vertical 1: horizontal. Default: 0.
+
+    Returns:
+        torch.Tensor: 2-D Sobel filter
+    """
     dx, dy = direction, 1-direction
     kernel_x, kernel_y = cv2.getDerivKernels(dx, dy, kernel_size)
     kernel_x, kernel_y = torch.from_numpy(kernel_x), torch.from_numpy(kernel_y)

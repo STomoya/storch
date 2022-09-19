@@ -5,34 +5,40 @@ import torch.nn as nn
 import storch
 
 
-def get_normalization2d(name, channels, affine=None):
-    '''Get 2d normalization layers by name
+def get_normalization2d(name: str, channels: int, affine: bool=None) -> nn.Module:
+    """Get 2d normalization layers by name
 
-    Arguments:
-        name: str
-            Name of the normalization layer
-        channels: int
-            Input tensor channel width
-        affine: bool (default: None)
-            Whether to enable trainability. If None, uses the default behaviour
-    '''
+    Args:
+        name (str): Name of the normalization layer
+        channels (int): Input tensor channel width
+        affine (bool, optional): Whether to enable trainability. If None, uses the default behaviour. Default: None.
+
+    Raises:
+        Exception: Unknown normalization layer name.
+
+    Returns:
+        nn.Module: normalization layer module.
+    """
     if   name == 'bn': return nn.BatchNorm2d(channels,    affine=storch.dynamic_default(affine, True))
     elif name == 'in': return nn.InstanceNorm2d(channels, affine=storch.dynamic_default(affine, False))
     elif name == 'ln': return nn.GroupNorm(1, channels,   affine=storch.dynamic_default(affine, True))
     elif name == 'gn': return nn.GroupNorm(16, channels,  affine=storch.dynamic_default(affine, True))
     raise Exception(f'Normalization: {name}')
 
-def get_normalization1d(name, channels, affine=None):
-    '''Get 1d normalization layers by name
+def get_normalization1d(name: str, channels: int, affine: bool=None):
+    """Get 1d normalization layers by name
 
-    Arguments:
-        name: str
-            Name of the normalization layer
-        channels: int
-            Input tensor channel width
-        affine: bool (default: None)
-            Whether to enable trainability. If None, uses the default behaviour
-    '''
+    Args:
+        name (str): Name of the normalization layer
+        channels (int): Input tensor channel width
+        affine (bool, optional): Whether to enable trainability. If None, uses the default behaviour. Default: None.
+
+    Raises:
+        Exception: Unknown normalization layer name.
+
+    Returns:
+        nn.Module: normalization layer module.
+    """
     if   name == 'bn': return nn.BatchNorm1d(channels,    affine=storch.dynamic_default(affine, True))
     elif name == 'in': return nn.InstanceNorm1d(channels, affine=storch.dynamic_default(affine, False))
     elif name == 'ln': return nn.LayerNorm(channels,      affine=storch.dynamic_default(affine, True))
@@ -41,22 +47,17 @@ def get_normalization1d(name, channels, affine=None):
 
 
 class AdaptiveNorm2d(nn.Module):
-    '''Adaptive Normalization Layer
+    """Adaptive Normalization Layer
 
-    Arguments:
-        norm_name: str
-            Name of the base normalization layer.
-        style_dim: int
-            Dimension of the style vector
-        channels: int
-            Input tensor channel width
-        affine_layer: nn.Module (default: nn.Linear)
-            nn.Module to transform style vector.
-        biasfree: bool (default: False)
-            Bias free.
-    '''
+    Args:
+        norm_name (str): Name of the base normalization layer.
+        style_dim (int): Dimension of the style vector
+        channels (int): Input tensor channel width
+        affine_layer (nn.Module, optional): nn.Module to transform style vector. Default: nn.Linear.
+        biasfree (bool, optional): Bias free. Default: False.
+    """
     def __init__(self,
-        norm_name, style_dim, channels, affine_layer=nn.Linear, biasfree=False
+        norm_name: str, style_dim: int, channels: int, affine_layer: nn.Module=nn.Linear, biasfree: bool=False
     ) -> None:
         super().__init__()
         self._norm_name = norm_name

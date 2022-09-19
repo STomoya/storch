@@ -6,18 +6,15 @@ from storch.models import ModelMixin
 
 
 class PatchDiscriminator(ModelMixin):
-    '''PatchGAN D
+    """PatchGAN D
 
-    Arguments:
-        in_channels: int
-            Channel width of the input image.
-        num_layers: int (default: 3)
-            Number of strided convolution layers.
-        norm_name: str (default: 'bn')
-            Normalization layer name.
-        act_name: str (default: 'lrelu')
-            Activation function name
-    '''
+    Args:
+        in_channels (int): Channel width of the input image.
+        num_layers (int, optional): Number of strided convolution layers. Default: 3.
+        channels (int, optional): Base channel width. Default: 64.
+        norm_name (str, optional): Normalization layer name. Default: 'bn'.
+        act_name (str, optional): Activation function name. Default: 'lrelu'.
+    """
     def __init__(self,
         in_channels: int, num_layers: int=3, channels: int=64, norm_name: str='bn', act_name: str='lrelu'
     ) -> None:

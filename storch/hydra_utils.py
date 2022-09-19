@@ -11,37 +11,31 @@ import sys
 
 from hydra import compose, initialize_config_dir
 from hydra.utils import to_absolute_path
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 
 
-def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys.argv[1:]):
-    '''gather config using hydra.
+def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys.argv[1:]) -> DictConfig:
+    """gather config using hydra.
 
-    Arguments:
-        config_dir: str
-            Relative path to directory where config files are stored.
-        config_name: str
-            Filename of the head config file.
-        overrides: list[str] (default: sys.argv[1:])
-            Overrides. Usually from command line arguments.
+    Args:
+        config_dir (str): Relative path to directory where config files are stored.
+        config_name (str): Filename of the head config file.
+        overrides (list[str], optional): Overrides. Usually from command line arguments. Default: sys.argv[1:].
 
     Returns:
-        cfg: OmegaConf
-            Configs
-    '''
+        DictConfig: Loaded config.
+    """
     with initialize_config_dir(config_dir=to_absolute_path(config_dir), version_base=None):
         cfg = compose(config_name, overrides=overrides)
     return cfg
 
 
-def save_hydra_config(config: OmegaConf, filename: str):
-    '''save OmegaConf as yaml file
+def save_hydra_config(config: DictConfig, filename: str) -> None:
+    """save OmegaConf as yaml file
 
-    Arguments:
-        config: OmegaConf
-            Config to save.
-        filename: str
-            filename of the saved config.
-    '''
+    Args:
+        config (DictConfig): Config to save.
+        filename (str): filename of the saved config.
+    """
     with open(filename, 'w') as fout:
         fout.write(OmegaConf.to_yaml(config))
