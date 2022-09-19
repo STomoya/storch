@@ -10,14 +10,6 @@ from typing import Any, Callable
 
 import storch
 
-_float_pattern = re.compile(f'[0-9]+.[0-9]*')
-def find_last_float(path):
-    return float(_float_pattern.findall(path)[-1])
-
-_int_pattern   = re.compile(f'[0-9]')
-def find_last_int(path):
-    return int(_int_pattern.findall(path)[-1])
-
 
 class Path(str):
     '''pathlib.Path like class but is a string object and with additional methods'''
