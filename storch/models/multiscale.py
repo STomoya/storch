@@ -8,20 +8,16 @@ import torch.nn as nn
 
 
 class MultiScale(nn.Module):
-    '''Multi Scale
+    """Multi Scale
     Only supports models with same structure.
 
-    Arguments:
-        builld_model: Callable
-            Func that builds the model. Requires to have no arguments. Use functools.partial, etc.
-        num_scales: int (default: 2)
-            Number of scales.
-        downsample: Callable (default: None)
-            Callable to downsample the input tensor.
-            If not specified, nn.AvgPool2d(2) will be used.
-        collate_fn: Callable (default: None)
-            Func to collate the outputs.
-    '''
+    Args:
+        build_model (Callable): Func that builds the model. Requires to have no arguments. Use functools.partial, etc.
+        num_scales (int, optional): Number of scales. Default: 2.
+        downsample (Callable | None, optional): Callable to downsample the input tensor.
+            If not specified, nn.AvgPool2d(2) will be used. Default: None.
+        collate_fn (Callable | None, optional): Func to collate the outputs. Default: None.
+    """
     def __init__(self,
         build_model: Callable, num_scales: int=2, downsample: Callable|None=None, collate_fn: Callable|None=None
     ) -> None:
