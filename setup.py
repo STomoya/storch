@@ -1,9 +1,11 @@
 
 from setuptools import find_packages, setup
 
+import storch
+
 setup(
     name='storch',
-    version='0.2.6',
+    version=storch.__version__,
     license='MIT',
     description='PyTorch utilities for STomoya.',
     author='Tomoya Sawada (STomoya)',
