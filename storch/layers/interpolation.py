@@ -6,7 +6,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def _make_blur_kernel(filter_size: int):
+def _make_blur_kernel(filter_size: int) -> torch.Tensor:
+    """integer aproximation of gaussian kernel.
+
+    Args:
+        filter_size (int): The size of the filter.
+
+    Returns:
+        torch.Tensor: The resampling filter.
+    """
     def _pascal_triangle():
         '''return binomial filter from size.'''
         def c(n, k):
@@ -20,12 +28,11 @@ def _make_blur_kernel(filter_size: int):
     return filter2d.unsqueeze(0).unsqueeze(0)
 
 class Blur(nn.Module):
-    '''Blur layer used in StyleGANs
+    """Blur layer used in StyleGANs
 
-    Arguments:
-        filter_size: int (default: 4)
-            Size of the low pass filter.
-    '''
+    Args:
+        filter_size (int): Size of the low pass filter. Default: 4
+    """
     def __init__(self, filter_size: int=4) -> None:
         super().__init__()
         self._filter_size = filter_size
@@ -47,18 +54,14 @@ class Blur(nn.Module):
         return f'filter_size={self._filter_size}'
 
 class BlurUpsample(nn.Sequential):
-    '''Upsample then blur.
+    """Upsample then blur.
 
-    Arguments:
-        filter_size: int (default: 4)
-            Size of the low pass filter.
-        scale_factor: int (default: 2)
-            Scale factor for upsampling
-        mode: str (default: 'bilinear')
-            Upsampling mode
-        align_corners: bool (default: True)
-            Align corners.
-    '''
+    Args:
+        filter_size (int, optional): Size of the low pass filter. Default: 4.
+        scale_factor (int, optional): Scale factor for upsampling. Default: 2.
+        mode (str, optional): Upsampling mode. Default: 'bilinear'.
+        align_corners (bool, optional): Align corners. Default: True.
+    """
     def __init__(self,
         filter_size: int=4, scale_factor: int=2, mode: str='bilinear', align_corners: bool=True
     ) -> None:
@@ -67,14 +70,12 @@ class BlurUpsample(nn.Sequential):
             Blur(filter_size))
 
 class BlurDownsample(nn.Sequential):
-    '''Blur then downsample
+    """Blur then downsample
 
-    Arguments:
-        filter_size: int (default: 4)
-            Size of the low pass filter.
-        scale: int (default: 2)
-            Scale for downsampling
-    '''
+    Args:
+        filter_size (int, optional): Size of the low pass filter. Default: 4.
+        scale (int, optional):  Scale for downsampling. Default: 2.
+    """
     def __init__(self,
         filter_size: int=4, scale: int=2
     ) -> None:
@@ -82,14 +83,12 @@ class BlurDownsample(nn.Sequential):
 
 
 class AABilinearInterp(nn.Module):
-    '''Bilinear interpolation with antialias option enabled
+    """Bilinear interpolation with antialias option enabled
 
-    Arguments:
-        size: int|None (default: None)
-            The output size.
-        scale_factor: int|None (default: None)
-            Scale factor.
-    '''
+    Args:
+        size (int | None, optional): The output size. Default: None.
+        scale_factor (int | None, optional): Scale factor.. Default: None.
+    """
     def __init__(self,
         size: int|None=None, scale_factor: int|None=None
     ) -> None:
