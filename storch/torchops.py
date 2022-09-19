@@ -1,9 +1,11 @@
+'''PyTorch operations.'''
 
 from __future__ import annotations
 
 import random
 import warnings
 from collections.abc import Callable
+from typing import Union
 
 import numpy as np
 import torch
@@ -27,19 +29,24 @@ __all__ = [
 ]
 
 
-def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn'):
-    '''automatically return a torch.device object.
+def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.device:
+    """automatically return a torch.device object.
     'cuda' if torch.cuda.is_available() else 'cpu'
 
-    Argumnets:
-        force_cpu: bool (default: False)
-            force device to be CPU
-        no_gpu_msg_type: str (default: 'warn')
-            How this function tells you, you do not have any GPUs. Ignored when force_cpu=True.
+    Args:
+        force_cpu (bool, optional): Force device to be CPU. Default: False.
+        no_gpu_msg_type (str, optional): How this function tells you, you do not have any GPUs. Ignored when force_cpu=True.
             - 'warn': warnings.warn
             - 'except': raise an exception
-            - any other str: does nothing
-    '''
+            - any other str: does nothing.
+            Default: 'warn'.
+
+    Raises:
+        Exception: Raised when no GPUs found.
+
+    Returns:
+        torch.device: Device.
+    """
     if torch.cuda.is_available() or not force_cpu:
         return torch.device('cuda')
     if force_cpu:
@@ -55,16 +62,28 @@ def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn'):
 
 
 @torch.no_grad()
-def freeze(model: nn.Module):
-    '''freeze the model'''
+def freeze(model: nn.Module) -> None:
+    """freeze the model.
+
+    This is an inplace operation.
+
+    Args:
+        model (nn.Module): The module to freeze.
+    """
     model.eval()
     for param in model.parameters():
         param.requires_grad = False
 
 
 @torch.no_grad()
-def unfreeze(model: nn.Module):
-    '''unfreeze the model'''
+def unfreeze(model: nn.Module) -> None:
+    """unfreeze the model
+
+    This is an inplace operation.
+
+    Args:
+        model (nn.Module): The module to unfreeze.
+    """
     for param in model.parameters():
         param.requires_grad = True
     model.train()
@@ -75,21 +94,16 @@ def update_ema(
     model: torch.nn.Module, model_ema: torch.nn.Module,
     decay: float=0.999, copy_buffers: bool=False, force_cpu: bool=False
 ) -> None:
-    '''Update exponential moving avg
+    """Update exponential moving avg.
     w'_new = w' * decay + w * (1 - decay)
 
-    Arguments:
-        model: torch.nn.Module
-            Model, which actually is updated
-        model_ema: torch.nn.Module
-            Copy of the model, which is updated by exponential moving average.
-        decay: float (default: 0.999)
-            Decay for exponential modving average.
-        copy_buffers: bool (default: False)
-            If True, also copy buffers inside the model.
-        force_cpu: bool (default: True)
-            If True, process on cpu.
-    '''
+    Args:
+        model (torch.nn.Module): Model, which actually is updated
+        model_ema (torch.nn.Module): Copy of the model, which is updated by exponential moving average.
+        decay (float, optional):  Decay for exponential modving average. Default: 0.999.
+        copy_buffers (bool, optional): If True, also copy buffers inside the model. Default: False.
+        force_cpu (bool, optional): If True, process on cpu. Expects the model_ema to be on CPU. Default: False.
+    """
     if force_cpu:
         org_device = next(model.parameters()).device
         model.to('cpu')
@@ -112,18 +126,15 @@ def update_ema(
 
 
 def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
-    '''reproducible training
+    """Settings for reproducible training.
 
-    Arguments:
-        seed: int (default: 3407)
-            seed for random
+    Args:
+        seed (int, optional): Random number generator seed. Default: 3407.
 
     Returns:
-        - seed_worker: Callable
-            Function for DataLoader's worker_init_fn option.
-        - generator: torch.Generator
-            torch.generator for DataLoader's generator option.
-    '''
+        Callable: Function for DataLoader's worker_init_fn option.
+        torch.Generator: torch.Generator for DataLoader's generator option.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -140,15 +151,17 @@ def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
     return seed_worker, generator
 
 
-def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
-    '''randomly shuffle a batched tensor and optionally return pthe permutation.
+def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
+    """randomly shuffle a batched tensor and optionally return pthe permutation.
 
-    Arguments:
-        batch: torch.Tensor
-            the batch to shuffle
-        return_permutation: bool (default: False)
-            If True, return permutation
-    '''
+    Args:
+        batch (torch.Tensor): Batched tensor to shuffle.
+        return_permutation (bool, optional): If True, return permutation. Default: False.
+
+    Returns:
+        torch.Tensor: The shuffled tensor.
+        torch.Tensor: The permutation. Only when return_permutation==True.
+    """
     permutation = torch.randperm(batch.size(0))
     shuffled = batch[permutation]
     if return_permutation:
@@ -156,18 +169,17 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False):
     return shuffled
 
 
-def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf: float=1e5, neginf: float=1e-5):
-    '''set nan gardients to a number.
+def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf: float=1e5, neginf: float=1e-5) -> None:
+    """et nan gardients to a number.
+
     This is an inplace operation.
 
-    Arguments:
-        input: nn.Module|list[torch.Tensor]
-            Module or list of tensors with .grad attribute.
-        nan: float (default: 0)
-            Value to replace nan.
-        posinf, neginf: float (default: 1e5, 1e-5)
-            Value to replace positive/negative inf.
-    '''
+    Args:
+        input (nn.Module | list[torch.Tensor]): Module or list of tensors with .grad attribute.
+        nan (float, optional): Value to replace nan. Default: 0.0.
+        posinf (float, optional): Value to replace positive inf. Default: 1e5.
+        neginf (float, optional): Value to replace negative inf. Default: 1e-5.
+    """
     if isinstance(input, nn.Module):
         input = input.parameters()
     params = [param for param in input if param.grad is not None]
@@ -188,23 +200,20 @@ def optimizer_step(
     clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
     update_scaler: bool=False
 ) -> None:
-    '''optimization step which supports gradient scaling for AMP.
+    """optimization step which supports gradient scaling for AMP.
 
-    Arguments:
-        loss: torch.Tensor
-            loss to backpropagate.
-        optimizer: torch.optim.Optimizer
-            optimizer.
-        scaler: GradScaler (default: None)
-            Optional GradScaler object.
-            If specified, uses it to scale the loss and call .step()
-        zero_grad: bool (default: True)
-            Call .zero_grad() on optimizer before calling .backward() on loss
-        set_no_none: bool (default: True)
-            Set None to .grad instead of setting them to 0.
-        update_scaler: bool (default: False)
-            Update the scaler if not None.
-    '''
+    Args:
+        loss (torch.Tensor): loss to backpropagate.
+        optimizer (optim.Optimizer): optimizer.
+        scaler (_type_, optional): Optional GradScaler object.
+            If specified, uses it to scale the loss and call .step(). Default: None.
+        zero_grad (bool, optional): Call .zero_grad() on optimizer before calling .backward() on loss. Default: True.
+        set_to_none (bool, optional): Set None to .grad instead of setting them to 0. Default: True.
+        clip_grad_norm (bool, optional): Clip gradient norm. Default: False.
+        max_norm (float, optional): Maximum norm used when clipping gradients. Default: 1.0.
+        grad_nan_to_num (bool, optional): Replace nan gradient: a number. Default: False.
+        update_scaler (bool, optional): Update the scaler if not None. Default: False.
+    """
     assert scaler is None or isinstance(scaler, GradScaler)
 
     if zero_grad:
@@ -239,16 +248,13 @@ def optimizer_step(
         optimizer.step()
 
 
-def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list):
-    '''assert shape of tensor
+def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list) -> None:
+    """assert shape of tensor
 
-    Arguments:
-        tensor: torch.Tensor
-            tensor to check the shape of
-        shape: torch.Size|tuple|list
-            expected shape of tensor.
-            pass -1 or None for arbitrary size.
-    '''
+    Args:
+        tensor (torch.Tensor): tensor to check the shape of
+        shape (torch.Size | tuple | list): expected shape of tensor. -1 or None for arbitrary size.
+    """
     assert tensor.ndim == len(shape), f'Wrong number of dimensions: got {tensor.ndim} expected {len(shape)}'
     for i, (size, exp_size) in enumerate(zip(tensor.size(), shape)):
         if exp_size is None or exp_size == -1:
@@ -257,19 +263,16 @@ def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list):
 
 
 def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int=3, skip_redundant: bool=True, print_fn: Callable=print):
-    '''Print module summary.
+    """Print module summary.
     Taken from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/torch_utils/misc.py#L196-L264
 
-    Arguments:
-        module: nn.Module
-            The module to summrize.
-        inputs: list|tuple
-            List of input tensors.
-        max_nesting: int (default: 3)
-        skip_redundant: bool (default: True)
-        print_fn: Callable (default: print)
-            Function for printing the summary.
-    '''
+    Args:
+        module (nn.Module): The module to summarize.
+        inputs (list | tuple): List of input tensors.
+        max_nesting (int, optional): Max nested modules to print. Default: 3.
+        skip_redundant (bool, optional): Filter out redundant entries. Default: True.
+        print_fn (Callable, optional): Function for printing the summary. Default: print.
+    """
     assert isinstance(module, torch.nn.Module)
     assert not isinstance(module, torch.jit.ScriptModule)
     assert isinstance(inputs, (tuple, list))
