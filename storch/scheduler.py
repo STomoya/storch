@@ -5,10 +5,17 @@ and modified by STomoya: https://github.com/STomoya
 '''
 
 import math
+import warnings
 from typing import List
 
 import torch.optim as optim
 from torch.optim.lr_scheduler import _LRScheduler
+
+warnings.warn(
+    'This module is deprecated in favor of torch.optim.lr_scheduler.ChainedScheduler and will be removed in future versions.',
+    DeprecationWarning
+)
+
 
 __all__ = [
     'ConstantMultiplier',
