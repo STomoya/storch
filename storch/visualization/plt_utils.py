@@ -119,30 +119,30 @@ def ax_setter(ax: Axes, *,
         if yticks is not None:
             ax.set_yticks(yticks, ytick_labels)
 
-        # bound/limit
-        if xbound is not None:
-            assert isinstance(xbound, (tuple, list)) and len(xbound) == 2
-            ax.set_xbound(*xbound)
-        if ybound is not None:
-            assert isinstance(ybound, (tuple, list)) and len(ybound) == 2
-            ax.set_ybound(*ybound)
+    # bound/limit
+    if xbound is not None:
+        assert isinstance(xbound, (tuple, list)) and len(xbound) == 2
+        ax.set_xbound(*xbound)
+    if ybound is not None:
+        assert isinstance(ybound, (tuple, list)) and len(ybound) == 2
+        ax.set_ybound(*ybound)
 
-        if xlim is not None:
-            assert isinstance(xlim, (tuple, list)) and len(xlim) == 2
-            ax.set_xlim(*xlim)
-        if ylim is not None:
-            assert isinstance(ylim, (tuple, list)) and len(ylim) == 2
-            ax.set_ylim(*ylim)
+    if xlim is not None:
+        assert isinstance(xlim, (tuple, list)) and len(xlim) == 2
+        ax.set_xlim(*xlim)
+    if ylim is not None:
+        assert isinstance(ylim, (tuple, list)) and len(ylim) == 2
+        ax.set_ylim(*ylim)
 
-        # invert order
-        if invert_xaxis:
-            ax.invert_xaxis()
-        if invert_yaxis:
-            ax.invert_yaxis()
+    # invert order
+    if invert_xaxis:
+        ax.invert_xaxis()
+    if invert_yaxis:
+        ax.invert_yaxis()
 
-        # axis scale
-        # {linear,log,symlog,logit}
-        if xscale is not None:
-            ax.set_xscale(xscale)
-        if yscale is not None:
-            ax.set_yscale(yscale)
+    # axis scale
+    # {linear,log,symlog,logit}
+    if xscale is not None:
+        ax.set_xscale(xscale)
+    if yscale is not None:
+        ax.set_yscale(yscale)
