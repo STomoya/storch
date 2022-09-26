@@ -51,7 +51,8 @@ def plt_subplots(nrows: int=1, ncols: int=1, format_axes: bool=True, filename: s
 def ax_setter(ax: Axes, *,
     title: str=None, legend: bool=False, legend_loc: str='best', axis_off: bool=False,
     xlabel: str=None, ylabel: str=None, grid: bool=False, tick_top: bool=False, tick_right: bool=False,
-    xticks: list[float]=None, xtick_labels: list[str]=None, yticks: list[float]=None, ytick_labels: list[str]=None,
+    xticks: list[float]=None, xtick_labels: list[str]=None, xtick_rotation: int=None,
+    yticks: list[float]=None, ytick_labels: list[str]=None, ytick_rotation: int=None,
     xlim: list[float]=None, ylim: list[float]=None, xbound: list[float]=None, ybound: list[float]=None,
     invert_xaxis: bool=False, invert_yaxis: bool=False, xscale: str=None, yscale: str=None
 ):
@@ -72,8 +73,10 @@ def ax_setter(ax: Axes, *,
         tick_right (bool, optional): position ytick to right. Default: False.
         xticks (list[float], optional): ticks of x axis. Default: None.
         xtick_labels (list[str], optional): labels of ticks of x axis. Default: None.
+        xtick_rotation (int, optional): rotation of labels of x axis. Default: None.
         yticks (list[float], optional): ticks of y axis . Default: None.
         ytick_labels (list[str], optional): labels of ticks of y axis. Default: None.
+        ytick_rotation (int, optional): rotation of labels of y axis. Default: None.
         xlim (list[float], optional): lower and upper limit of x axis. Default: None.
         ylim (list[float], optional): lower and upper limit of y axis. Default: None.
         xbound (list[float], optional): lower and upper bounds of x axis. Default: None.
@@ -110,14 +113,18 @@ def ax_setter(ax: Axes, *,
         # tick position
         if tick_top:
             ax.xaxis.tick_top()
+        else:
+            ax.xaxis.tick_bottom()
         if tick_right:
             ax.yaxis.tick_right()
+        else:
+            ax.yaxis.tick_left()
 
         # tick values and labels
         if xticks is not None:
-            ax.set_xticks(xticks, xtick_labels)
+            ax.set_xticks(xticks, xtick_labels, rotation=xtick_rotation)
         if yticks is not None:
-            ax.set_yticks(yticks, ytick_labels)
+            ax.set_yticks(yticks, ytick_labels, rotation=ytick_rotation)
 
     # bound/limit
     if xbound is not None:
