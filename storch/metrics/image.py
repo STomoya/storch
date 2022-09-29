@@ -25,7 +25,7 @@ def psnr(input: torch.Tensor, target: torch.Tensor, max_val: float=1.0, reductio
     """
     mse_error = (input.double() - target.double()).square().mean(dim=(1, 2, 3), keepdim=True)
     psnr = 10.0 * torch.log10(max_val ** 2 / mse_error)
-    return reduce_dimension(psnr, reduction)
+    return reduce_dimension(psnr, reduction).type(input.dtype)
 
 
 def ssim(input: torch.Tensor, target: torch.Tensor, max_val: float=1.0,
