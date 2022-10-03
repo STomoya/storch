@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
 
+from storch.visualization import ax_setter, plt_subplots
+
 
 def test_classification(
     targets: np.ndarray, predictions: np.ndarray, labels: list=None,
@@ -34,18 +36,17 @@ def test_classification(
     print_fn(f'Confusion matrix:\n{confmat}')
 
     if filename is not None:
-        # visualize confmat
-        fig, ax = plt.subplots(tight_layout=True)
-        ax.matshow(confmat, cmap='Blues')
-        for (i, j), value in np.ndenumerate(confmat):
-            ax.text(j, i, f'{value:.3f}', ha='center', va='center')
-        ax.xaxis.set_ticks_position('bottom')
-        ax.set_xticks(range(len(labels)))
-        ax.set_xticklabels(labels)
-        ax.set_yticks(range(len(labels)))
-        ax.set_yticklabels(labels)
-        ax.set_xlabel('prediction')
-        ax.set_ylabel('ground truth')
-        plt.savefig(filename)
-        plt.close()
+        print_percentage = len(np.unique(targets)) <= 10
+        print_ticks = len(labels) <= 25 if labels is not None else False
+        with plt_subplots(filename=filename, format_axes=False, tight_layout=True) as (fig, ax):
+            ax.matshow(confmat, cmap='Blues')
+            if print_percentage:
+                for (i, j), value in np.ndenumerate(confmat):
+                    ax.text(j, i, f'{value:.3f}', ha='center', va='center')
+            ticks = range(len(labels)) if print_ticks else []
+            tick_labels = labels if print_ticks else []
+            ax_setter(ax,
+                xlabel='prediction', ylabel='ground truth',
+                xticks=ticks, xtick_labels=tick_labels, yticks=ticks, ytick_labels=tick_labels,
+                xtick_rotation=90)
         print_fn(f'Saved confusion matrix to {filename}')

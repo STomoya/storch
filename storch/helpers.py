@@ -10,7 +10,7 @@ def _ntuple(n):
             if len(x) != n:
                 raise UserWarning(f'Expected input to have {n} elements. Got {len(x)}')
             if isinstance(x, tuple):
-                return tuple
+                return x
             return tuple(x)
         return tuple(repeat(x, n))
 
