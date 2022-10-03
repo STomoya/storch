@@ -6,7 +6,7 @@ from typing import Sequence
 import torch
 import torch.nn.functional as F
 
-from storch.helpers import to_2tuple
+from storch.utils.layer_helpers import to_2tuple
 from storch.imageops import gaussian_2d
 from storch.metrics.utils import reduce_dimension
 
