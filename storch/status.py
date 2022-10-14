@@ -24,6 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 from tqdm import tqdm
 
+from storch._funtext import ASCII_LOGO
 from storch.path import Path
 from storch.profiler import get_tb_profile, record_function
 
@@ -228,6 +229,8 @@ class Status:
         self._profiler = None
 
         atexit.register(self._shutdown_logger)
+
+        self.log('\n'+ASCII_LOGO)
 
     @property
     def max_iters(self):
