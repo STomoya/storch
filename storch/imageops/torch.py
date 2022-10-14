@@ -11,7 +11,7 @@ from PIL import Image
 from torchvision.io.image import ImageReadMode, read_image
 from torchvision.utils import save_image
 
-from storch.helpers import to_2tuple
+from storch.utils.layer_helpers import to_2tuple
 from storch.imageops.utils import random_box
 
 __all__=[

@@ -1,14 +1,10 @@
 
 import torch
 import torch.nn as nn
-from torchvision.models.resnet import ResNet50_Weights, resnet50
-
-try:
-    from torchvision.models.resnet import ResNet50_Weights
-except ImportError:
-    ResNet50_Weights = None
+from torchvision.models.resnet import resnet50
 
 from storch.metrics.utils.download import download_url
+from storch.utils.pt_version import is_multi_weight_api_available
 
 SWAV_IN1K_URL = 'https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar'
 
@@ -68,7 +64,8 @@ class ResNetIN(_ResNet):
     """Supervised ResNet50"""
     def load_checkpoint(self, weight_folder, filename):
         ckpt_path = None
-        if ResNet50_Weights is not None:
+        if is_multi_weight_api_available():
+            from torchvision.models.resnet import ResNet50_Weights
             resnet = resnet50(weights=ResNet50_Weights.DEFAULT)
         else:
             resnet = resnet50(pretrained=True)

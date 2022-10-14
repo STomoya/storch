@@ -27,7 +27,7 @@ import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 
-from storch.utils import EasyDict
+from storch import EasyDict
 
 warnings.warn(
     'storch.accelerate is deprecated and will be removed in future versions.' + \
