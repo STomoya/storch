@@ -7,18 +7,28 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
+import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.transforms.functional as TF
 from torchvision.utils import save_image
+from PIL import Image, ImageFile
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from storch.imageops import dummy_tensor, save_images
+from storch.torchops import print_module_summary
 
 __all__ = [
+    'np',
     'torch',
     'dummy_tensor',
     'save_image',
     'save_images',
-    'test_model'
+    'test_model',
+    'print_module_summary',
+    'Image',
+    'TF',
 ]
 
 def test_model(
