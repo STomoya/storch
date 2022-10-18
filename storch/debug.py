@@ -7,18 +7,30 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
+import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.transforms.functional as TF
+from torch.utils.data import Dataset, DataLoader
 from torchvision.utils import save_image
+from PIL import Image, ImageFile
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from storch.imageops import dummy_tensor, save_images
+from storch.torchops import print_module_summary
 
 __all__ = [
+    'np',
     'torch',
     'dummy_tensor',
     'save_image',
     'save_images',
-    'test_model'
+    'test_model',
+    'print_module_summary',
+    'Image',
+    'TF',
+    'RandomDataset'
 ]
 
 def test_model(
@@ -57,3 +69,45 @@ def test_model(
         if call_backward:
             print(f'Calling .backward() on {name}(input).mean().')
             mean.backward()
+
+
+class RandomDataset(Dataset):
+    def __init__(self, generate_data: Callable, num_samples: int=32) -> None:
+        super().__init__()
+        self.generate_data = generate_data
+        self.num_samples = num_samples
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, _):
+        return self.generate_data()
+
+    @classmethod
+    def create(cls, generate_data: Callable|str, num_samples: int=32, batch_size: int=32, **kwargs):
+        if isinstance(generate_data, str):
+            generate_data = _build_data_generators(generate_data, **kwargs)
+        dataset = cls(generate_data, num_samples)
+        dataloader = DataLoader(dataset, batch_size)
+        return dataloader
+
+
+def _build_data_generators(type: str, image_size: int=224, num_classes: int=1000, sr_scale: int=2):
+    if type == 'image':
+        def generate_data():
+            return torch.randn(3, image_size, image_size)
+    elif type == 'classification':
+        def generate_data():
+            return torch.randn(3, image_size, image_size), torch.randint(0, num_classes, (1, )).long()
+    elif type == 'multilabel':
+        def generate_data():
+            return torch.randn(3, image_size, image_size), torch.where(torch.rand(num_classes) < 0.5, torch.zeros(num_classes), torch.ones(num_classes))
+    elif type == 'i2i':
+        def generate_data():
+            return torch.randn(3, image_size, image_size), torch.randn(3, image_size, image_size)
+    elif type == 'sr':
+        def generate_data():
+            return torch.randn(3, image_size//sr_scale, image_size//sr_scale), torch.randn(3, image_size, image_size)
+    else:
+        raise Exception(f'No random generator type "{type}"')
+    return generate_data
