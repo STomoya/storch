@@ -7,13 +7,26 @@ from io import BytesIO
 import torch
 from PIL import Image, ImageFile
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 __all__=[
     'download',
     'gif_from_files',
-    'pil_load_image'
+    'pil_load_image',
+    'pil_configuration'
 ]
+
+
+def pil_configuration(
+    max_image_pixels: int=Image.MAX_IMAGE_PIXELS,
+    load_truncated_images: bool=ImageFile.LOAD_TRUNCATED_IMAGES
+) -> None:
+    """Configure PIL globals.
+
+    Args:
+        max_image_pixels (int, optional): maximum image pixels. Default: Image.MAX_IMAGE_PIXELS.
+        load_truncated_images (bool, optional): load truncated images? Default: False
+    """
+    Image.MAX_IMAGE_PIXELS = max_image_pixels
+    ImageFile.LOAD_TRUNCATED_IMAGES = load_truncated_images
 
 
 def pil_load_image(path: str, color_mode='RGB') -> Image.Image:
