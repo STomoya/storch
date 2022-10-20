@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: docker/torch/Dockerfile
       args:
-        - UID=${USERID}
+        - UID=${USERID:-1000}
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -15,3 +15,17 @@ services:
     working_dir: /usr/src
     tty: true
     shm_size: '8gb'
+
+  install:
+    build:
+      context: .
+      dockerfile: docker/install/Dockerfile
+      args:
+        - UID=${USERID:-1000}
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - .:/usr/src
+    working_dir: /usr/src
+    command: python -m pip install -e .
