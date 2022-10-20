@@ -20,6 +20,7 @@ __all__ = [
     'freeze',
     'unfreeze',
     'update_ema',
+    'set_seeds',
     'deterministic',
     'shuffle_batch',
     'optimizer_step',
@@ -125,11 +126,20 @@ def update_ema(
         model.to(org_device)
 
 
-def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
+def set_seeds(
+    seed: int=3407,
+    use_deterministic_algorithms: bool=False, warn_only: bool=False,
+    cudnn_benchmark: bool=False
+) -> tuple[Callable, torch.Generator]:
     """Settings for reproducible training.
 
     Args:
         seed (int, optional): Random number generator seed. Default: 3407.
+        use_deterministic_algorithms (bool, optional): use deterministic algorithms?
+            True for reproducibility. Default: False.
+        warn_only (bool, optional): Warn instead of an exception when using an module
+            without a deterministic implementation. Default: False.
+        cudnn_benchmark (bool, optional): cudnn benchmark. Default: False.
 
     Returns:
         Callable: Function for DataLoader's worker_init_fn option.
@@ -138,8 +148,8 @@ def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.backends.cudnn.benchmark = False
-    torch.use_deterministic_algorithms(True)
+    torch.use_deterministic_algorithms(use_deterministic_algorithms, warn_only=warn_only)
+    torch.backends.cudnn.benchmark = cudnn_benchmark
 
     def seed_worker(worker_id):
         worker_seed = torch.initial_seed() % 2**32
@@ -149,6 +159,26 @@ def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
     generator.manual_seed(0)
 
     return seed_worker, generator
+
+
+def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
+    """Settings for reproducible training.
+
+    Deprecated
+
+    Args:
+        seed (int, optional): Random number generator seed. Default: 3407.
+
+    Returns:
+        Callable: Function for DataLoader's worker_init_fn option.
+        torch.Generator: torch.Generator for DataLoader's generator option.
+    """
+    import warnings
+    warnings.warn(
+        f'"deterministic" is deprecated in favor of "set_seeds" and will be erased in the future version.',
+        DeprecationWarning
+    )
+    set_seeds(seed, use_deterministic_algorithms=True)
 
 
 def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
