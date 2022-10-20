@@ -10,6 +10,8 @@ from stutil import (EasyDict, call_func_by_name, check_folder,
 __all__=[
     'calc_num_sampling',
     'check_folder',
+    'get_obj_by_name',
+    'call_func_by_name',
     'construct_class_by_name',
     'dynamic_default',
     'EasyDict',
