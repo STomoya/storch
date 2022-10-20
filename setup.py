@@ -1,11 +1,13 @@
 
 from setuptools import find_packages, setup
 
-import storch
+with open('./storch/version.py', 'r') as fp:
+    versionpy = fp.read().strip()
+version = versionpy[versionpy.find('=')+1:].replace("'", '')
 
 setup(
     name='storch',
-    version=storch.__version__,
+    version=version,
     license='MIT',
     description='PyTorch utilities for STomoya.',
     author='Tomoya Sawada (STomoya)',
