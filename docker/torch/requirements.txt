@@ -1,3 +1,4 @@
+git+https://github.com/STomoya/stutil
 hydra-core
 matplotlib
 opencv-python
