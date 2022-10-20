@@ -21,6 +21,7 @@ setup(
         'scikit-learn',
         'scikit-image',
         'hydra-core',
-        'tensorboard'
+        'tensorboard',
+        'stutil@git+https://github.com/STomoya/stutil@v0.0.1'
     ]
 )
