@@ -24,6 +24,7 @@ def _collect_versions(num_cols=2):
     import PIL
     import skimage
     import sklearn
+    import stutil
     import tensorboard
     import torch
     import torchvision
@@ -39,6 +40,7 @@ def _collect_versions(num_cols=2):
     version_strings.pillow = PIL.__version__
     version_strings.skimage = skimage.__version__
     version_strings.sklearn = sklearn.__version__
+    version_strings.stutil = stutil.__version__
     version_strings.tensorboard = tensorboard.__version__
     version_strings.tqdm = tqdm.__version__
 
@@ -49,6 +51,10 @@ def _collect_versions(num_cols=2):
         if index % num_cols == 0:
             dependency_versions.append(' '.join(temp).center(__text_length))
             temp = []
+    if len(temp) != 0:
+        while len(temp) != num_cols:
+            temp.append(f'|{"":>15} | {"":<10}|')
+        dependency_versions.append(' '.join(temp).center(__text_length))
     return '\n'.join(dependency_versions)
 
 

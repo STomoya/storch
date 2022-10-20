@@ -25,6 +25,9 @@ Defining and configuration of training loops and models are fully up to the user
 
 No classes like `Trainer` will be implemented. (At least, until I find a way that makes these fully customizable + easily configured.)
 
+## Version
+
+Until `v0.2.13`, the version was bumped on every merge from a pull request. From `v0.3.0`, this module relies on [`stutil`](https://github.com/STomoya/stutil), and when any version updates on `stutil`, `storch` version will also be updated.
 
 ## License
 
