@@ -13,10 +13,11 @@ import warnings
 from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
 from statistics import mean
-from typing import Any, Union
+from typing import Any
 
 import torch
 from omegaconf import DictConfig, OmegaConf
+from stutil.logger import get_logger
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, RandomSampler
@@ -27,68 +28,6 @@ from tqdm import tqdm
 from storch._funtext import ASCII_LOGO
 from storch.path import Path
 from storch.profiler import get_tb_profile, record_function
-
-
-class Logger(object):
-    '''Redirect stderr to stdout, optionally print stdout to a file, and optionally force flushing on both stdout and the file.
-    from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/dnnlib/util.py#L56-L112
-    '''
-
-    def __init__(self, file_name: str = None, file_mode: str = "w", should_flush: bool = True):
-        self.file = None
-
-        if file_name is not None:
-            self.file = open(file_name, file_mode)
-
-        self.should_flush = should_flush
-        self.stdout = sys.stdout
-        self.stderr = sys.stderr
-
-        sys.stdout = self
-        sys.stderr = self
-
-    def write(self, text: Union[str, bytes]) -> None:
-        """Write text to stdout (and a file) and optionally flush.
-
-        Args:
-            text (Union[str, bytes]): Text to write.
-        """
-        if isinstance(text, bytes):
-            text = text.decode()
-        if len(text) == 0: # workaround for a bug in VSCode debugger: sys.stdout.write(''); sys.stdout.flush() => crash
-            return
-
-        if self.file is not None:
-            self.file.write(text)
-
-        self.stdout.write(text)
-
-        if self.should_flush:
-            self.flush()
-
-    def flush(self) -> None:
-        """Flush written text to both stdout and a file, if open.
-        """
-        if self.file is not None:
-            self.file.flush()
-
-        self.stdout.flush()
-
-    def close(self) -> None:
-        """Flush, close possible files, and remove stdout/stderr mirroring.
-        """
-        self.flush()
-
-        # if using multiple loggers, prevent closing in wrong order
-        if sys.stdout is self:
-            sys.stdout = self.stdout
-        if sys.stderr is self:
-            sys.stderr = self.stderr
-
-        if self.file is not None:
-            self.file.close()
-            self.file = None
-
 
 
 class Collector:
@@ -211,11 +150,8 @@ class Status:
 
 
         log_file = Path(log_file)
-        self._std_logger = Logger(log_file)
-        logging.basicConfig(
-            format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s',
-            level=logging.INFO, stream=self._std_logger)
-        self._logger = logging.getLogger(logger_name)
+        self._logger = get_logger(logger_name, filename=log_file, mode='a',
+            format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s')
         self._delta_format = delta_format
 
         self._collector = Collector()
@@ -548,7 +484,6 @@ class Status:
         for handler in handlers:
             self._logger.removeHandler(handler)
             handler.close()
-        self._std_logger.close()
 
     def load_state_dict(self, state_dict: dict) -> None:
         """fast forward training status by the given state_dict.
