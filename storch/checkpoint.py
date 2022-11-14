@@ -1,8 +1,10 @@
+"""Checkpointing
+"""
 
-from __future__ import annotations
-
-import copy
 import glob
+import os
+import warnings
+from collections import deque
 
 import torch
 
@@ -11,87 +13,170 @@ from storch.path import Path
 
 
 class Checkpoint:
-    """Checkpointing
+    """class for saving checkpoints.
 
     Args:
-        root (str): Where to save the chaeckpoint files.
-        prefix (str, optional): Prefix for the saved checkpoint file name. Defaults to 'checkpoint'.
-        separator (str, optional): Separator for the saved checkpoint file name. Defaults to '_'.
-        overwrite (bool, optional): Whether to overwrite the saved checkpoint everytime .save() is called. Defaults to False.
+        folder (str): folder to save the checkpoints to.
+        keep_last (int, optional): keep last n checkpoints. None to keep all. Default: 3.
+        filename_format (str, optional): format for filename of the checkpoint. Default: 'checkpoint.{count}.torch'.
+
+    Examples:
+        >>> checkpoint = Checkpoint('./checkpoints')
+        >>> # the objects must have state_dict and load_state_dict function.
+        >>> checkpoint.register(model=torch.nn.Linear(1, 1))
+
+        >>> # this will save the registered models.
+        >>> checkpoint.save()
+        >>> # you can also save others, including objects without state_dict and load_state_dict func.
+        >>> checkpoint.save(constant=1)
+
+        >>> # update models
+        >>> train(...)
+
+        >>> # this will load the models from a specific checkpoint to the registered objects.
+        >>> # no need to call load_state_dict.
+        >>> # it also returns additionally saved objects. (These must be over written by user code.)
+        >>> checkpoint.load('./checkpoints/checkpoint.0.torch')
+        {'constant': 1}
+
+        >>> # this will load the state_dict from the latest checkpoint.
+        >>> checkpoint.load_latest()
+        {'constant': 1}
     """
-    def __init__(self, root: str, prefix: str='checkpoint', separator: str='_', overwrite: bool=False) -> None:
-        self._root = Path(root)
-        self._root.mkdir()
-        self._compactname = self._root / f'{prefix}.torch'
 
-        self._prefix = prefix
-        self._separator = separator
-        self._overwrite = overwrite
-
-        self._state_dict = None
+    _container = storch.EasyDict()
 
 
-    def save(self, state_dict: str, step: int|str, force_cpu=False) -> None:
-        """Save checkpoint.
+    def __init__(self, folder: str, keep_last=3, filename_format: str='checkpoint.{count}.torch') -> None:
+        self.folder = Path(folder)
+        self.filename_format = filename_format
 
-        Args:
-            state_dict (str): The object to be saved. Any pickle-able object can be passed in.
-            step (int | str): Current step. Ignored if overwrite=True.
-            force_cpu (bool, optional): Force the state_dict to be on CPU before saving. Default: False.
-        """
-        filename = self._root / f'{self._prefix}{self._separator}{step}.torch'
-
-        if force_cpu:
-            def is_tensor(data): return isinstance(data, torch.Tensor)
-            def to_cpu(tensor): return tensor.cpu()
-            state_dict = storch.recursive_apply(to_cpu, state_dict, is_tensor)
-
-        torch.save(state_dict, filename if not self._overwrite else self._compactname)
+        if keep_last is not None:
+            keep_last += 1
+        self.file_deque = deque(maxlen=keep_last)
+        self.count = 0
 
 
-    def load(self, step: int|str, map_location: str='cpu') -> dict:
-        """_summary_
-
-        Args:
-            step (int | str): The specific step to be loaded.
-            map_location (str, optional): Device for the state_dict to be on when loaded.
+    def _container_as_state_dict(self) -> dict:
+        """call state_dict on registered objects and return as dict.
 
         Returns:
-            dict: The loaded state dict
+            dict: the state_dict of registered objects.
         """
-        filename = self._root / f'{self._prefix}{self._separator}{step}.torch'
-        state_dict = torch.load(filename, map_location=map_location)
+        state_dict = dict()
+        for key, value in self._container.items():
+            state_dict[key] = value.state_dict()
         return state_dict
 
 
-    def load_latest(self, map_location: str='cpu') -> dict:
-        """Load latest checkpoint
-
-        Args:
-            map_location (str, optional): Device for the state_dict to be on when loaded. Defaults to 'cpu'.
+    def state_dict(self):
+        """state_dict
 
         Returns:
-            dict: The loaded state dict
+            dict: state_dict of this class.
         """
-        pattern = self._root / f'{self._prefix}*.torch'
-        latest = storch.natural_sort(glob.glob(pattern))[-1]
-        state_dict = torch.load(latest, map_location=map_location)
-        return state_dict
+        return dict(
+            storch_version=storch.__version__,
+            file_deque=self.file_deque,
+            count=self.count
+        )
 
 
-    # for keeping best model state.
-    def keep(self, state_dict: dict):
-        """Keep a deepcopy of a state_dict
-
-        Args:
-            state_dict (dict): The state_dict to be kept.
+    def load_state_dict(self, state_dict: dict):
+        """load from a saved state_dict
         """
-        self._state_dict = copy.deepcopy(state_dict)
+        _storch_version = state_dict.pop('storch_version')
+        if storch.__version__ != _storch_version:
+            warnings.warn(
+                f'Checkpoint.load_state_dict: You are using a different version of storch ({_storch_version} -> {storch.__version__}). This might cause errors.',
+                UserWarning)
+        self.file_deque = state_dict.pop('file_deque')
+        self.count = state_dict.pop('count')
 
-    def get_kept(self) -> dict:
-        """Return the deepcopy of the state_dict.
+
+    def save(self, **constants):
+        """save the registered objects along with additional objects.
 
         Returns:
-            dict: The state_dict that was kept via .keep()
+            str: path to where the checkpoint was saved
         """
-        return self._state_dict
+        filename = self.folder / self.filename_format.format(count=self.count)
+        self.file_deque.append(filename)
+        self.count += 1
+
+        state_dict = {}
+        state_dict['state_dict'] = self._container_as_state_dict()
+        if constants != {}:
+            state_dict.update({'constants': constants})
+        state_dict.update({'__checkpoint_state': self.state_dict()})
+        torch.save(state_dict, filename)
+
+        if self.file_deque.maxlen is not None and len(self.file_deque) == self.file_deque.maxlen:
+            to_erase = self.file_deque.popleft()
+            os.remove(to_erase)
+
+        return filename
+
+
+    def load(self, path: str, map_location: torch.device=None):
+        """load checkpoint from "path".
+
+        Args:
+            path (str): path to the saved checkpoint.
+            map_location (torch.device, optional): location to load the checkpoint. Default: None.
+
+        Raises:
+            Exception: the checkpoint was not saved by this class
+
+        Returns:
+            dict: additional objects saved when save (if any).
+        """
+        state_dict = torch.load(path, map_location=map_location)
+
+        _self_state = state_dict.pop('__checkpoint_state', None)
+        if _self_state is None:
+            raise Exception(f'Checkpoint.load: This checkpoint seems to be not saved via storch.Checkpoint.')
+        self.load_state_dict(_self_state)
+
+        constants = state_dict.pop('constants', None)
+
+        for key, value in state_dict.pop('state_dict').items():
+            self._container[key].load_state_dict(value)
+
+        return constants
+
+
+    def load_latest(self, map_location: torch.device=None):
+        """load checkpoint from latest file (if any).
+
+        Args:
+            map_location (torch.device, optional): location to load the checkpoint. Default: None.
+
+        Returns:
+            dict: additional objects saved when save (if any).
+        """
+        paths = storch.natural_sort(glob.glob(self.folder / self.filename_format.format(count='*')))
+        if len(paths) > 0:
+            return self.load(paths[-1], map_location)
+
+
+    def register(self, **kwargs):
+        """register objects to be saved when "save" is called. also used to load checkpoints via "load".
+        The objects must have a "state_dict" and "load_state_dict" function.
+
+        Args:
+            **kwargs: objects to be registered as keyword arguments.
+        """
+        not_registered_keys = []
+        for key, value in kwargs.items():
+            if (hasattr(value, 'state_dict') and hasattr(value, 'load_state_dict') and
+                callable(value.state_dict) and callable(value.load_state_dict)):
+                self._container[key] = value
+            else:
+                not_registered_keys.append(key)
+
+        if len(not_registered_keys):
+            warnings.warn(
+                f'Checkpoint.register: The following object could not be registered: {not_registered_keys}',
+                UserWarning
+            )
