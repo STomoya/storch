@@ -6,7 +6,7 @@ import copy
 import torch.nn as nn
 
 
-class Compose:
+class KeeperCompose:
     """Compose multiple state_dict keepers.
 
     Args:
