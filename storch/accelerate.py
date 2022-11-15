@@ -18,22 +18,18 @@ Differences:
 
 from __future__ import annotations
 
-import warnings
 from contextlib import contextmanager
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from stutil.exceptions import warn_deprecated
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 
 from storch import EasyDict
 
-warnings.warn(
-    'storch.accelerate is deprecated and will be removed in future versions.' + \
-    'Use huggingface/accelerate, where this code is originally taken from.',
-    DeprecationWarning
-)
+warn_deprecated(__name__, 'huggingface/accelerate', 'huggingface/accelerate')
 
 
 class MiniAcceleratedOptimizer(optim.Optimizer):
