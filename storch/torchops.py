@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
+from torch.optim.lr_scheduler import _LRScheduler
 
 import storch
 
@@ -225,7 +226,8 @@ def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf
     #         param.grad = grad.reshape(param.shape)
 
 def optimizer_step(
-    loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
+    loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+    *,
     zero_grad: bool=True, set_to_none: bool=True,
     clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
     update_scaler: bool=False
@@ -235,8 +237,10 @@ def optimizer_step(
     Args:
         loss (torch.Tensor): loss to backpropagate.
         optimizer (optim.Optimizer): optimizer.
-        scaler (_type_, optional): Optional GradScaler object.
+        scaler (GradScaler, optional): Optional GradScaler object.
             If specified, uses it to scale the loss and call .step(). Default: None.
+        scheduler (_LRScheduler, optional): learning rate scheduler. should only be specified when calling .step()
+            on every batch. Default: None.
         zero_grad (bool, optional): Call .zero_grad() on optimizer before calling .backward() on loss. Default: True.
         set_to_none (bool, optional): Set None to .grad instead of setting them to 0. Default: True.
         clip_grad_norm (bool, optional): Clip gradient norm. Default: False.
@@ -276,6 +280,9 @@ def optimizer_step(
                     torch.nn.utils.clip_grad_norm_(params, max_norm)
 
         optimizer.step()
+
+    if scheduler is not None:
+        scheduler.step()
 
 
 class optimizer_step_with_gradient_accumulation:
@@ -334,7 +341,8 @@ class optimizer_step_with_gradient_accumulation:
 
 
     def __call__(self,
-        loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
+        loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+        *,
         zero_grad: bool=True, set_to_none: bool=True,
         clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
         update_scaler: bool=False
@@ -346,6 +354,8 @@ class optimizer_step_with_gradient_accumulation:
             optimizer (optim.Optimizer): optimizer.
             scaler (_type_, optional): Optional GradScaler object.
                 If specified, uses it to scale the loss and call .step(). Default: None.
+            scheduler (_LRScheduler, optional): learning rate scheduler. should only be specified when calling .step()
+                on every batch. Default: None.
             zero_grad (bool, optional): Call .zero_grad() on optimizer before calling .backward() on loss. Default: True.
             set_to_none (bool, optional): Set None to .grad instead of setting them to 0. Default: True.
             clip_grad_norm (bool, optional): Clip gradient norm. Default: False.
@@ -390,6 +400,9 @@ class optimizer_step_with_gradient_accumulation:
                         torch.nn.utils.clip_grad_norm_(params, max_norm)
 
             optimizer.step()
+
+        if scheduler is not None:
+            scheduler.step()
 
         if zero_grad:
             optimizer.zero_grad(set_to_none=set_to_none)
