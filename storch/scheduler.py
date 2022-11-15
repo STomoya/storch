@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import math
-import warnings
 from typing import Callable, List
 
 import numpy as np
 import torch.optim as optim
+from stutil.exceptions import deprecated
 from torch.optim.lr_scheduler import LambdaLR, _LRScheduler
 
 __all__ = [
@@ -177,14 +177,11 @@ and modified by STomoya: https://github.com/STomoya
 class Multiplier:
     WHERE_EPSILON = 1e-6
 
-    warnings.warn(
-        'This module is deprecated in favor of a new API and will be removed in future versions. please use build_scheduler.',
-        FutureWarning
-    )
-
     def __call__(self, where: float) -> float:
         raise NotImplementedError()
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class ConstantMultiplier(Multiplier):
     def __init__(self,
         value: float
@@ -193,6 +190,8 @@ class ConstantMultiplier(Multiplier):
     def __call__(self, where: float) -> float:
         return self.value
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class LinearMultiplier(Multiplier):
     def __init__(self,
         start: float, end: float
@@ -203,6 +202,8 @@ class LinearMultiplier(Multiplier):
     def __call__(self, where: float) -> float:
         return self.end * where + self.start * (1 - where)
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class CosineMultiplier(Multiplier):
     def __init__(self,
         start: float, min_value: float, T_max: float=1.
@@ -216,6 +217,8 @@ class CosineMultiplier(Multiplier):
             + 0.5 * (self.start - self.min_value) \
             * (1 + math.cos(math.pi * where / self.T_max))
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class ExponentialMultiplier(Multiplier):
     def __init__(self,
         start: float, decay: float
@@ -225,6 +228,8 @@ class ExponentialMultiplier(Multiplier):
     def __call__(self, where: float) -> float:
         return self.start * (self.decay ** where)
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class MultiStepMultiplier(Multiplier):
     def __init__(self,
         milestones: List[int], max_iters: int, gamma: float, initial_scale: float=1.
@@ -240,6 +245,8 @@ class MultiStepMultiplier(Multiplier):
             self.curret *= self.gamma
         return self.curret
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 class Compose(Multiplier):
     def __init__(self,
         multipliers: List[Multiplier], lengths: List[int], scaling: List[str]
@@ -267,6 +274,8 @@ class Compose(Multiplier):
 
         return multiplier(where)
 
+
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
 def with_warmup(
     multiplier: Multiplier, warmup_factor: float, warmup_length: float, warmup_method: str='linear'
 ) -> Compose:
@@ -284,12 +293,9 @@ def with_warmup(
         ['scaled', 'fixed']
     )
 
-class MultiplyLR(_LRScheduler):
 
-    warnings.warn(
-        'This module is deprecated in favor of a new API and will be removed in future versions. please use build_scheduler.',
-        FutureWarning
-    )
+@deprecated(favor_of='build_scheduler', recommendation='build_scheduler')
+class MultiplyLR(_LRScheduler):
 
     def __init__(self,
         optimizer: optim.Optimizer,
