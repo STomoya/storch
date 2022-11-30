@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
+from torch.optim.lr_scheduler import _LRScheduler
 
 import storch
 
@@ -225,7 +226,8 @@ def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf
     #         param.grad = grad.reshape(param.shape)
 
 def optimizer_step(
-    loss: torch.Tensor, optimizer: optim.Optimizer, scaler=None,
+    loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+    *,
     zero_grad: bool=True, set_to_none: bool=True,
     clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
     update_scaler: bool=False
@@ -235,8 +237,10 @@ def optimizer_step(
     Args:
         loss (torch.Tensor): loss to backpropagate.
         optimizer (optim.Optimizer): optimizer.
-        scaler (_type_, optional): Optional GradScaler object.
+        scaler (GradScaler, optional): Optional GradScaler object.
             If specified, uses it to scale the loss and call .step(). Default: None.
+        scheduler (_LRScheduler, optional): learning rate scheduler. should only be specified when calling .step()
+            on every batch. Default: None.
         zero_grad (bool, optional): Call .zero_grad() on optimizer before calling .backward() on loss. Default: True.
         set_to_none (bool, optional): Set None to .grad instead of setting them to 0. Default: True.
         clip_grad_norm (bool, optional): Clip gradient norm. Default: False.
@@ -276,6 +280,132 @@ def optimizer_step(
                     torch.nn.utils.clip_grad_norm_(params, max_norm)
 
         optimizer.step()
+
+    if scheduler is not None:
+        scheduler.step()
+
+
+class optimizer_step_with_gradient_accumulation:
+    """"torchops.optimizer_step" supporting gradient accumulation.
+
+    Args:
+        gradient_accumulation_steps (int): number of gradient accumulation steps.
+        num_iters_per_epoch (int): number of iterations per epoch. used to adjust the
+            accumulation steps of the last few batches.
+
+    Examples:
+        >>> optimizer_step = optimizer_step_with_gradient_accumulation(grad_steps, total_iters)
+        >>> # then "optimizer_step" can be used as same as "torchops.optimizer_step"
+    """
+
+    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int) -> None:
+        self.gradient_accumulation_steps = gradient_accumulation_steps
+        self.num_iters_per_epoch = num_iters_per_epoch
+
+        # calc last accumulation steps and where it starts.
+        # if gradient accumulation steps and total iterations are 4 and 13 respectively,
+        # last accumulation steps and where it starts would be 1 and 12 respectively.
+        quotient, remainder = divmod(num_iters_per_epoch, gradient_accumulation_steps)
+        self.last_gradient_accumulation_steps = remainder
+        self.last_accumulation_from = quotient * gradient_accumulation_steps
+
+        # counters
+        self.accumulation_count = 0
+        self.total_step_count = 0
+
+
+    def _reset(self):
+        """reset counters"""
+        self.accumulation_count = 0
+        self.total_step_count = self.total_step_count % self.num_iters_per_epoch
+
+
+    def _step(self) -> tuple[bool, float]:
+        """one step
+
+        Returns:
+            bool: whether to call .step() on optimizer or not.
+            float: value to scale the loss. generally equal to gradient accumulation steps.
+        """
+        self.accumulation_count += 1
+        self.total_step_count += 1
+
+        gradient_accumulation_steps = self.gradient_accumulation_steps
+        if self.total_step_count > self.last_accumulation_from:
+            gradient_accumulation_steps = self.last_gradient_accumulation_steps
+
+        if self.accumulation_count == gradient_accumulation_steps:
+            self._reset()
+            return True, 1.0 / gradient_accumulation_steps
+        return False, 1.0 / gradient_accumulation_steps
+
+
+    def __call__(self,
+        loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+        *,
+        zero_grad: bool=True, set_to_none: bool=True,
+        clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
+        update_scaler: bool=False
+    ) -> None:
+        """optimization step which supports gradient scaling for AMP.
+
+        Args:
+            loss (torch.Tensor): loss to backpropagate.
+            optimizer (optim.Optimizer): optimizer.
+            scaler (_type_, optional): Optional GradScaler object.
+                If specified, uses it to scale the loss and call .step(). Default: None.
+            scheduler (_LRScheduler, optional): learning rate scheduler. should only be specified when calling .step()
+                on every batch. Default: None.
+            zero_grad (bool, optional): Call .zero_grad() on optimizer before calling .backward() on loss. Default: True.
+            set_to_none (bool, optional): Set None to .grad instead of setting them to 0. Default: True.
+            clip_grad_norm (bool, optional): Clip gradient norm. Default: False.
+            max_norm (float, optional): Maximum norm used when clipping gradients. Default: 1.0.
+            grad_nan_to_num (bool, optional): Replace nan gradient: a number. Default: False.
+            update_scaler (bool, optional): Update the scaler if not None. Default: False.
+        """
+        assert scaler is None or isinstance(scaler, GradScaler)
+
+        should_call_step, loss_scale = self._step()
+        loss = loss * loss_scale
+
+        if scaler is not None:
+            scaler.scale(loss).backward()
+        else:
+            loss.backward()
+
+        if not should_call_step:
+            return
+
+        if scaler is not None:
+            if clip_grad_norm or grad_nan_to_num:
+                scaler.unscale_(optimizer)
+                for param_group in optimizer.param_groups:
+                    params = param_group.get('params')
+                    if grad_nan_to_num:
+                        grad_nan_to_num_(params)
+                    if clip_grad_norm:
+                        torch.nn.utils.clip_grad_norm_(params, max_norm)
+
+            scaler.step(optimizer)
+            if update_scaler:
+                scaler.update()
+
+        else:
+            if clip_grad_norm or grad_nan_to_num:
+                for param_group in optimizer.param_groups:
+                    params = param_group.get('params')
+                    if grad_nan_to_num:
+                        grad_nan_to_num_(params)
+                    if clip_grad_norm:
+                        torch.nn.utils.clip_grad_norm_(params, max_norm)
+
+            optimizer.step()
+
+        if scheduler is not None:
+            scheduler.step()
+
+        if zero_grad:
+            optimizer.zero_grad(set_to_none=set_to_none)
 
 
 def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list) -> None:
