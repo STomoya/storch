@@ -11,7 +11,7 @@ import numpy as np
 import torch.nn as nn
 from skimage.transform import rescale, resize
 
-from storch.transforms.degredations import (all_kernels,
+from storch.transforms.degradations import (all_kernels,
                                             circular_lowpass_kernel,
                                             random_gaussian_noise,
                                             random_jpg_compression,

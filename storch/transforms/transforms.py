@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn as nn
 
 from storch.transforms.converters import pil_to_numpy
-from storch.transforms.degredations import (all_kernels, random_gaussian_noise,
+from storch.transforms.degradations import (all_kernels, random_gaussian_noise,
                                             random_jpg_compression,
                                             random_mixed_kernels,
                                             random_poisson_noise)
