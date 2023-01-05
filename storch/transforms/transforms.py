@@ -8,6 +8,7 @@ from storch.transforms.degradations import (all_kernels, random_gaussian_noise,
                                             random_jpg_compression,
                                             random_mixed_kernels,
                                             random_poisson_noise)
+from storch.transforms.resize_right import resize
 
 
 class PILToNumpy(nn.Module):
@@ -73,3 +74,15 @@ class RandomJPEGCompression(nn.Module):
     def forward(self, image):
         image = random_jpg_compression(image, self.quality_range)
         return image
+
+
+class ResizeRight(nn.Module):
+    def __init__(self, size, interp_method='cubic', antialias=True) -> None:
+        super().__init__()
+        self.size = size
+        self.interp_method = interp_method
+        self.antialias = antialias
+
+    def forward(self, x):
+        x = resize(x, out_shape=self.size, interp_method=self.interp_method, antialiasing=self.antialias)
+        return x
