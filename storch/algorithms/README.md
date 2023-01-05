@@ -51,3 +51,16 @@
     doi={10.1109/TVCG.2009.9}
 }
 ```
+
+## Real Enhanced Super-Resolution
+
+```bibtex
+@inproceedings{wang2021realesrgan,
+    author={Wang, Xintao and Xie, Liangbin and Dong, Chao and Shan, Ying},
+    title={Real-ESRGAN: Training Real-World Blind Super-Resolution With Pure Synthetic Data},
+    booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops},
+    month={October},
+    year={2021},
+    pages={1905-1914}
+}
+```
