@@ -49,7 +49,7 @@ def _collect_image_paths(root, filter_fn):
     images = glob.glob(os.path.join(root, '**', '*'), recursive=True)
     images = [file for file in images if is_image_file(file)]
     if isinstance(filter_fn, Callable):
-        images = [file for file in images if is_image_file(file)]
+        images = [file for file in images if filter_fn(file)]
     return natural_sort(images)
 
 
