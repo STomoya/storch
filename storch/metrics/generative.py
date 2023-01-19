@@ -265,10 +265,32 @@ class MetricFlags:
         return any([self.fid, self.kid, self.precision, self.recall, self.density, self.coverage])
 
 
-def calc_metrics(real_root, fake_root, num_images, synthesized_size, device,
-    metric_flags: MetricFlags=MetricFlags(), model_name='jit_inception',
-    batch_size=64, num_workers=4, verbose: bool=False
-):
+def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int], device: torch.device,
+    metric_flags: MetricFlags=MetricFlags(), model_name: str='jit_inception',
+    batch_size: int=64, num_workers: int=4, num_images: int=None, verbose: bool=False
+) -> dict:
+    """calculate metrics for generative models.
+
+    Args:
+        real_root (str): directory containing real samples
+        fake_root (str): directory containing fake samples
+        synthesized_size (int | tuple[int]): Synthesized image size. Used to resize large real images
+            before input to feature extractors for small generated images.
+            example)
+                When input size: 299, real: 512, fake: 128.
+                Real images will first be resiazed to 128, then resized again to 299.
+        device (torch.device): device.
+        metric_flags (MetricFlags, optional): flags. Default: MetricFlags().
+        model_name (str, optional): name of the feature extractor. Default: 'jit_inception'.
+        batch_size (int, optional): batch size. Default: 64.
+        num_workers (int, optional): Default: 4.
+        num_images (int, optional): number of images used. specify when using same number of images
+            Default: None.
+        verbose (bool, optional): verbose mode. Default: False.
+
+    Returns:
+        dict: dictionary containing the metrics
+    """
     results = storch.EasyDict()
 
     # fast exit.
@@ -285,13 +307,13 @@ def calc_metrics(real_root, fake_root, num_images, synthesized_size, device,
     freeze(model)
     model.to(device)
 
-    real_dataset = build_dataset(real_root, num_images, synthesized_size, synthetic=False, batch_size=batch_size,
-        num_workers=num_workers, feature_extractor_input_size=model_config.input_size)
+    real_dataset = build_dataset(real_root, synthesized_size, synthetic=False, batch_size=batch_size,
+        num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
     real_features = get_features(real_dataset, model, device, verbose)
     del real_dataset # manual delete to confirm reduce memory.
 
-    fake_dataset = build_dataset(fake_root, num_images, synthesized_size, synthetic=True, batch_size=batch_size,
-        num_workers=num_workers, feature_extractor_input_size=model_config.input_size)
+    fake_dataset = build_dataset(fake_root, synthesized_size, synthetic=True, batch_size=batch_size,
+        num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
     fake_features = get_features(fake_dataset, model, device, verbose)
     del fake_dataset, model # manual delete to confirm reduce memory.
 

@@ -13,40 +13,42 @@ from storch.dataset.dataset import _collect_image_paths
 
 
 def build_dataset(
-    root_dir: str, num_images: int, synthesized_size: int|tuple|list, synthetic: bool,
-    batch_size: int=64, num_workers: int=4,
+    root_dir: str, synthesized_size: int|tuple|list, synthetic: bool,
+    batch_size: int=64, num_workers: int=4, num_images: int=None,
     feature_extractor_input_size: int|tuple|list=(299, 299), filter_fn: Callable=None
 ) -> DataLoader:
     """build dataset for metrics
 
     Args:
         root_dir (str): root folder to images
-        num_images (int): number of images
         synthesized_size (int | tuple | list): synthesized image size.
         synthetic (bool): is the dataset fake?
         batch_size (int, optional): batch size. Default: 64.
         num_workers (int, optional): number of workers for dataloader. Default: 4.
+        num_images (int, optional): number of images. Default: None.
         feature_extractor_input_size (int | tuple | list, optional): input size of feature extractor. Defaults to (299, 299).
         filter_fn (Callable, optional): callable to filter files. Defaults to None.
 
     Returns:
         DataLoader: dataset
     """
-    dataset = CleanResizeDataset(root_dir, num_images, synthesized_size, feature_extractor_input_size, synthetic, filter_fn)
+    dataset = CleanResizeDataset(root_dir, synthesized_size, feature_extractor_input_size, synthetic, num_images, filter_fn)
     dataloader = DataLoader(dataset, batch_size, num_workers=num_workers)
     return dataloader
 
 
 class CleanResizeDataset(Dataset):
     def __init__(self,
-        root_dir, num_images, syn_size, image_size=(299, 299), synthetic=False, filter_fn: Callable=None
+        root_dir, syn_size, image_size=(299, 299), synthetic=False, num_images=None, filter_fn: Callable=None
     ) -> None:
         super().__init__()
         self.image_paths = _collect_image_paths(root_dir, filter_fn)
-        assert len(self.image_paths) >= num_images, 'number of images must be smaller than the total image numbers.'
-        self.num_images = num_images
+        self.num_images = len(self.image_paths)
         random.shuffle(self.image_paths)
-        self.image_paths = self.image_paths[:num_images]
+        if num_images is not None:
+            assert len(self.image_paths) >= num_images, 'number of images must be smaller than the total image numbers.'
+            self.num_images = num_images
+            self.image_paths = self.image_paths[:num_images]
 
         self.transform = make_transform_from_config([
             dict(name='ToTensor'), dict(name='Normalize', mean=0.5, std=0.5)
