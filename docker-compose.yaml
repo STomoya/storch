@@ -28,4 +28,4 @@ services:
     volumes:
       - .:/usr/src
     working_dir: /usr/src
-    command: python -m pip install -e .
+    entrypoint: bash ./docker/install/entrypoint.sh
