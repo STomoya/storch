@@ -3,7 +3,7 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable, grad
+from torch.autograd import grad
 from torch.cuda.amp import GradScaler, autocast
 
 from storch.loss._base import Loss
@@ -39,24 +39,40 @@ class Penalty(Loss):
     """Penalty
 
     Examples:
+        Using classes
         >>> gp = Penalty()
+        >>> loss = gp(...)
 
-        >>> # Examples for when your D has multiple outputs
+        Example for when your D has multiple outputs
         >>> # 1. Use only first output
         >>> gp.filter_output = lambda d_output: d_output[0]
         >>> # 2. Sum all outputs
-        >>> gp.filter_output = lambda d_output: sum(list(map(lambda x:x.sum(), d_output)))
-        >>> # ...etc.
+        >>> gp.filter_output = lambda d_output: sum(map(lambda x:x.sum(), d_output))
+        >>> #   ...etc.
         >>> # It should be a callable that receives outputs from D and outputs a scalar torch.Tensor.
         >>> # Penalty().filter_output defaults to lambda x:x
 
-        >>> # calculate penalty
-        >>> loss = gp(...)
-        >>> loss.backward()
+        Using functional
+        >>> gp_input = gp.prepare_input(real, fake)
+        >>> gradients = calc_grad(D(gp_input), gp_input)
+        >>> loss = gp.calc(gradients)
     """
     def __init__(self, return_all: bool = False) -> None:
         super().__init__(return_all=return_all)
         self.filter_output = lambda x: x
+
+    def calc_grad(self, outputs: torch.Tensor, inputs: torch.Tensor, scaler: Optional[GradScaler]=None) -> torch.Tensor:
+        """Alias to calc_grad for functional."""
+        return calc_grad(outputs, inputs, scaler)
+
+    @staticmethod
+    def prepare_input(real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError()
+
+    @staticmethod
+    def calc(gradients: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError()
+
 
 class gradient_penalty(Penalty):
     def __call__(self,
@@ -77,23 +93,27 @@ class gradient_penalty(Penalty):
         Returns:
             torch.Tensor: The loss
         """
-
         assert center in [1., 0.]
 
-        device = real.device
-
-        alpha = torch.rand(1, device=device)
-        x_hat = real * alpha + fake * (1 - alpha)
-        x_hat = Variable(x_hat, requires_grad=True)
-
+        x_hat = self.prepare_input(real, fake)
         d_x_hat = self.filter_output(D(x_hat, *d_aux_input))
-
         gradients = calc_grad(d_x_hat, x_hat, scaler)
+        penalty = self.calc(gradients, center)
+        return penalty
 
+    @staticmethod
+    def prepare_input(real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
+        alpha = torch.rand(real.size(0), 1, 1, 1, device=real.device)
+        x_hat = real * alpha + fake * (1 - alpha)
+        x_hat = x_hat.clone().requires_grad_(True)
+        return x_hat
+
+    @staticmethod
+    def calc(gradients: torch.Tensor, center: float=1.0) -> torch.Tensor:
         gradients = gradients.reshape(gradients.size(0), -1)
         penalty = (gradients.norm(2, dim=1) - center).pow(2).mean()
-
         return penalty
+
 
 class dragan_penalty(Penalty):
     def __call__(self,
@@ -113,22 +133,26 @@ class dragan_penalty(Penalty):
         Returns:
             torch.Tensor: The loss.
         """
-
-        device = real.device
-
-        alpha = torch.rand((real.size(0), 1, 1, 1), device=device).expand(real.size())
-        beta = torch.rand(real.size(), device=device)
-        x_hat = real * alpha + (1 - alpha) * (real + 0.5 * real.std() * beta)
-        x_hat = Variable(x_hat, requires_grad=True)
-
+        x_hat = self.prepare_input(real)
         d_x_hat = self.filter_output(D(x_hat, *d_aux_input))
-
         gradients = calc_grad(d_x_hat, x_hat, scaler)
+        penalty = self.calc(gradients, center)
+        return penalty
 
+    @staticmethod
+    def prepare_input(real: torch.Tensor, fake: torch.Tensor=None) -> torch.Tensor:
+        alpha = torch.rand((real.size(0), 1, 1, 1), device=real.device)
+        beta = torch.rand_like(real)
+        x_hat = real * alpha + (1 - alpha) * (real + 0.5 * real.std() * beta)
+        x_hat = x_hat.clone().requires_grad_(True)
+        return x_hat
+
+    @staticmethod
+    def calc(gradients: torch.Tensor, center: float=1.0) -> torch.Tensor:
         gradients = gradients.reshape(gradients.size(0), -1)
         penalty = (gradients.norm(2, dim=1) - center).pow(2).mean()
-
         return penalty
+
 
 class r1_regularizer(Penalty):
     def __call__(self,
@@ -146,16 +170,22 @@ class r1_regularizer(Penalty):
         Returns:
             torch.Tensor: The loss.
         """
-        real_loc = Variable(real, requires_grad=True)
-
+        real_loc = self.prepare_input(real)
         d_real_loc = self.filter_output(D(real_loc, *d_aux_input))
-
         gradients = calc_grad(d_real_loc, real_loc, scaler)
+        penalty = self.calc(gradients)
+        return penalty
 
+    @staticmethod
+    def prepare_input(real: torch.Tensor, fake: torch.Tensor=None) -> torch.Tensor:
+        return real.requires_grad_(True)
+
+    @staticmethod
+    def calc(gradients: torch.Tensor) -> torch.Tensor:
         gradients = gradients.reshape(gradients.size(0), -1)
         penalty = gradients.norm(2, dim=1).pow(2).mean() / 2.
-
         return penalty
+
 
 class r2_regularizer(r1_regularizer):
     def __call__(self,
@@ -174,3 +204,7 @@ class r2_regularizer(r1_regularizer):
             torch.Tensor: The loss.
         """
         return super().__call__(fake, D, scaler, d_aux_input)
+
+    @staticmethod
+    def prepare_input(real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
+        return fake.requires_grad_(True)
