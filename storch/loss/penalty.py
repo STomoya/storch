@@ -61,6 +61,10 @@ class Penalty(Loss):
         super().__init__(return_all=return_all)
         self.filter_output = lambda x: x
 
+    def calc_grad(self, outputs: torch.Tensor, inputs: torch.Tensor, scaler: Optional[GradScaler]=None) -> torch.Tensor:
+        """Alias to calc_grad for functional."""
+        return calc_grad(outputs, inputs, scaler)
+
     @staticmethod
     def prepare_input(real: torch.Tensor, fake: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError()
