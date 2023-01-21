@@ -25,9 +25,10 @@ __all__ = [
     'deterministic',
     'shuffle_batch',
     'optimizer_step',
+    'optimizer_step_with_gradient_accumulation',
     'assert_shape',
     'print_module_summary',
-    'grad_nan_to_num'
+    'grad_nan_to_num_'
 ]
 
 
@@ -73,8 +74,7 @@ def freeze(model: nn.Module) -> None:
         model (nn.Module): The module to freeze.
     """
     model.eval()
-    for param in model.parameters():
-        param.requires_grad = False
+    model.requires_grad_(False)
 
 
 @torch.no_grad()
@@ -86,8 +86,7 @@ def unfreeze(model: nn.Module) -> None:
     Args:
         model (nn.Module): The module to unfreeze.
     """
-    for param in model.parameters():
-        param.requires_grad = True
+    model.requires_grad_(True)
     model.train()
 
 
