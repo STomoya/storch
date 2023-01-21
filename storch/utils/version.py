@@ -1,9 +1,12 @@
 """pytorch availability"""
 
+import platform
+
 import torch
 import torchvision
 from pkg_resources import parse_version
 
+_PYTHON_VERSION = parse_version(platform.python_version())
 _PYTORCH_VERSION = parse_version(torch.__version__)
 _TORCHVISION_VERSION = parse_version(torchvision.__version__)
 
