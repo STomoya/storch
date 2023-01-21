@@ -15,6 +15,7 @@ from torch.cuda.amp import GradScaler
 from torch.optim.lr_scheduler import _LRScheduler
 
 import storch
+from storch.utils import version
 
 __all__ = [
     'auto_get_device',
@@ -28,8 +29,15 @@ __all__ = [
     'optimizer_step_with_gradient_accumulation',
     'assert_shape',
     'print_module_summary',
-    'grad_nan_to_num_'
+    'grad_nan_to_num_',
+    'inference_mode',
 ]
+
+
+if version.is_torch_version_geq('1.9.0'):
+    inference_mode: Callable = torch.inference_mode
+else:
+    inference_mode: Callable = torch.no_grad
 
 
 def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.device:
