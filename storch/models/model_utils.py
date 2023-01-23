@@ -121,6 +121,10 @@ class ModelMixin(nn.Module):
         torch.save(new_state_dict, filename)
 
 
+    def extra_repr(self):
+        return ', '.join([f'{k}={v}' for k, v in self._config_repr.items()])
+
+
 def register_init_args(init):
 
     @wraps(init)
