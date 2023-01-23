@@ -15,6 +15,7 @@ from torch.cuda.amp import GradScaler
 from torch.optim.lr_scheduler import _LRScheduler
 
 import storch
+from storch.utils import version
 
 __all__ = [
     'auto_get_device',
@@ -25,10 +26,18 @@ __all__ = [
     'deterministic',
     'shuffle_batch',
     'optimizer_step',
+    'optimizer_step_with_gradient_accumulation',
     'assert_shape',
     'print_module_summary',
-    'grad_nan_to_num'
+    'grad_nan_to_num_',
+    'inference_mode',
 ]
+
+
+if version.is_torch_version_geq('1.9.0'):
+    inference_mode: Callable = torch.inference_mode
+else:
+    inference_mode: Callable = torch.no_grad
 
 
 def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.device:
@@ -73,8 +82,7 @@ def freeze(model: nn.Module) -> None:
         model (nn.Module): The module to freeze.
     """
     model.eval()
-    for param in model.parameters():
-        param.requires_grad = False
+    model.requires_grad_(False)
 
 
 @torch.no_grad()
@@ -86,8 +94,7 @@ def unfreeze(model: nn.Module) -> None:
     Args:
         model (nn.Module): The module to unfreeze.
     """
-    for param in model.parameters():
-        param.requires_grad = True
+    model.requires_grad_(True)
     model.train()
 
 
