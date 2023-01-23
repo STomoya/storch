@@ -118,7 +118,7 @@ class ModelMixin(nn.Module):
                 new_state_dict[key] = value.to(location)
         else: new_state_dict = state_dict
 
-        torch.save(state_dict, filename)
+        torch.save(new_state_dict, filename)
 
 
 def register_init_args(init):
