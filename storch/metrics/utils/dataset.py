@@ -68,6 +68,13 @@ class CleanResizeDataset(Dataset):
         image_path = self.image_paths[index]
         image = Image.open(image_path).convert('RGB')
 
+        # pre-resizing: (d, u: downsample, upsample to output)
+        #   - real = fake = output:  no ops.
+        #   - real >= fake > output: d(real), d(fake). This is ok.
+        #   - output > fake >= real: u(real), u(fake). This is ok.
+        #   - real > output > fake:  d(real), u(fake). We want to deal with this situation.
+        #   - fake > output > real:  we want to believe this never happens...
+        # => if (real > output > fake) then u(d'(real)), u(fake), where d' is downsample to fake.
         if self.maybe_downsample_before_resize and min(image.size) > min(self.image_size):
             image = self.clean_resize(image, self.syn_size)
         image = self.clean_resize(image, self.image_size)
