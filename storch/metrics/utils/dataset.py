@@ -57,7 +57,7 @@ class CleanResizeDataset(Dataset):
         self.syn_size = syn_size if isinstance(syn_size, (tuple, list)) else (syn_size, syn_size)
         self.image_size = image_size if isinstance(image_size, (tuple, list)) else (image_size, image_size)
         # if the generated images are too small, downsample reals then upsample.
-        self.downsample_before_resize = not synthetic and min(self.syn_size) < min(self.image_size)
+        self.maybe_downsample_before_resize = not synthetic and min(self.syn_size) < min(self.image_size)
 
 
     def __len__(self):
@@ -68,7 +68,14 @@ class CleanResizeDataset(Dataset):
         image_path = self.image_paths[index]
         image = Image.open(image_path).convert('RGB')
 
-        if self.downsample_before_resize:
+        # pre-resizing: (d, u: downsample, upsample to output)
+        #   - real = fake = output:  no ops.
+        #   - real >= fake > output: d(real), d(fake). This is ok.
+        #   - output > fake >= real: u(real), u(fake). This is ok.
+        #   - real > output > fake:  d(real), u(fake). We want to deal with this situation.
+        #   - fake > output > real:  we want to believe this never happens...
+        # => if (real > output > fake) then u(d'(real)), u(fake), where d' is downsample to fake.
+        if self.maybe_downsample_before_resize and min(image.size) > min(self.image_size):
             image = self.clean_resize(image, self.syn_size)
         image = self.clean_resize(image, self.image_size)
         image = self.transform(image)
