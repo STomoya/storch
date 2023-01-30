@@ -27,7 +27,7 @@ dependencies = [
     'scikit-image',
     'hydra-core',
     'tensorboard',
-    'stutil@git+https://github.com/STomoya/stutil@v0.0.4'
+    'stutil@git+https://github.com/STomoya/stutil@v0.0.5'
 ]
 dynamic = ["version"]
 
