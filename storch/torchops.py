@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 import warnings
 from collections.abc import Callable
+from contextlib import nullcontext
 from functools import wraps
 from typing import Union
 
@@ -13,6 +14,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.optim.lr_scheduler import _LRScheduler
 
 import storch
@@ -235,7 +237,7 @@ def grad_nan_to_num_(input: nn.Module|list[torch.Tensor], nan: float=0.0, posinf
     #         param.grad = grad.reshape(param.shape)
 
 def optimizer_step(
-    loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+    loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None, module: nn.Module=None,
     *,
     zero_grad: bool=True, set_to_none: bool=True,
     clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
@@ -258,6 +260,8 @@ def optimizer_step(
         update_scaler (bool, optional): Update the scaler if not None. Default: False.
     """
     assert scaler is None or isinstance(scaler, GradScaler)
+    if clip_grad_norm or grad_nan_to_num:
+        assert module is not None, f'"clip_grad_norm" or "grad_nan_to_num" option requires module argument.'
 
     if zero_grad:
         optimizer.zero_grad(set_to_none=set_to_none)
@@ -267,12 +271,13 @@ def optimizer_step(
 
         if clip_grad_norm or grad_nan_to_num:
             scaler.unscale_(optimizer)
-            for param_group in optimizer.param_groups:
-                params = param_group.get('params')
-                if grad_nan_to_num:
-                    grad_nan_to_num_(params)
-                if clip_grad_norm:
-                    torch.nn.utils.clip_grad_norm_(params, max_norm)
+            if grad_nan_to_num:
+                grad_nan_to_num_(module.parameters())
+            if clip_grad_norm:
+                if isinstance(module, FSDP):
+                    module.clip_grad_norm_(max_norm)
+                else:
+                    torch.nn.utils.clip_grad_norm_(module.parameters(), max_norm)
 
         scaler.step(optimizer)
         if update_scaler:
@@ -281,12 +286,13 @@ def optimizer_step(
         loss.backward()
 
         if clip_grad_norm or grad_nan_to_num:
-            for param_group in optimizer.param_groups:
-                params = param_group.get('params')
-                if grad_nan_to_num:
-                    grad_nan_to_num_(params)
-                if clip_grad_norm:
-                    torch.nn.utils.clip_grad_norm_(params, max_norm)
+            if grad_nan_to_num:
+                grad_nan_to_num_(module.parameters())
+            if clip_grad_norm:
+                if isinstance(module, FSDP):
+                    module.clip_grad_norm_(max_norm)
+                else:
+                    torch.nn.utils.clip_grad_norm_(module.parameters(), max_norm)
 
         optimizer.step()
 
@@ -307,7 +313,7 @@ class optimizer_step_with_gradient_accumulation:
         >>> # then "optimizer_step" can be used as same as "torchops.optimizer_step"
     """
 
-    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int) -> None:
+    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int, no_sync_context: Callable=None) -> None:
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.num_iters_per_epoch = num_iters_per_epoch
 
@@ -322,6 +328,7 @@ class optimizer_step_with_gradient_accumulation:
         self.accumulation_count = 0
         self.total_step_count = 0
 
+        self.no_sync = no_sync_context if no_sync_context is not None else nullcontext
 
     def _reset(self):
         """reset counters"""
@@ -350,7 +357,7 @@ class optimizer_step_with_gradient_accumulation:
 
 
     def __call__(self,
-        loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None,
+        loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler=None, scheduler: _LRScheduler=None, module: nn.Module=None,
         *,
         zero_grad: bool=True, set_to_none: bool=True,
         clip_grad_norm: bool=False, max_norm: float=1.0, grad_nan_to_num: bool=False,
@@ -373,14 +380,19 @@ class optimizer_step_with_gradient_accumulation:
             update_scaler (bool, optional): Update the scaler if not None. Default: False.
         """
         assert scaler is None or isinstance(scaler, GradScaler)
+        if clip_grad_norm or grad_nan_to_num:
+            assert module is not None, f'"clip_grad_norm" or "grad_nan_to_num" option requires module argument.'
 
         should_call_step, loss_scale = self._step()
         loss = loss * loss_scale
 
-        if scaler is not None:
-            scaler.scale(loss).backward()
-        else:
-            loss.backward()
+        no_sync = nullcontext if should_call_step else self.no_sync
+
+        with no_sync():
+            if scaler is not None:
+                scaler.scale(loss).backward()
+            else:
+                loss.backward()
 
         if not should_call_step:
             return
@@ -388,12 +400,13 @@ class optimizer_step_with_gradient_accumulation:
         if scaler is not None:
             if clip_grad_norm or grad_nan_to_num:
                 scaler.unscale_(optimizer)
-                for param_group in optimizer.param_groups:
-                    params = param_group.get('params')
-                    if grad_nan_to_num:
-                        grad_nan_to_num_(params)
-                    if clip_grad_norm:
-                        torch.nn.utils.clip_grad_norm_(params, max_norm)
+                if grad_nan_to_num:
+                    grad_nan_to_num_(module.parameters())
+                if clip_grad_norm:
+                    if isinstance(module, FSDP):
+                        module.clip_grad_norm_(max_norm)
+                    else:
+                        torch.nn.utils.clip_grad_norm_(module.parameters(), max_norm)
 
             scaler.step(optimizer)
             if update_scaler:
@@ -401,12 +414,13 @@ class optimizer_step_with_gradient_accumulation:
 
         else:
             if clip_grad_norm or grad_nan_to_num:
-                for param_group in optimizer.param_groups:
-                    params = param_group.get('params')
-                    if grad_nan_to_num:
-                        grad_nan_to_num_(params)
-                    if clip_grad_norm:
-                        torch.nn.utils.clip_grad_norm_(params, max_norm)
+                if grad_nan_to_num:
+                    grad_nan_to_num_(module.parameters())
+                if clip_grad_norm:
+                    if isinstance(module, FSDP):
+                        module.clip_grad_norm_(max_norm)
+                    else:
+                        torch.nn.utils.clip_grad_norm_(module.parameters(), max_norm)
 
             optimizer.step()
 
