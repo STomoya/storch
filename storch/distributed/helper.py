@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 import os
 from typing import Any, Callable
 
@@ -15,6 +17,21 @@ from storch.torchops import convert_outputs_to_fp32
 
 
 class DistributedHelper:
+    """Helper class for distributed training.
+
+    Args:
+        world_size (int, optional): world size. ignored when {torchrun,CPU,single GPU}. Default: 1.
+        rank (int, optional): rank. ignored when {torchrun,CPU,single GPU}. Default: 0.
+
+    Examples:
+        >>> # When running with torchrun launcher, nothing needs to be set.
+        >>> disthelper = DistributedHelper(world_size, rank) # arguments are ignored.
+        >>> # When lauching with torch.multiprocessing.spawn
+        >>> os.environ['MASTER_ADDR'] = '127.0.0.1'
+        >>> os.environ['MASTER_PORT'] = '29500'
+        >>> #   in main function
+        >>> disthelper = DistributedHelper(world_size=world_size, rank=rank)
+    """
     def __init__(self,
         world_size: int=1, rank: int=0
     ) -> None:
@@ -35,6 +52,7 @@ class DistributedHelper:
                 # we don't need distributed setup on single GPU environment.
                 # lets require MASTER_ADDR and MASTER_PORT exported before execution.
                 _ma, _mp = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
+                # NOTE: should we fall back to single process, and not raise an exception?
                 assert _ma is not None and _mp is not None, 'ENV "MASTER_ADDR" and "MASTER_PPORT" must be set.'
                 dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
@@ -154,7 +172,25 @@ class DistributedHelper:
         dist.barrier()
 
 
-    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False):
+    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False) -> tuple[nn.Module]|nn.Module:
+        """prepare the input modules with mode "mode".
+
+        - If the device is a cuda device the module is first set to the device, then wrapped.
+        - "mixed_precision" is enabled by wrapping the forward function with torch.cuda.amp.autocast,
+            and storch.torchops.convert_outputc_to_fp32. No need to use autocast contextmanager.
+
+        Args:
+            *modules (nn.Module): modules to wrap for distributed training.
+            mode (str, optional): data parallel mode. one of {ddp,fsdp} for distributed settings,
+                any other for single GPU or CPU. Default: None.
+            mixed_precision (bool, optional): use mixed precision. Default: False.
+
+        Raises:
+            Exception: unknown data parallel mode.
+
+        Returns:
+            tuple[nn.Module]|nn.Module: the wrapped modules in the same order as input.
+        """
         if mode is None:
             mode = 'ddp'
             if self.is_primary():
@@ -193,8 +229,26 @@ class DistributedHelper:
         return tuple(wrapped_modules) if len(wrapped_modules) > 1 else wrapped_modules[0]
 
 
-    def prepare_dataset(self, dataset: Dataset, batch_size: int, shuffle: bool=True, drop_last: bool=True, num_workers: int=0, pin_memory: bool=True, worker_init_fn: Callable=None, generator: torch.Generator=None) -> DataLoader:
+    def prepare_dataset(self, dataset: Dataset, batch_size: int, shuffle: bool=True, drop_last: bool=True,
+        num_workers: int=0, pin_memory: bool=True, worker_init_fn: Callable=None, generator: torch.Generator=None
+    ) -> DataLoader:
+        """prepare dataset, given dataloader parameters.
+
+        Args:
+            dataset (Dataset): Dataset
+            batch_size (int):
+            shuffle (bool, optional): Default: True.
+            drop_last (bool, optional): Default: True.
+            num_workers (int, optional): Default: 0.
+            pin_memory (bool, optional): Default: True.
+            worker_init_fn (Callable, optional): Default: None.
+            generator (torch.Generator, optional): Default: None.
+
+        Returns:
+            DataLoader: the created dataloader
+        """
         if self.is_initialized():
+            # when distributed training, always use DistributedSampler
             sampler = DistributedSampler(dataset,
                 num_replicas=self.world_size, rank=self.rank,
                 shuffle=shuffle, drop_last=drop_last
@@ -213,7 +267,20 @@ class DistributedHelper:
         return dataloader
 
 
-    def prepare_for_checkpointing(self, *optimizers, offload_to_cpu: bool=True):
+    def prepare_for_checkpointing(self, *optimizers, offload_to_cpu: bool=True) -> tuple|tuple[tuple]:
+        """create two object that has {state_dict,load_state_dict} function, that returns/loads the state_dict like
+        modules that are not wrapped, for the wrapped module and corresponding optimizer.
+        This function is for checkpointing models without changing codes between different data parallel methods.
+        Tested to work well with storch.checkpoint.Checkpoint
+
+        Args:
+            offload_to_cpu (bool, optional): When the model is FSDP, configures is the weights are offload to cpu before serialization.
+                When `True`, it also enables `rank0_only`, which will result in returning empty dicts on processes that are `rank!=0`.
+                Default: True.
+
+        Returns:
+            tuple|tuple[tuple]: module state_dict {get,set}ter and optimizer state_dict {get,set}ter
+        """
         assert len(optimizers) == len(self._factories)
         ckpt_ifs = []
         kwargs = {'offload_to_cpu': offload_to_cpu} if isinstance(self._factories[0], FullyShardedDataParallelFactory) else {}
