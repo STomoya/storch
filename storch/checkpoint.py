@@ -47,7 +47,7 @@ class Checkpoint:
     _container = storch.EasyDict()
 
 
-    def __init__(self, folder: str, keep_last=3, filename_format: str='checkpoint.{count}.torch') -> None:
+    def __init__(self, folder: str, keep_last=3, filename_format: str='checkpoint.{count}.torch', disthelper=None) -> None:
         self.folder = Path(folder)
         self.filename_format = filename_format
 
@@ -55,6 +55,8 @@ class Checkpoint:
             keep_last += 1
         self.file_deque = deque(maxlen=keep_last)
         self.count = 0
+
+        self.disthelper = disthelper
 
 
     def _container_as_state_dict(self) -> dict:
@@ -109,11 +111,13 @@ class Checkpoint:
         if constants != {}:
             state_dict.update({'constants': constants})
         state_dict.update({'__checkpoint_state': self.state_dict()})
-        torch.save(state_dict, filename)
 
-        if self.file_deque.maxlen is not None and len(self.file_deque) == self.file_deque.maxlen:
-            to_erase = self.file_deque.popleft()
-            os.remove(to_erase)
+        if self.disthelper is None or self.disthelper.is_primary():
+            torch.save(state_dict, filename)
+
+            if self.file_deque.maxlen is not None and len(self.file_deque) == self.file_deque.maxlen:
+                to_erase = self.file_deque.popleft()
+                os.remove(to_erase)
 
         return filename
 
@@ -131,6 +135,9 @@ class Checkpoint:
         Returns:
             dict: additional objects saved when save (if any).
         """
+        if self.disthelper is not None:
+            self.disthelper.wait_for_all_processes()
+
         state_dict = torch.load(path, map_location=map_location)
 
         _self_state = state_dict.pop('__checkpoint_state', None)
