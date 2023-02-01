@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 import warnings
 from collections.abc import Callable
+from functools import wraps
 from typing import Union
 
 import numpy as np
@@ -31,6 +32,7 @@ __all__ = [
     'print_module_summary',
     'grad_nan_to_num_',
     'inference_mode',
+    'convert_outputs_to_fp32'
 ]
 
 
@@ -508,3 +510,16 @@ def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int
         print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths)))
     print_fn()
     return outputs
+
+
+def convert_outputs_to_fp32(func: Callable) -> Callable:
+    def convert_to_fp32(tensor: torch.Tensor):
+        return tensor.float()
+
+    @wraps(func)
+    def inner(*args, **kwargs):
+        retvals = func(*args, **kwargs)
+        retvals = storch.recursive_apply(convert_to_fp32, retvals, torch.is_tensor)
+        return retvals
+
+    return inner
