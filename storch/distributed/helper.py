@@ -1,0 +1,222 @@
+
+import os
+from typing import Any, Callable
+
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+from torch.distributed import ReduceOp
+from torch.utils.data import DataLoader, Dataset, DistributedSampler
+
+from storch.distributed.factory import (DistributedDataParallelFactory,
+                                        FullyShardedDataParallelFactory,
+                                        NoParallelFactory)
+from storch.torchops import convert_outputs_to_fp32
+
+
+class DistributedHelper:
+    def __init__(self,
+        world_size: int=1, rank: int=0
+    ) -> None:
+        self.backend = None
+        self.master_addr = None
+        self.master_port = None
+        self.world_size = 1
+        self.rank = 0
+        self.device = torch.device('cpu')
+
+        if torch.cuda.is_available(): # CUDA
+            if self.is_torchrun():
+                # torchrun can handle either single GPU and multiple GPU environment.
+                self.master_addr = os.environ['MASTER_ADDR']
+                self.master_port = os.environ['MASTER_PORT']
+                dist.init_process_group(backend='nccl')
+            elif torch.cuda.device_count() > 1:
+                # we don't need distributed setup on single GPU environment.
+                # lets require MASTER_ADDR and MASTER_PORT exported before execution.
+                _ma, _mp = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
+                assert _ma is not None and _mp is not None, 'ENV "MASTER_ADDR" and "MASTER_PPORT" must be set.'
+                dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
+
+            if self.is_initialized():
+                self.backend = dist.get_backend()
+                self.world_size = dist.get_world_size()
+                self.rank = dist.get_rank()
+
+            self.device = torch.device('cuda', self.rank)
+            torch.cuda.set_device(self.device)
+
+        self._factories = []
+
+
+    @staticmethod
+    def is_available() -> bool:
+        return dist.is_available()
+
+    @staticmethod
+    def is_initialized() -> bool:
+        return dist.is_initialized()
+
+    @staticmethod
+    def is_torchrun() -> bool:
+        return dist.is_torchelastic_launched()
+
+    def is_primary(self) -> bool:
+        return self.rank == 0
+
+    # gather functions.
+    # these functions work on both single/multi GPU without any specifications.
+
+    def gather_tensor(self, tensor: torch.Tensor) -> torch.Tensor:
+        """gather all tensors, scattered to multiple devices,
+        to a tensor concatenated on the 0th dimension.
+
+        Args:
+            tensor (torch.Tensor): the tensor to gather
+
+        Returns:
+            torch.Tensor: gathered tensor
+        """
+        if tensor.ndim == 0:
+            tensor = tensor.clone()[None]
+        output_tensor = torch.cat([torch.empty_like(tensor) for _ in range(self.world_size)], dim=0)
+        dist.all_gather_into_tensor(output_tensor, tensor)
+        return output_tensor
+
+    def gather_any(self, val: Any) -> torch.Tensor:
+        """gather that supports float and int input.
+
+        Args:
+            val (Any): value to gather.
+
+        Returns:
+            torch.Tensor: gathered values as an tensor.
+        """
+        if not isinstance(val, torch.Tensor):
+            val = torch.tensor(val, device=self.device)
+        return self.gather_tensor(val)
+
+    def reduce_tensor(self, tensor: torch.Tensor, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
+        """reduce a tensor, scattered on multiple GPUs, with a certain operator.
+
+        Args:
+            tensor (torch.Tensor): the tensor to reduce
+            op (ReduceOp, optional): the operator. Default: ReduceOp.SUM.
+
+        Returns:
+            torch.Tensor: the reduced tensor
+        """
+        dist.all_reduce(tensor, op=op)
+        return tensor
+
+    def reduce_any(self, val: Any, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
+        """reduce that supports float and int inputs.
+
+        Args:
+            val (Any): value to reduce
+            op (ReduceOp, optional): operator. Default: ReduceOp.SUM.
+
+        Returns:
+            torch.Tensor: the reduced tensor
+        """
+        if not isinstance(val, torch.Tensor):
+            val = torch.tensor(val, device=self.device)
+        return self.reduce_tensor(val, op=op)
+
+    # aliases
+    gather = gather_any
+    reduce = reduce_any
+
+    def reduce_sum(self, val: Any) -> torch.Tensor:
+        return self.reduce_any(val)
+
+    def reduce_mean(self, val: Any) -> torch.Tensor:
+        return self.reduce_any(val, ReduceOp.AVG)
+
+    def reduce_prod(self, val: Any) -> torch.Tensor:
+        return self.reduce_any(val, ReduceOp.PRODUCT)
+
+    def reduce_min(self, val: Any) -> torch.Tensor:
+        return self.reduce_any(val, ReduceOp.MIN)
+
+    def reduce_max(self, val: Any) -> torch.Tensor:
+        return self.reduce_any(val, ReduceOp.MAX)
+
+    @staticmethod
+    def barrier():
+        if dist.is_initialized():
+            dist.barrier()
+
+    @staticmethod
+    def wait_for_all_processes():
+        """torch.distributed.barrier with a recognizable name.
+        """
+        dist.barrier()
+
+
+    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False):
+        if mode is None:
+            mode = 'ddp'
+            if self.is_primary():
+                print(f'Data parallelizm default to "ddp".')
+        mode = mode.lower()
+
+        wrapped_modules = []
+        for module in modules:
+            module.to(self.device)
+            wrap_kwargs = {}
+            if self.is_initialized():
+
+                if mode == 'ddp':
+                    factory = DistributedDataParallelFactory()
+                    wrap_kwargs['device_ids'] = [self.rank]
+                elif mode == 'fsdp':
+                    factory = FullyShardedDataParallelFactory()
+                    wrap_kwargs['mixed_precision'] = mixed_precision
+                else:
+                    raise Exception(f'Unknown data parallelizm mode "{mode}"')
+
+            else:
+                factory = NoParallelFactory()
+
+            wrapped_module = factory.wrap_module(module, **wrap_kwargs)
+
+            if mixed_precision and self.device.type == 'cuda':
+                wrapped_module._original_forward = wrapped_module.forward
+                dtype = torch.float16
+                forward = torch.cuda.amp.autocast(dtype=dtype)(wrapped_module.forward)
+                wrapped_module.forward = convert_outputs_to_fp32(forward)
+
+            self._factories.append(factory)
+            wrapped_modules.append(wrapped_module)
+
+        return tuple(wrapped_modules) if len(wrapped_modules) > 1 else wrapped_modules[0]
+
+
+    def prepare_dataset(self, dataset: Dataset, batch_size: int, shuffle: bool=True, drop_last: bool=True, num_workers: int=0, pin_memory: bool=True, worker_init_fn: Callable=None, generator: torch.Generator=None) -> DataLoader:
+        if self.is_initialized():
+            sampler = DistributedSampler(dataset,
+                num_replicas=self.world_size, rank=self.rank,
+                shuffle=shuffle, drop_last=drop_last
+            )
+            dataloader = DataLoader(dataset,
+                batch_size=batch_size, sampler=sampler,
+                num_workers=num_workers, pin_memory=pin_memory,
+                worker_init_fn=worker_init_fn, generator=generator
+            )
+        else:
+            dataloader = DataLoader(dataset,
+                batch_size=batch_size, shuffle=shuffle, drop_last=drop_last,
+                num_workers=num_workers, pin_memory=pin_memory,
+                worker_init_fn=worker_init_fn, generator=generator
+            )
+        return dataloader
+
+
+    def prepare_for_checkpointing(self, *optimizers, offload_to_cpu: bool=True):
+        assert len(optimizers) == len(self._factories)
+        ckpt_ifs = []
+        kwargs = {'offload_to_cpu': offload_to_cpu} if isinstance(self._factories[0], FullyShardedDataParallelFactory) else {}
+        for i, optimizer in enumerate(optimizers):
+            ckpt_ifs.append(self._factories[i].create_checkpoint_interface(optimizer, **kwargs))
+        return tuple(ckpt_ifs) if len(ckpt_ifs) > 1 else ckpt_ifs[0]
