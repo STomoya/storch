@@ -1,8 +1,9 @@
 """Classes for keeping the best state_dict for easy saving and loading.
 """
 
-import copy
+import os
 
+import torch
 import torch.nn as nn
 
 
@@ -80,9 +81,11 @@ class BestStateKeeper:
         >>> # to load the best state_dict to the model just call.
         >>> val_loss_model.load()
     """
-    def __init__(self, direction: str, model: nn.Module, init_abs_value: float=1e10) -> None:
+    def __init__(self, name: str, direction: str, model: nn.Module, folder: str='.', init_abs_value: float=1e10, disthelper=None) -> None:
         assert direction in ['min', 'max', 'minimize', 'maximize']
+        self.name = name
         self.direction = 'min' if direction in ['min', 'minimize'] else 'max'
+        self.disthelper = disthelper
 
         # reference to the model.
         if isinstance(model, nn.DataParallel):
@@ -90,7 +93,8 @@ class BestStateKeeper:
         else:
             self.model = model
 
-        self.best_state_dict = self._copy_state_dict()
+        os.makedirs(folder, exist_ok=True)
+        self.filename = os.path.join(folder, f'{name}.torch')
         self.value = (1 if self.is_minimize() else -1) * init_abs_value
         self.step = None
 
@@ -113,10 +117,6 @@ class BestStateKeeper:
         return self.direction == 'max'
 
 
-    def _copy_state_dict(self):
-        return copy.deepcopy(self.model.state_dict())
-
-
     def update(self, new_value: float, step: int=None) -> bool:
         """update the state_dict if new_value is better that current value.
 
@@ -127,39 +127,53 @@ class BestStateKeeper:
         Returns:
             bool: True if updated, else False
         """
-        if self.is_minimize():
-            if new_value < self.value:
-                self.value = new_value
-                self.best_state_dict = self._copy_state_dict()
-                self.step = step
-                return True
-
-        if self.is_maximize():
-            if new_value > self.value:
-                self.value = new_value
-                self.best_state_dict = self._copy_state_dict()
-                self.step = step
-                return True
+        if (
+            (self.is_minimize() and new_value < self.value) or
+            (self.is_maximize() and new_value > self.value)
+        ):
+            self.value = new_value
+            self.step = step
+            self.save(self.filename, model_state_only=False)
+            return True
 
         return False
+
+
+    def save(self, filename: str, model_state_only: bool=True):
+        state_dict = self.state_dict(model_state_only=model_state_only)
+        if self.disthelper is not None and not self.disthelper.is_primary():
+            return
+        torch.save(state_dict, filename)
+
 
     def load(self) -> None:
         """load the best state_dict to the model.
         """
-        self.model.load_state_dict(self.best_state_dict)
+        if self.disthelper is not None:
+            self.disthelper.wait_for_all_processes()
+        state_dict = torch.load(self.filename)
+        if 'state_dict' in state_dict:
+            state_dict = state_dict.get('state_dict')
+        self.model.load_state_dict(state_dict)
 
 
-    def state_dict(self) -> dict:
+    def state_dict(self, model_state_only: bool=False) -> dict:
         """returns this class' state.
 
         Returns:
             dict: state_dict of this class
         """
+        model_state = self.model.state_dict()
+
+        if model_state_only:
+            return model_state
+
         return dict(
             direction = self.direction,
             value = self.value,
-            state_dict = self.best_state_dict,
-            step = self.step
+            step = self.step,
+            filename = self.filename,
+            state_dict = model_state
         )
 
 
@@ -171,5 +185,5 @@ class BestStateKeeper:
         """
         self.direction = state_dict.get('direction')
         self.value = state_dict.get('value')
-        self.best_state_dict = state_dict.get('state_dict')
         self.step = state_dict.get('step')
+        self.filename = state_dict.get('filename')

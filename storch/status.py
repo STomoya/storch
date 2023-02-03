@@ -554,45 +554,63 @@ class ThinStatus:
     def batches_done(self, value):
         self._batches_done = value
 
-    def print(self, *args, **kwargs):
-        '''print function'''
-        print(*args, **kwargs)
+    def get_kbatches(self, format='{kbatches:.2f}k') -> str:
+        """Returns a formated kilo batches.
 
-    def log(self, message: str, level: str='info'):
-        self.print(message)
+        Args:
+            format (str, optional): format of the string. Default: '{kbatches:.2f}k'.
 
-    def log_command_line(self):
+        Returns:
+            str: The formated kilo batches.
+        """
+        kbatches = self._batches_done / 1000
+        return format.format(kbatches=kbatches)
+
+    def print(self, *args, **kwargs) -> None:
         pass
 
-    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None):
+    def log(self, message: str, level='info') -> None:
         pass
 
-    def log_omegaconf(self, config: DictConfig):
+    def log_command_line(self) -> None:
         pass
 
-    def log_dataset(self, dataloader: DataLoader):
+    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None) -> None:
         pass
 
-    def log_optimizer(self, optimizer: Optimizer):
+    def log_omegaconf(self, config: DictConfig) -> None:
         pass
 
-    def log_env(self):
+    def log_dataset(self, dataloader: DataLoader) -> None:
         pass
 
-    def log_model(self, model):
+    def log_optimizer(self, optimizer: Optimizer) -> None:
         pass
 
-    def log_gpu_memory(self):
+    def log_env(self) -> None:
         pass
 
-    def log_nvidia_smi(self):
+    def log_model(self, model: torch.nn.Module) -> None:
         pass
 
-    def log_stuff(self, *args):
+    def log_gpu_memory(self) -> None:
         pass
 
-    def update(self, **kwargs):
+    def log_nvidia_smi(self) -> None:
+        pass
+
+    def log_stuff(self, *to_log) -> None:
+        pass
+
+    def update(self, **kwargs) -> None:
+        """update status."""
         self._batches_done += 1
+
+    def tb_add_scalars(self, **kwargs) -> None:
+        pass
+
+    def tb_add_images(self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs) -> None:
+        pass
 
     def initialize_collector(self, *keys):
         pass
@@ -600,22 +618,30 @@ class ThinStatus:
     def update_collector(self, **kwargs):
         pass
 
-    def tb_add_scalars(self, **kwargs):
+    def dry_update(self, **kwargs):
         pass
 
     @contextmanager
-    def stop_timer(self, verbose=False):
+    def profile(self, enabled=True):
         yield
 
-    def is_end(self):
+
+    @contextmanager
+    def stop_timer(self, verbose=False) -> None:
+        yield
+
+    def is_end(self) -> None:
         return self.batches_done >= self.max_iters
+
+    def _shutdown_logger(self) -> None:
+        pass
 
     def load_state_dict(self, state_dict: dict) -> None:
         # load batches_done from the state_dict saved at the primary process.
         self.batches_done = state_dict['batches_done']
 
     def state_dict(self) -> dict:
-        raise NotImplementedError()
+        return {}
 
     def plot(self, filename='loss'):
         pass

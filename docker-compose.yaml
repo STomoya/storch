@@ -1,31 +1,40 @@
-version: '2.3'
-
 services:
   python:
     build:
       context: .
-      dockerfile: docker/torch/Dockerfile
+      dockerfile: ./docker/torch/Dockerfile
       args:
         - UID=${USERID:-1000}
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+
     volumes:
       - .:/usr/src
-    working_dir: /usr/src
-    tty: true
     shm_size: '8gb'
+    working_dir: /usr/src
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              device_ids: ['0']
 
   install:
     build:
       context: .
-      dockerfile: docker/install/Dockerfile
+      dockerfile: ./docker/install/Dockerfile
       args:
         - UID=${USERID:-1000}
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+
     volumes:
       - .:/usr/src
+    shm_size: '8gb'
     working_dir: /usr/src
-    entrypoint: bash ./docker/install/entrypoint.sh
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              device_ids: ['0']

@@ -6,11 +6,13 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
+from stutil.exceptions import deprecated
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import Dataset
 from torch.utils.data.distributed import DistributedSampler
 
 
+@deprecated(favor_of='storch.distributed.DistributedHelper', recommendation='storch.distributed.DistributedHelper')
 class DistributedHelper:
     """Helper class for distributed training.
 
