@@ -641,7 +641,7 @@ class ThinStatus:
         self.batches_done = state_dict['batches_done']
 
     def state_dict(self) -> dict:
-        raise NotImplementedError()
+        return {}
 
     def plot(self, filename='loss'):
         pass
