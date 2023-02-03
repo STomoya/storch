@@ -169,7 +169,8 @@ class DistributedHelper:
     def wait_for_all_processes():
         """torch.distributed.barrier with a recognizable name.
         """
-        dist.barrier()
+        if dist.is_initialized():
+            dist.barrier()
 
 
     def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False) -> tuple[nn.Module]|nn.Module:
