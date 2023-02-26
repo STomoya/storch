@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 from torch.cuda.amp import GradScaler
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler
 
 from storch._optimizer_step import get_optimizer_step
 
@@ -180,7 +180,7 @@ class Engine:
     """
     def __init__(self,
         model: nn.Module, optimizer: Optimizer,
-        scaler: GradScaler=None, scheduler: LRScheduler=None,
+        scaler: GradScaler=None, scheduler: _LRScheduler=None,
         *,
         # kwargs for optimizer step getter
         gradient_accumulation_steps: int=1,
