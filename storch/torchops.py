@@ -38,7 +38,8 @@ __all__ = [
     'print_module_summary',
     'grad_nan_to_num_',
     'inference_mode',
-    'convert_outputs_to_fp32'
+    'convert_outputs_to_fp32',
+    'get_grad_scaler',
 ]
 
 

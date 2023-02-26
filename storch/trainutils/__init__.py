@@ -6,13 +6,17 @@ from storch.dataset import make_simple_transform, make_transform_from_config
 from storch.distributed import DistributedHelper
 from storch.hydra_utils import get_hydra_config, save_hydra_config
 from storch.metrics import BestStateKeeper, KeeperCompose
+from storch.models import Engine
 from storch.path import Folder, Path
 from storch.scheduler import build_scheduler
 from storch.status import Status, ThinStatus
-from storch.torchops import (auto_get_device, freeze, inference_mode,
+from storch.torchops import (auto_get_device, freeze, get_grad_scaler,
+                             get_optimizer_step, inference_mode,
                              optimizer_step,
                              optimizer_step_with_gradient_accumulation,
-                             set_seeds, unfreeze, update_ema)
+                             set_seeds, simple_optimizer_step,
+                             simple_optimizer_step_with_gradient_accumulation,
+                             unfreeze, update_ema)
 
 __all__ = [
     'loss',
@@ -24,13 +28,18 @@ __all__ = [
     'save_hydra_config',
     'BestStateKeeper',
     'KeeperCompose',
+    'Engine',
     'Folder',
     'Path',
     'build_scheduler',
     'Status',
     'ThinStatus',
     'optimizer_step',
+    'get_optimizer_step',
+    'simple_optimizer_step',
     'optimizer_step_with_gradient_accumulation',
+    'simple_optimizer_step_with_gradient_accumulation',
+    'get_grad_scaler',
     'freeze',
     'unfreeze',
     'set_seeds',
