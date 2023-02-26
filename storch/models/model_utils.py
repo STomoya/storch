@@ -8,6 +8,11 @@ from typing import Iterable
 
 import torch
 import torch.nn as nn
+from torch.cuda.amp import GradScaler
+from torch.optim import Optimizer
+from torch.optim.lr_scheduler import _LRScheduler
+
+from storch._optimizer_step import get_optimizer_step
 
 
 def get_parameters_and_buffers(module: nn.Module) -> Iterable:
@@ -143,3 +148,76 @@ def register_init_args(init):
         self._config_repr = config
 
     return inner
+
+
+class Engine:
+    """engine for training.
+
+    Args:
+        model (nn.Module): model to optimize.
+        optimizer (Optimizer): optimizer.
+        scaler (GradScaler, optional): gradient scaler. Default: None.
+        scheduler (LRScheduler, optional): scheduler. calls step every STEP not EPOCH. Default: None.
+
+        gradient_accumulation_steps (int, optional): gradient accumulation steps. Default: 1.
+        num_iters_per_epoch (int, optional): number of iterations per epoch.
+            required for gradient accumulation. Default: None.
+
+        zero_grad (bool, optional): kwarg for optimizer step. Default: True.
+        set_to_none (bool, optional): kwarg for optimizer step. Default: True.
+        clip_grad_norm (bool, optional): kwarg for optimizer step. Default: False.
+        max_norm (float, optional): kwarg for optimizer step. Default: 5.0.
+        grad_nan_to_num (bool, optional): kwarg for optimizer step. Default: False.
+        update_scaler (bool, optional): kwarg for optimizer step. Default: True.
+
+    Examples:
+        >>> model = get_model(...)
+        >>> optimizer = get_optimizer(model.parameters(), ...)
+        >>> engine = Engine(model, optimizer)
+        >>> input = torch.randn(10, 10)
+        >>> loss = criterion(engine(input), label)
+        >>> engine.step(loss)
+    """
+    def __init__(self,
+        model: nn.Module, optimizer: Optimizer,
+        scaler: GradScaler=None, scheduler: _LRScheduler=None,
+        *,
+        # kwargs for optimizer step getter
+        gradient_accumulation_steps: int=1,
+        num_iters_per_epoch: int=None,
+        # kwargs for optimizer step
+        zero_grad: bool=True, set_to_none: bool=True,
+        clip_grad_norm: bool=False, max_norm: float=5.0,
+        grad_nan_to_num: bool=False, update_scaler: bool = True
+    ) -> None:
+        self.model = model
+        self.optimizer = optimizer
+        self.scaler = scaler
+        self.scheduler = scheduler
+
+        self.optimizer_step = get_optimizer_step(
+            trigger_gradient_scaling_via_gradscaler=False,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            num_iters_per_epoch=num_iters_per_epoch,
+            no_sync_context = model.no_sync if hasattr(model, 'no_sync') else None
+        )
+        self.optimizer_step_kwargs = dict(
+            zero_grad=zero_grad, set_to_none=set_to_none,
+            clip_grad_norm=clip_grad_norm, max_norm=max_norm,
+            grad_nan_to_num=grad_nan_to_num, update_scaler=update_scaler
+        )
+
+
+    def __call__(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+
+    def step(self, loss, **overrides):
+        kwargs = self.optimizer_step_kwargs.copy()
+        if overrides != {}:
+            assert all(key in self.optimizer_step_kwargs.keys() for key in overrides.keys())
+            kwargs.update(overrides)
+        self.optimizer_step(
+            loss, self.optimizer, self.scaler, self.scheduler, self.model,
+            **kwargs
+        )
