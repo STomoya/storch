@@ -1,5 +1,6 @@
 """Base container classes for data parallel wrapped modules.
 """
+from __future__ import annotations
 
 from collections import OrderedDict
 
