@@ -1,0 +1,68 @@
+run:
+  name: cifar10
+  folder: checkpoint
+  log_file: log.log
+  log_interval: 10
+
+amp: false
+
+distributed:
+  mode: ddp
+
+model:
+  class_name: torchvision.models.resnet18
+  num_classes: ${data.num_classes}
+
+data:
+  root: cifar10
+  num_classes: 10
+
+  validation_size: 5000
+
+  transforms:
+    train:
+      - name: RandomHorizontalFlip
+      - name: Resize
+        size:
+          - 32
+          - 32
+      - name: ToTensor
+      - name: Normalize
+        mean: 0.5
+        std: 0.5
+    test:
+      - name: Resize
+        size:
+          - 32
+          - 32
+      - name: ToTensor
+      - name: Normalize
+        mean: 0.5
+        std: 0.5
+
+  loader:
+    batch_size: 32
+    drop_last: true
+    pin_memory: true
+    num_workers: 2
+
+train:
+  epochs: 40
+  offload_ckpt_to_cpu: true
+  keep_last_n_ckpt: 1
+
+  grad_accum_steps: 1
+  clip_grad_norm: true
+  max_norm: 5.0
+
+optimizer:
+  class_name: torch.optim.AdamW
+  lr: 0.001
+  betas:
+    - 0.9
+    - 0.999
+  weight_decay: 0.05
+
+criterion:
+  class_name: torch.nn.CrossEntropyLoss
+  label_smoothing: 0.1
