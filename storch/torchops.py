@@ -11,6 +11,8 @@ from typing import Union
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.cuda.amp import GradScaler
+from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 
 import storch
 from storch._optimizer_step import (
@@ -319,3 +321,20 @@ def convert_outputs_to_fp32(func: Callable) -> Callable:
         return retvals
 
     return inner
+
+
+def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> GradScaler|None:
+    """Get the proper gradient scaler.
+
+    Args:
+        enabled (bool, optional): Enable gradient scaling? Default: True.
+        is_fsdp (bool, optional): is distributed mode FSDP? Default: False.
+        disable_with_none (bool, optional): Disable grdient scaling by returning None. Default: False.
+
+    Returns:
+        GradScaler | None: gradient scaler class
+    """
+    scaler = GradScaler(enabled=enabled) if not is_fsdp else ShardedGradScaler(enabled=enabled)
+    if not enabled and disable_with_none:
+        scaler = None
+    return scaler
