@@ -47,6 +47,31 @@ def _assert_require_module(maybe_module: None|nn.Module):
     assert maybe_module is not None, f'"module" is required for "clip_grad_norm" or "grad_nan_to_num" option.'
 
 
+def get_optimizer_step(
+    trigger_gradient_scaling_via_gradscaler=False,
+    gradient_accumulation_steps: int=1,
+    num_iters_per_epoch: int=None,
+    no_sync_context: Callable=None
+):
+
+    if trigger_gradient_scaling_via_gradscaler:
+        func = simple_optimizer_step
+        _cls = simple_optimizer_step_with_gradient_accumulation
+    else:
+        func = optimizer_step
+        _cls = optimizer_step_with_gradient_accumulation
+
+    if gradient_accumulation_steps > 1:
+        assert num_iters_per_epoch is not None, 'gradient accumulation requires "num_iters_per_epoch" argument.'
+        func = _cls(
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            num_iters_per_epoch=num_iters_per_epoch,
+            no_sync_context=no_sync_context
+        )
+
+    return func
+
+
 def simple_optimizer_step(
     loss: torch.Tensor, optimizer: optim.Optimizer, scaler: GradScaler, scheduler: _LRScheduler=None, module: nn.Module=None,
     *,
