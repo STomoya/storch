@@ -16,8 +16,8 @@ class MinibatchStdDev(torch.nn.Module):
 
     def forward(self, x):
         N, C, H, W = x.shape
-        G = self.group_size if N % self.group_size == 0 else N
-        F = self.num_channels
+        G = self._group_size if N % self._group_size == 0 else N
+        F = self._num_channels
         c = C // F
 
         y = x.reshape(G, -1, F, c, H, W)
