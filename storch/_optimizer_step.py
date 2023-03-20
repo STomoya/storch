@@ -115,7 +115,7 @@ def simple_optimizer_step(
             if isinstance(module, FSDP):
                 module.clip_grad_norm_(max_norm=max_norm)
             else:
-                torch.clip_grad_norm(module.parameters(), max_norm=max_norm)
+                torch.clip_grad_norm_(module.parameters(), max_norm=max_norm)
 
     scaler.step(optimizer)
 
