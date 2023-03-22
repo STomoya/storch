@@ -1,6 +1,7 @@
 
 import inspect
 import json
+import warnings
 from collections import OrderedDict
 from functools import wraps
 from itertools import chain
@@ -13,6 +14,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
 from storch._optimizer_step import get_optimizer_step
+from storch.utils import version
 
 
 def get_parameters_and_buffers(module: nn.Module) -> Iterable:
@@ -124,6 +126,17 @@ class ModelMixin(nn.Module):
         else: new_state_dict = state_dict
 
         torch.save(new_state_dict, filename)
+
+
+    def compile(self, mode='default', dynamic=False):
+        if version.is_compiler_available():
+            return torch.compile(self, mode=mode, dynamic=dynamic)
+
+        warnings.warn((
+            f'"torch.compile" only supported for torch >= 2.0.0, got {torch.__version__}. '
+            'Falling back to no compilation.'
+        ))
+        return self
 
 
     def extra_repr(self):
