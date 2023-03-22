@@ -14,6 +14,7 @@ from storch.distributed.factory import (DistributedDataParallelFactory,
                                         FullyShardedDataParallelFactory,
                                         NoParallelFactory)
 from storch.torchops import convert_outputs_to_fp32
+from storch.utils import version
 
 
 class DistributedHelper:
@@ -173,7 +174,7 @@ class DistributedHelper:
             dist.barrier()
 
 
-    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False) -> tuple[nn.Module]|nn.Module:
+    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False, compile: bool|str|dict|None=None) -> tuple[nn.Module]|nn.Module:
         """prepare the input modules with mode "mode".
 
         - If the device is a cuda device the module is first set to the device, then wrapped.
@@ -185,6 +186,11 @@ class DistributedHelper:
             mode (str, optional): data parallel mode. one of {ddp,fsdp} for distributed settings,
                 any other for single GPU or CPU. Default: None.
             mixed_precision (bool, optional): use mixed precision. Default: False.
+            compile (bool | str | dict, optional): compile the model via torch.compile.
+                - if True, uses torch.compile without any arguments.
+                - if dict, uses torch.compile and use dict assuming containing arguments (e.g. "mode")
+                - if str,  uses torch.compile and input str as "mode" argument.
+                Default: None.
 
         Raises:
             Exception: unknown data parallel mode.
@@ -200,7 +206,10 @@ class DistributedHelper:
 
         wrapped_modules = []
         for module in modules:
+            # confirm send module to device before wrapping the model
             module.to(self.device)
+
+            # wrap the model. see storch.distributed.factory.
             wrap_kwargs = {}
             if self.is_initialized():
 
@@ -218,6 +227,7 @@ class DistributedHelper:
 
             wrapped_module = factory.wrap_module(module, **wrap_kwargs)
 
+            # wrap forward with autocast if enabled.
             if mixed_precision and self.device.type == 'cuda':
                 wrapped_module._original_forward = wrapped_module.forward
                 dtype = torch.float16
@@ -225,6 +235,18 @@ class DistributedHelper:
                 wrapped_module.forward = convert_outputs_to_fp32(forward)
 
             self._factories.append(factory)
+
+            # compile model
+            if compile is not None:
+                if version.is_compiler_available():
+                    if isinstance(compile, dict):
+                        compile_kwargs = compile
+                    if isinstance(compile, str):
+                        compile_kwargs = dict(mode=compile)
+                    else:
+                        compile_kwargs = {}
+                    wrapped_module = torch.compile(wrapped_module, **compile_kwargs)
+
             wrapped_modules.append(wrapped_module)
 
         return tuple(wrapped_modules) if len(wrapped_modules) > 1 else wrapped_modules[0]
