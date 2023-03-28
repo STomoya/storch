@@ -30,6 +30,7 @@ services:
       - .:/usr/src
     shm_size: '8gb'
     working_dir: /usr/src
+    entrypoint: sh ./docker/install/entrypoint.sh
 
     deploy:
       resources:

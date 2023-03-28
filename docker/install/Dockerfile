@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM pytorch/pytorch:2.0.0-cuda11.7-cudnn8-devel
 
 ENV DEBIAN_FRONTEND=noniteractive
 RUN apt update -y && \
