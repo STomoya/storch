@@ -8,7 +8,7 @@ from storch.visualization import ax_setter, plt_subplots
 
 
 def test_classification(
-    targets: np.ndarray, predictions: np.ndarray, labels: list=None,
+    targets: np.ndarray, predictions: np.ndarray, labels: list=None, digits: int=6,
     filename: str=None, print_fn: Callable=print
 ) -> None:
     """Calculate and visualizing scores for classification (mostly using sklearn).
@@ -17,6 +17,7 @@ def test_classification(
         targets (np.ndarray): Ground truth.
         predictions (np.ndarray): Predictions.
         labels (list, optional): List containing names of the classes.. Defaults to None.
+        digits (int, optional): digits argument for classification_report. Default: 6.
         filename (str, optional): If provided, visualize the confusion matrix via matplotlib. Defaults to None.
         print_fn (Callable, optional): A callable for printing the results. Defaults to print.
     """
@@ -28,7 +29,7 @@ def test_classification(
     print_fn('TEST')
     # precision, recall, F1, accuracy
     print_fn(
-        f'Classification report:\n{classification_report(targets, predictions)}')
+        f'Classification report:\n{classification_report(targets, predictions, digits=digits)}')
 
     # confusion matrix
     confmat = confusion_matrix(targets, predictions, labels=labels, normalize='true')
