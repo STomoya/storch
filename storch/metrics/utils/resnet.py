@@ -4,7 +4,7 @@ import torch.nn as nn
 from torchvision.models.resnet import resnet50
 
 from storch.metrics.utils.download import download_url
-from storch.utils.version import is_multi_weight_api_available
+from storch.utils.pt_version import is_multi_weight_api_available
 
 SWAV_IN1K_URL = 'https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar'
 
@@ -35,6 +35,10 @@ class _ResNet(nn.Module):
         raise NotImplementedError()
 
     def forward(self, x):
+        # normalize input.
+        x = x / 255.0
+        x = x * 2 - 1
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)

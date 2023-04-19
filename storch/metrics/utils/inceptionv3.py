@@ -22,11 +22,10 @@ class InceptionV3JIT(nn.Module):
         super().__init__()
         self.ckpt_path = download_url(JIT_INCEPTION_URL, filename, weight_folder)
         self.base = torch.jit.load(self.ckpt_path).eval()
-        self.layers = self.base.layers
 
     def forward(self, x):
         assert x.size(-1) == x.size(-2) == 299, 'Input size of inceptioinv3 must be 299x299'
-        features = self.layers.forward(x).view(x.size(0), 2048)
+        features = self.base(x, return_features=True)
         return features
 
 
@@ -45,7 +44,7 @@ class InceptionV3(nn.Module):
 
         self.ckpt_path = download_url(INCEPTION_URL, filename, weight_folder)
 
-        inception = inception_v3(num_classes=1008, aux_logits=False, init_weights=True)
+        inception = inception_v3(num_classes=1008, aux_logits=False, init_weights=False)
         # replace some layers to match tf implementation.
         inception.Mixed_5b = InceptionA(192, pool_features=32)
         inception.Mixed_5c = InceptionA(256, pool_features=64)
@@ -90,6 +89,9 @@ class InceptionV3(nn.Module):
 
     def forward(self, x):
         assert x.size(-1) == x.size(-2) == 299, 'Input size of inceptioinv3 must be 299x299'
+        x = x / 255.0
+        x = x * 2 - 1
+
         for i, block in enumerate(self.blocks):
             x = block(x)
             if i == self.block_index:
