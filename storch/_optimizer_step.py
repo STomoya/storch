@@ -62,7 +62,6 @@ def get_optimizer_step(
         _cls = optimizer_step_with_gradient_accumulation
 
     if gradient_accumulation_steps > 1:
-        assert num_iters_per_epoch is not None, 'gradient accumulation requires "num_iters_per_epoch" argument.'
         func = _cls(
             gradient_accumulation_steps=gradient_accumulation_steps,
             num_iters_per_epoch=num_iters_per_epoch,
