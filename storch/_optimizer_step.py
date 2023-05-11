@@ -62,7 +62,6 @@ def get_optimizer_step(
         _cls = optimizer_step_with_gradient_accumulation
 
     if gradient_accumulation_steps > 1:
-        assert num_iters_per_epoch is not None, 'gradient accumulation requires "num_iters_per_epoch" argument.'
         func = _cls(
             gradient_accumulation_steps=gradient_accumulation_steps,
             num_iters_per_epoch=num_iters_per_epoch,
@@ -201,17 +200,17 @@ class simple_optimizer_step_with_gradient_accumulation:
 
     Args:
         gradient_accumulation_steps (int): number of gradient accumulation steps.
-        num_iters_per_epoch (int): number of iterations per epoch. used to adjust the
-            accumulation steps of the last few batches.
+        num_iters_per_epoch (int | None): number of iterations per epoch. used to adjust the
+            accumulation steps of the last few batches. Pass None for infinite.
 
     Examples:
         >>> optimizer_step = optimizer_step_with_gradient_accumulation(grad_steps, total_iters)
         >>> # then "optimizer_step" can be used as same as "torchops.optimizer_step"
     """
 
-    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int, no_sync_context: Callable=None) -> None:
+    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int|None, no_sync_context: Callable=None) -> None:
         self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.num_iters_per_epoch = num_iters_per_epoch
+        self.num_iters_per_epoch = num_iters_per_epoch if isinstance(num_iters_per_epoch, int) else gradient_accumulation_steps
 
         # calc last accumulation steps and where it starts.
         # if gradient accumulation steps and total iterations are 4 and 13 respectively,
@@ -322,17 +321,17 @@ class optimizer_step_with_gradient_accumulation:
 
     Args:
         gradient_accumulation_steps (int): number of gradient accumulation steps.
-        num_iters_per_epoch (int): number of iterations per epoch. used to adjust the
-            accumulation steps of the last few batches.
+        num_iters_per_epoch (int | None): number of iterations per epoch. used to adjust the
+            accumulation steps of the last few batches. Pass None for infinite.
 
     Examples:
         >>> optimizer_step = optimizer_step_with_gradient_accumulation(grad_steps, total_iters)
         >>> # then "optimizer_step" can be used as same as "torchops.optimizer_step"
     """
 
-    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int, no_sync_context: Callable=None) -> None:
+    def __init__(self, gradient_accumulation_steps: int, num_iters_per_epoch: int|None, no_sync_context: Callable=None) -> None:
         self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.num_iters_per_epoch = num_iters_per_epoch
+        self.num_iters_per_epoch = num_iters_per_epoch if isinstance(num_iters_per_epoch, int) else gradient_accumulation_steps
 
         # calc last accumulation steps and where it starts.
         # if gradient accumulation steps and total iterations are 4 and 13 respectively,
