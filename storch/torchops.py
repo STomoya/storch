@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 import warnings
 from collections.abc import Callable
+from contextlib import contextmanager
 from functools import wraps
 from typing import Union
 
@@ -40,6 +41,11 @@ __all__ = [
     'inference_mode',
     'convert_outputs_to_fp32',
     'get_grad_scaler',
+    'local_seed_builtin',
+    'local_seed_numpy',
+    'local_seed_torch',
+    'local_seed',
+    'fixed_random'
 ]
 
 
@@ -339,3 +345,90 @@ def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> Gra
     if not enabled and disable_with_none:
         scaler = None
     return scaler
+
+
+@contextmanager
+def local_seed_builtin(seed: int, enabled: bool=True) -> None:
+    """locally set the seed of builtin random module.
+
+    Args:
+        seed (int): Seed.
+        enabled (bool, optional): Enable local seed if True. Default: True.
+    """
+    if enabled:
+        random_state = random.getstate()
+        random.seed(seed)
+    yield
+    if enabled:
+        random.setstate(random_state)
+
+
+@contextmanager
+def local_seed_numpy(seed: int, enabled: bool=True) -> None:
+    """locally set the seed of numpy.
+
+    Args:
+        seed (int): Seed.
+        enabled (bool, optional): Enable local seed if True. Default: True.
+    """
+    if enabled:
+        random_state = np.random.get_state()
+        np.random.seed(seed)
+    yield
+    if enabled:
+        np.random.set_state(random_state)
+
+
+@contextmanager
+def local_seed_torch(seed: int, enabled: bool=True) -> None:
+    """locally set the seed of torch.
+
+    Args:
+        seed (int): Seed.
+        enabled (bool, optional): Enable local seed if True. Default: True.
+    """
+    if enabled:
+        random_state = torch.get_rng_state()
+        torch.manual_seed(seed)
+    yield
+    if enabled:
+        torch.set_rng_state(random_state)
+
+
+@contextmanager
+def local_seed(seed: int, enabled: bool=True, builtin: bool=True, numpy: bool=True, torch: bool=True) -> None:
+    """locally set the seed of builtin random, numpy, and torch.
+
+    Args:
+        seed (int): Seed.
+        enabled (bool, optional): Enable local seed if True. Default: True.
+        builtin (bool, optional): Independent flag for builtin random. Ignored when enabled=False. Default: True.
+        numpy (bool, optional): Independent flag for numpy. Ignored when enabled=False. Default: True.
+        torch (bool, optional): Independent flag for torch. Ignored when enabled=False. Default: True.
+    """
+    if not enabled:
+        builtin = numpy = torch = False
+    with local_seed_builtin(seed, builtin), local_seed_numpy(seed, numpy), local_seed_torch(seed, torch):
+        yield
+
+
+def fixed_random(seed: int, enabled: bool=True):
+    """decorator that fixes random.
+
+    Args:
+        seed (int): seed.
+        enabled (bool, optional): Enable local seed if True. Default: True.
+
+    Usages:
+        >>> @fixed_random(3407)
+        ... def test():
+        ...     pass
+    """
+    def decorator(func):
+        @wraps(func)
+        def inner(*args, **kwargs):
+            with local_seed(seed, enabled):
+                retval = func(*args, **kwargs)
+            return retval
+        return inner
+    return decorator
