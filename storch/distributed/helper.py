@@ -219,6 +219,8 @@ class DistributedHelper:
                 elif mode == 'fsdp':
                     factory = FullyShardedDataParallelFactory()
                     wrap_kwargs['mixed_precision'] = mixed_precision
+                    if compile is not None:
+                        wrap_kwargs['use_orig_params'] = True
                 else:
                     raise Exception(f'Unknown data parallelizm mode "{mode}"')
 
