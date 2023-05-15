@@ -38,4 +38,4 @@ def is_multi_weight_api_available():
 
 
 def is_compiler_available():
-    return is_torchvision_version_geq('2.0.0')
+    return is_torch_version_geq('2.0.0')

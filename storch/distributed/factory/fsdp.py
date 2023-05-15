@@ -62,7 +62,7 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
             mixed_precision = MixedPrecision(param_dtype=dtype, reduce_dtype=dtype, buffer_dtype=dtype)
         else: mixed_precision = None
 
-        wrapped_module = FSDP(module, mixed_precision=mixed_precision)
+        wrapped_module = FSDP(module, mixed_precision=mixed_precision, **kwargs)
         self._wrapped_module = wrapped_module
 
         return wrapped_module
