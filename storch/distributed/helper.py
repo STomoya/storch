@@ -239,15 +239,14 @@ class DistributedHelper:
             self._factories.append(factory)
 
             # compile model
-            if compile is not None:
-                if version.is_compiler_available():
-                    if isinstance(compile, dict):
-                        compile_kwargs = compile
-                    if isinstance(compile, str):
-                        compile_kwargs = dict(mode=compile)
-                    else:
-                        compile_kwargs = {}
-                    wrapped_module = torch.compile(wrapped_module, **compile_kwargs)
+            if compile and version.is_compiler_available():
+                if isinstance(compile, dict):
+                    compile_kwargs = compile
+                if isinstance(compile, str):
+                    compile_kwargs = dict(mode=compile)
+                else:
+                    compile_kwargs = {}
+                wrapped_module = torch.compile(wrapped_module, **compile_kwargs)
 
             wrapped_modules.append(wrapped_module)
 
