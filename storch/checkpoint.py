@@ -3,9 +3,11 @@
 
 import glob
 import os
+import random
 import warnings
 from collections import deque
 
+import numpy as np
 import torch
 
 import storch
@@ -108,8 +110,14 @@ class Checkpoint:
 
         state_dict = {}
         state_dict['state_dict'] = self._container_as_state_dict()
+
         if constants != {}:
             state_dict.update({'constants': constants})
+
+        state_dict['random_state'] = dict(
+            builtin=random.getstate(), numpy=np.random.get_state(), torch=torch.get_rng_state()
+        )
+
         state_dict.update({'__checkpoint_state': self.state_dict()})
 
         if self.disthelper is None or self.disthelper.is_primary():
@@ -144,6 +152,11 @@ class Checkpoint:
         if _self_state is None:
             raise Exception(f'Checkpoint.load: This checkpoint seems to be not saved via storch.Checkpoint.')
         self.load_state_dict(_self_state)
+
+        random_state = state_dict.pop('random_state')
+        random.setstate(random_state['builtin'])
+        np.random.set_state(random_state['numpy'])
+        torch.set_rng_state(random_state['torch'])
 
         constants = state_dict.pop('constants', None)
 
