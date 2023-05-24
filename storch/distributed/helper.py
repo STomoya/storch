@@ -65,6 +65,7 @@ class DistributedHelper:
             self.device = torch.device('cuda', self.rank)
             torch.cuda.set_device(self.device)
 
+        self._mode = None
         self._factories = []
 
 
@@ -174,6 +175,19 @@ class DistributedHelper:
             dist.barrier()
 
 
+    def get_parallel_mode(self, mode: str=None):
+        if self._mode is None:
+            if mode is None:
+                mode = 'ddp'
+                if self.is_primary():
+                    print(f'Data parallelizm default to "ddp".')
+
+            assert mode.lower() in ['ddp', 'fsdp']
+            self._mode = mode
+
+        return self._mode
+
+
     def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False, compile: bool|str|dict|None=None) -> tuple[nn.Module]|nn.Module:
         """prepare the input modules with mode "mode".
 
@@ -198,11 +212,7 @@ class DistributedHelper:
         Returns:
             tuple[nn.Module]|nn.Module: the wrapped modules in the same order as input.
         """
-        if mode is None:
-            mode = 'ddp'
-            if self.is_primary():
-                print(f'Data parallelizm default to "ddp".')
-        mode = mode.lower()
+        mode = self.get_parallel_mode(mode)
 
         wrapped_modules = []
         for module in modules:
