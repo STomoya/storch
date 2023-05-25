@@ -12,6 +12,7 @@ from storch.project._config import get_default_config
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--folder', default='.')
+    parser.add_argument('--empty-config', default=False, action='store_true')
     return parser.parse_args()
 
 
@@ -43,7 +44,7 @@ def run():
     for folder in folders:
         os.mkdir(os.path.join(args.folder, folder))
     for file in files:
-        if file.endswith('config.yaml'):
+        if file.endswith('config.yaml') and not args.empty_config:
             with open(os.path.join(args.folder, file), 'w') as fp:
                 fp.write(OmegaConf.to_yaml(get_default_config()))
         else:
