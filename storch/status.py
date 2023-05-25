@@ -314,6 +314,30 @@ class Status:
         else:
             self.log('No GPU available on your enviornment.')
 
+    def log_actual_batch_size(self,
+        batch_size_per_proc: int, gradient_accumulation_steps: int, world_size: int
+    ) -> None:
+        """log actual batch size per optimization step
+
+        Args:
+            batch_size_per_proc (int): batch size per process.
+            gradient_accumulation_steps (int): gradient accumulation steps.
+            world_size (int): world size.
+        """
+        real_batch_size = batch_size_per_proc * gradient_accumulation_steps * world_size
+        if real_batch_size == batch_size_per_proc:
+            return
+
+        self.log(('Batch size:\n'
+            f'--------------------------------------------------\n'
+            f'            Batch size per process : {batch_size_per_proc}\n'
+            f'       Gradient accumulation steps : {gradient_accumulation_steps}\n'
+            f'               Number of processes : {world_size}\n'
+            f'  ----------------------------------------------\n'
+            f'  Batch size per optimization step : {real_batch_size}\n'
+            f'--------------------------------------------------'
+        ))
+
     def log_stuff(self, *to_log) -> None:
         """log information in one function.
         """
