@@ -1,5 +1,4 @@
 
-
 import argparse
 import glob
 import os
@@ -11,12 +10,36 @@ from storch.project._config import get_default_config
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--folder', default='.')
-    parser.add_argument('--empty-config', default=False, action='store_true')
+    parser.add_argument('--folder', default='.', help='The folder to be used for the project.')
+    parser.add_argument('--empty-config', default=False, action='store_true', help='Do not use default config.')
     return parser.parse_args()
 
 
 def run():
+    """Initialize a folder.
+
+    Folder tree:
+        ./
+            <root folder name>/
+            config/
+                config.yaml
+            docker/
+                torch/
+                    Dockerfile
+                    requirements.txt
+            workspace.local/
+            .dockerignore
+            .env
+            codecheck.py
+            compose.yaml
+            README.md
+
+    Raises:
+        Exception: The folder is not empty.
+
+    Usage:
+        $ python -m storch.commands.init_project
+    """
     args = get_args()
 
     if len(glob.glob(os.path.join(args.folder, '*'))) > 0:
