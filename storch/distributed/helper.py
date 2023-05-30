@@ -97,10 +97,13 @@ class DistributedHelper:
         Returns:
             torch.Tensor: gathered tensor
         """
-        if tensor.ndim == 0:
-            tensor = tensor.clone()[None]
-        output_tensor = torch.cat([torch.empty_like(tensor) for _ in range(self.world_size)], dim=0)
-        dist.all_gather_into_tensor(output_tensor, tensor)
+        if self.is_initialized():
+            if tensor.ndim == 0:
+                tensor = tensor.clone()[None]
+            output_tensor = torch.cat([torch.empty_like(tensor) for _ in range(self.world_size)], dim=0)
+            dist.all_gather_into_tensor(output_tensor, tensor)
+        else:
+            output_tensor = tensor
         return output_tensor
 
     def gather_any(self, val: Any) -> torch.Tensor:
@@ -114,7 +117,8 @@ class DistributedHelper:
         """
         if not isinstance(val, torch.Tensor):
             val = torch.tensor(val, device=self.device)
-        return self.gather_tensor(val)
+        val = self.gather_tensor(val)
+        return val
 
     def reduce_tensor(self, tensor: torch.Tensor, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
         """reduce a tensor, scattered on multiple GPUs, with a certain operator.
@@ -126,7 +130,8 @@ class DistributedHelper:
         Returns:
             torch.Tensor: the reduced tensor
         """
-        dist.all_reduce(tensor, op=op)
+        if self.is_initialized():
+            dist.all_reduce(tensor, op=op)
         return tensor
 
     def reduce_any(self, val: Any, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
@@ -141,7 +146,8 @@ class DistributedHelper:
         """
         if not isinstance(val, torch.Tensor):
             val = torch.tensor(val, device=self.device)
-        return self.reduce_tensor(val, op=op)
+        val = self.reduce_tensor(val, op=op)
+        return val
 
     # aliases
     gather = gather_any
