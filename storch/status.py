@@ -294,11 +294,20 @@ class Status:
         """
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
-    def log_gpu_memory(self) -> None:
+    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
         """log memory summary.
         """
         if torch.cuda.is_available():
-            self.log(f'\n{torch.cuda.memory_summary()}')
+            message = 'GPU memory summary'
+            if isinstance(stage, str):
+                message += f' of stage "{stage}"'
+            message += f' at iteration {self.batches_done}.'
+            if (
+                (at is None) or
+                (self.batches_done == at if isinstance(at, int) else self.batches_done in at)
+            ):
+                message += f'\n{torch.cuda.memory_summary()}'
+                self.log(message)
         else:
             self.log('No GPU available on your enviornment.')
 
