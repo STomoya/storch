@@ -371,7 +371,8 @@ class Status:
             and (
             (self.batches_done == 1) or
             (self.batches_done % self._log_interval == 0) or
-            (self.batches_done <= 100 and self.batches_done % 5 == 0))
+            (self.batches_done <= 100 and self.batches_done % 5 == 0) or
+            (self.batches_done == self.max_iters))
         ):
             self._log_progress()
 
