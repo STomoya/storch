@@ -307,6 +307,20 @@ class Status:
 
     def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
         """log memory summary.
+
+        Args:
+            stage (str, optional): The name of the stage to summarize VRAM. Default: None.
+            at (list[int], optional): Used to determine when to log summary.
+                If None always log summary. Default: None.
+
+        Usage:
+            >>> status = Status(...)
+            >>> output = model(input)
+            >>> status.log_gpu_memory('forward', [0, 100])
+            >>> output.sum().backward()
+            >>> status.log_gpu_memory('backward', [0, 100])
+            >>> optimizer.step()
+            >>> status.log_gpu_memory('step', [0, 100])
         """
         if torch.cuda.is_available():
             message = 'GPU memory summary'
@@ -586,6 +600,14 @@ class ThinStatus:
     def batches_done(self, value):
         self._batches_done = value
 
+    def __getattr__(self, __name: str) -> Any:
+        """If "__name" is not specified in ThinStatus but exists in Status, return a function that does nothing.
+        """
+        if __name in Status.__dict__ and callable(Status.__dict__[__name]):
+            def _noop(*args, **kwargs): pass
+            return _noop
+        raise AttributeError(__name)
+
     def get_kbatches(self, format='{kbatches:.2f}k') -> str:
         """Returns a formated kilo batches.
 
@@ -598,62 +620,9 @@ class ThinStatus:
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
 
-    def print(self, *args, **kwargs) -> None:
-        pass
-
-    def log(self, message: str, level='info') -> None:
-        pass
-
-    def log_command_line(self) -> None:
-        pass
-
-    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None) -> None:
-        pass
-
-    def log_omegaconf(self, config: DictConfig) -> None:
-        pass
-
-    def log_dataset(self, dataloader: DataLoader) -> None:
-        pass
-
-    def log_optimizer(self, optimizer: Optimizer) -> None:
-        pass
-
-    def log_env(self) -> None:
-        pass
-
-    def log_model(self, model: torch.nn.Module) -> None:
-        pass
-
-    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
-        pass
-
-    def log_nvidia_smi(self) -> None:
-        pass
-
-    def log_actual_batch_size(self,
-        batch_size_per_proc: int, gradient_accumulation_steps: int, world_size: int
-    ) -> None:
-        pass
-
-    def log_stuff(self, *to_log) -> None:
-        pass
-
     def update(self, **kwargs) -> None:
         """update status."""
         self._batches_done += 1
-
-    def _log_progress(self):
-        pass
-
-    def tb_add_scalars(self, **kwargs) -> None:
-        pass
-
-    def tb_add_images(self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs) -> None:
-        pass
-
-    def dry_update(self, **kwargs):
-        pass
 
     @contextmanager
     def profile(self, enabled=True):
@@ -665,9 +634,6 @@ class ThinStatus:
 
     def is_end(self) -> None:
         return self.batches_done >= self.max_iters
-
-    def _shutdown_logger(self) -> None:
-        pass
 
     def load_state_dict(self, state_dict: dict) -> None:
         # load batches_done from the state_dict saved at the primary process.
