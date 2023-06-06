@@ -8,7 +8,6 @@ import pprint
 import subprocess
 import sys
 import time
-import warnings
 from argparse import ArgumentParser, Namespace
 from collections import deque
 from contextlib import contextmanager
@@ -450,17 +449,6 @@ class Status:
         self._tbwriter.add_images(tag, images, self.batches_done)
 
 
-    def initialize_collector(self, *keys):
-        warnings.warn(
-            'initialize_collector is no logger needed due to full migration to SummaryWriter. This function will be erased in the future version.',
-            DeprecationWarning)
-
-    def update_collector(self, **kwargs):
-        warnings.warn(
-            'update_collector is renamed to dry_update for disambiguation. This function will be erased in the future version. Please use dry_update()',
-            DeprecationWarning)
-        self.dry_update(**kwargs)
-
     def dry_update(self, **kwargs):
         """Update accumulation values without updating iteration counts.
         """
@@ -548,12 +536,6 @@ class Status:
             steptimes=self._steptimes)
 
 
-    def plot(self, filename='loss'):
-        warnings.warn(
-            'plot is no logger supported due to full migration to SummaryWriter. This function will be erased in the future version.',
-            DeprecationWarning)
-
-
 class ThinStatus:
     '''Thin implementation of Status.
     We will always have to check if the rank is 0 when printing or logging.
@@ -635,6 +617,11 @@ class ThinStatus:
     def log_nvidia_smi(self) -> None:
         pass
 
+    def log_actual_batch_size(self,
+        batch_size_per_proc: int, gradient_accumulation_steps: int, world_size: int
+    ) -> None:
+        pass
+
     def log_stuff(self, *to_log) -> None:
         pass
 
@@ -642,16 +629,13 @@ class ThinStatus:
         """update status."""
         self._batches_done += 1
 
+    def _log_progress(self):
+        pass
+
     def tb_add_scalars(self, **kwargs) -> None:
         pass
 
     def tb_add_images(self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs) -> None:
-        pass
-
-    def initialize_collector(self, *keys):
-        pass
-
-    def update_collector(self, **kwargs):
         pass
 
     def dry_update(self, **kwargs):
@@ -660,7 +644,6 @@ class ThinStatus:
     @contextmanager
     def profile(self, enabled=True):
         yield
-
 
     @contextmanager
     def stop_timer(self, verbose=False) -> None:
@@ -678,6 +661,3 @@ class ThinStatus:
 
     def state_dict(self) -> dict:
         return {}
-
-    def plot(self, filename='loss'):
-        pass
