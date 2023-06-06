@@ -86,6 +86,32 @@ class OptimizerStep:
         else:
             self.no_sync = nullcontext
 
+        self._post_backward_hooks = []
+        self._post_optim_step_hooks = []
+
+
+    def _call_hooks(self, hooks):
+        for hook in hooks:
+            hook()
+
+
+    def register_hooks(self, when: str, *hooks):
+        """Register hooks to be executed inside the step function.
+
+        Args:
+            when (str): either 'backward' or 'step'
+            *hooks: callables to be executed.
+        """
+        assert when in ['backward', 'step']
+        for hook in hooks:
+            is_valid = callable(hook)
+            if is_valid and when == 'backward':
+                self._post_backward_hooks.append(hook)
+            elif is_valid and when == 'step':
+                self._post_optim_step_hooks.append(hook)
+
+
+    # functions for gradient accumulation
 
     def _reset_count(self):
         """reset count attrs"""
@@ -145,6 +171,8 @@ class OptimizerStep:
             else:
                 loss.backward()
 
+        self._call_hooks(self._post_backward_hooks)
+
         if not should_call_step:
             return
 
@@ -159,6 +187,8 @@ class OptimizerStep:
                 clip_grad_norm=clip_grad_norm, max_norm=max_norm, grad_nan_to_num=grad_nan_to_num,
                 update_scaler=update_scaler
             )
+
+        self._call_hooks(self._post_optim_step_hooks)
 
         if scheduler is not None:
             scheduler.step()
