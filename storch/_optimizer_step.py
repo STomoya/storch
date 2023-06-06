@@ -74,9 +74,9 @@ class OptimizerStep:
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.num_iters_per_epoch = num_iters_per_epoch if isinstance(num_iters_per_epoch, int) else gradient_accumulation_steps
 
-        quotient, remainder = divmod(num_iters_per_epoch, gradient_accumulation_steps)
+        quotient, remainder = divmod(self.num_iters_per_epoch, self.gradient_accumulation_steps)
         self.last_gradient_accumulation_steps = remainder
-        self.last_accumulation_from = quotient * gradient_accumulation_steps
+        self.last_accumulation_from = quotient * self.gradient_accumulation_steps
 
         self.accumulation_count = 0
         self.total_step_count = 0
