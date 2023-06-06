@@ -403,6 +403,12 @@ class Status:
             f'STEP: {self.batches_done} / {self.max_iters}',
             f'INFO: {", ".join(delta_str)}']
 
+        # Memory usage
+        if torch.cuda.is_available():
+            global_empty, global_total = torch.cuda.mem_get_info()
+            local_usage = torch.cuda.memory_reserved() / global_total * 100
+            message_parts.append(f'VRAM_used(%): {local_usage:.1f}')
+
         # ETA
         # NOTE: this ETA is not exact.
         #       dealed by avging multiple steps. (see rolling eta)
@@ -410,12 +416,6 @@ class Status:
         eta_sec  = int((self.max_iters - self.batches_done) * duration)
         eta      = datetime.timedelta(seconds=eta_sec)
         message_parts.append(f'ETA(sec): {eta}')
-
-        # peak memory
-        if torch.cuda.is_available():
-            peak_mem_byte = torch.cuda.max_memory_allocated()
-            peak_mem_M    = peak_mem_byte / 1024 / 1024
-            message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
 
         # rolling eta for more stable ETA
         if len(self._steptimes) == self._steptimes.maxlen:
