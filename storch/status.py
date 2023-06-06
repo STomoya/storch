@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import datetime
-import logging
 import pprint
 import subprocess
 import sys
