@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import atexit
 import datetime
-import logging
 import pprint
 import subprocess
 import sys
 import time
 import warnings
 from argparse import ArgumentParser, Namespace
+from collections import deque
 from contextlib import contextmanager
 from statistics import mean
 from typing import Any
@@ -20,10 +20,9 @@ from omegaconf import DictConfig, OmegaConf
 from stutil.logger import get_logger
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader, DistributedSampler, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
-from tqdm import tqdm
 
 from storch._funtext import ASCII_LOGO
 from storch.path import Path
@@ -142,7 +141,8 @@ class Status:
         delta_format: str='{key}: {value: 10.5f}'
     ) -> None:
 
-        self._bar = tqdm(total=max_iters, disable=not bar)
+        if bar:
+            warnings.warn(f'tqdm progress bar in Status is deprecated and will be ignored.')
         self._max_iters = max_iters
         self._batches_done = 0
         self._log_file = log_file
@@ -158,7 +158,7 @@ class Status:
 
         self._step_start = time.time()
         self._steptime_num_accum = steptime_num_accum
-        self._steptimes = []
+        self._steptimes = deque(maxlen=steptime_num_accum)
 
         self._tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
         self._tbwriter = SummaryWriter(self._tb_folder)
@@ -195,10 +195,9 @@ class Status:
     def print(self, *args, **kwargs) -> None:
         """Print function. If tqdm progress bar is enabled, uses tqdm.write as function.
         """
-        if not self._bar.disable:
-            tqdm.write(*args, **kwargs)
-        else:
-            print(*args, **kwargs)
+        from stutil.exceptions import warn_deprecated
+        warn_deprecated('Status.print')
+        print(*args, **kwargs)
 
     def log(self, message: str, level='info') -> None:
         """log a message
@@ -258,13 +257,24 @@ class Status:
         Args:
             dataloader (DataLoader): The DataLoader object to log.
         """
+        dataset = dataloader.dataset
+        sampler = dataloader.sampler
+        shuffle = False
+        drop_last = False
+        if isinstance(sampler, RandomSampler):
+            shuffle = True
+            drop_last = dataloader.drop_last
+        elif isinstance(sampler, DistributedSampler):
+            shuffle = sampler.shuffle
+            drop_last = sampler.drop_last
+
         loader_kwargs = dict(
-            TYPE           = dataloader.dataset.__class__.__name__,
-            num_samples    = len(dataloader.dataset),
+            TYPE           = dataset.__class__.__name__,
+            num_samples    = len(dataset),
             num_iterations = len(dataloader),
             batch_size     = dataloader.batch_size,
-            shuffle        = isinstance(dataloader.batch_sampler.sampler, RandomSampler),
-            drop_last      = dataloader.drop_last,
+            shuffle        = shuffle,
+            drop_last      = drop_last,
             num_workers    = dataloader.num_workers,
             pin_memory     = dataloader.pin_memory)
         message = '------------------------- Dataset -----------------------\n'
@@ -295,11 +305,34 @@ class Status:
         """
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
-    def log_gpu_memory(self) -> None:
+    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
         """log memory summary.
+
+        Args:
+            stage (str, optional): The name of the stage to summarize VRAM. Default: None.
+            at (list[int], optional): Used to determine when to log summary.
+                If None always log summary. Default: None.
+
+        Usage:
+            >>> status = Status(...)
+            >>> output = model(input)
+            >>> status.log_gpu_memory('forward', [0, 100])
+            >>> output.sum().backward()
+            >>> status.log_gpu_memory('backward', [0, 100])
+            >>> optimizer.step()
+            >>> status.log_gpu_memory('step', [0, 100])
         """
         if torch.cuda.is_available():
-            self.log(f'\n{torch.cuda.memory_summary()}')
+            message = 'GPU memory summary'
+            if isinstance(stage, str):
+                message += f' of stage "{stage}"'
+            message += f' at iteration {self.batches_done}.'
+            if (
+                (at is None) or
+                (self.batches_done == at if isinstance(at, int) else self.batches_done in at)
+            ):
+                message += f'\n{torch.cuda.memory_summary()}'
+                self.log(message)
         else:
             self.log('No GPU available on your enviornment.')
 
@@ -364,10 +397,6 @@ class Status:
         self._collector.report_by_dict(kwargs)
         self.batches_done += 1
 
-        _print_rolling_eta = False
-        if len(self._steptimes) == self._steptime_num_accum:
-            self._steptimes = self._steptimes[1:]
-            _print_rolling_eta = True
         self._steptimes.append(time.time() - self._step_start)
 
         # log
@@ -375,47 +404,61 @@ class Status:
             and (
             (self.batches_done == 1) or
             (self.batches_done % self._log_interval == 0) or
-            (self.batches_done <= 100 and self.batches_done % 5 == 0))
+            (self.batches_done <= 100 and self.batches_done % 5 == 0) or
+            (self.batches_done == self.max_iters))
         ):
-            delta = self._collector.update()
-            delta_str = []
-            for key, value in delta.items():
-                delta_str.append(self._delta_format.format(key=key, value=value))
-            message_parts = [
-                f'STEP: {self.batches_done} / {self.max_iters}',
-                f'INFO: {", ".join(delta_str)}']
-            # ETA
-            # NOTE: this ETA is not exact.
-            #       dealed by avging multiple steps. (see rolling eta)
-            duration = self._steptimes[-1]
-            eta_sec  = int((self.max_iters - self.batches_done) * duration)
-            eta      = datetime.timedelta(seconds=eta_sec)
-            message_parts.append(f'ETA(sec): {eta}')
-            # peak memory
-            if torch.cuda.is_available():
-                peak_mem_byte = torch.cuda.max_memory_allocated()
-                peak_mem_M    = peak_mem_byte / 1024 / 1024
-                message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
-            # rolling eta for more stable ETA
-            if _print_rolling_eta:
-                rolling_duration = mean(self._steptimes)
-                rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
-                rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
-                message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
-            self.log(' '.join(message_parts))
-            self.tb_add_scalars(**delta)
+            self._log_progress()
+
         if self.batches_done == 10:
             # print gpu after some batches
             # for checking memory usage
             with record_function('nvidia-smi'):
                 self.log_nvidia_smi()
 
-        self._bar.update(1)
-
         if self._profiler is not None:
             self._profiler.step()
 
         self._step_start = time.time()
+
+
+    def _log_progress(self):
+        """log progress.
+        """
+
+        delta = self._collector.update()
+        delta_str = []
+
+        for key, value in delta.items():
+            delta_str.append(self._delta_format.format(key=key, value=value))
+
+        message_parts = [
+            f'STEP: {self.batches_done} / {self.max_iters}',
+            f'INFO: {", ".join(delta_str)}']
+
+        # Memory usage
+        if torch.cuda.is_available():
+            global_empty, global_total = torch.cuda.mem_get_info()
+            local_usage = torch.cuda.memory_reserved() / global_total * 100
+            message_parts.append(f'VRAM_used(%): {local_usage:.1f}')
+
+        # ETA
+        # NOTE: this ETA is not exact.
+        #       dealed by avging multiple steps. (see rolling eta)
+        duration = self._steptimes[-1]
+        eta_sec  = int((self.max_iters - self.batches_done) * duration)
+        eta      = datetime.timedelta(seconds=eta_sec)
+        message_parts.append(f'ETA(sec): {eta}')
+
+        # rolling eta for more stable ETA
+        if len(self._steptimes) == self._steptimes.maxlen:
+            rolling_duration = mean(self._steptimes)
+            rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
+            rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
+            message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
+
+        self.log(' '.join(message_parts))
+        self.tb_add_scalars(**delta)
+
 
     def tb_add_scalars(self, **kwargs) -> None:
         """add scalars to tensorboard.
@@ -437,17 +480,6 @@ class Status:
         images = make_grid(image_tensor, normalize=normalize, value_range=value_range, nrow=nrow, **mkgridkwargs)
         self._tbwriter.add_images(tag, images, self.batches_done)
 
-
-    def initialize_collector(self, *keys):
-        warnings.warn(
-            'initialize_collector is no logger needed due to full migration to SummaryWriter. This function will be erased in the future version.',
-            DeprecationWarning)
-
-    def update_collector(self, **kwargs):
-        warnings.warn(
-            'update_collector is renamed to dry_update for disambiguation. This function will be erased in the future version. Please use dry_update()',
-            DeprecationWarning)
-        self.dry_update(**kwargs)
 
     def dry_update(self, **kwargs):
         """Update accumulation values without updating iteration counts.
@@ -519,10 +551,6 @@ class Status:
         self._collector = state_dict['collector']
         self.batches_done = state_dict['batches_done']
         self._steptimes = state_dict['steptimes']
-        if self.batches_done > 0:
-            # fastforward progress bar if present
-            if self._bar:
-                self._bar.update(self.batches_done)
 
     def state_dict(self) -> dict:
         """make a dictionary to save current training status.
@@ -534,12 +562,6 @@ class Status:
             collector=self._collector,
             batches_done=self.batches_done,
             steptimes=self._steptimes)
-
-
-    def plot(self, filename='loss'):
-        warnings.warn(
-            'plot is no logger supported due to full migration to SummaryWriter. This function will be erased in the future version.',
-            DeprecationWarning)
 
 
 class ThinStatus:
@@ -578,6 +600,14 @@ class ThinStatus:
     def batches_done(self, value):
         self._batches_done = value
 
+    def __getattr__(self, __name: str) -> Any:
+        """If "__name" is not specified in ThinStatus but exists in Status, return a function that does nothing.
+        """
+        if __name in Status.__dict__ and callable(Status.__dict__[__name]):
+            def _noop(*args, **kwargs): pass
+            return _noop
+        raise AttributeError(__name)
+
     def get_kbatches(self, format='{kbatches:.2f}k') -> str:
         """Returns a formated kilo batches.
 
@@ -590,65 +620,13 @@ class ThinStatus:
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
 
-    def print(self, *args, **kwargs) -> None:
-        pass
-
-    def log(self, message: str, level='info') -> None:
-        pass
-
-    def log_command_line(self) -> None:
-        pass
-
-    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None) -> None:
-        pass
-
-    def log_omegaconf(self, config: DictConfig) -> None:
-        pass
-
-    def log_dataset(self, dataloader: DataLoader) -> None:
-        pass
-
-    def log_optimizer(self, optimizer: Optimizer) -> None:
-        pass
-
-    def log_env(self) -> None:
-        pass
-
-    def log_model(self, model: torch.nn.Module) -> None:
-        pass
-
-    def log_gpu_memory(self) -> None:
-        pass
-
-    def log_nvidia_smi(self) -> None:
-        pass
-
-    def log_stuff(self, *to_log) -> None:
-        pass
-
     def update(self, **kwargs) -> None:
         """update status."""
         self._batches_done += 1
 
-    def tb_add_scalars(self, **kwargs) -> None:
-        pass
-
-    def tb_add_images(self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs) -> None:
-        pass
-
-    def initialize_collector(self, *keys):
-        pass
-
-    def update_collector(self, **kwargs):
-        pass
-
-    def dry_update(self, **kwargs):
-        pass
-
     @contextmanager
     def profile(self, enabled=True):
         yield
-
 
     @contextmanager
     def stop_timer(self, verbose=False) -> None:
@@ -657,15 +635,9 @@ class ThinStatus:
     def is_end(self) -> None:
         return self.batches_done >= self.max_iters
 
-    def _shutdown_logger(self) -> None:
-        pass
-
     def load_state_dict(self, state_dict: dict) -> None:
         # load batches_done from the state_dict saved at the primary process.
         self.batches_done = state_dict['batches_done']
 
     def state_dict(self) -> dict:
         return {}
-
-    def plot(self, filename='loss'):
-        pass
