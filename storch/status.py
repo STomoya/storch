@@ -23,7 +23,6 @@ from torch.utils.collect_env import get_pretty_env_info
 from torch.utils.data import DataLoader, DistributedSampler, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
-from tqdm import tqdm
 
 from storch._funtext import ASCII_LOGO
 from storch.path import Path
@@ -626,7 +625,7 @@ class ThinStatus:
     def log_model(self, model: torch.nn.Module) -> None:
         pass
 
-    def log_gpu_memory(self) -> None:
+    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
         pass
 
     def log_nvidia_smi(self) -> None:
