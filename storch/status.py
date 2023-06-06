@@ -20,7 +20,7 @@ from omegaconf import DictConfig, OmegaConf
 from stutil.logger import get_logger
 from torch.optim import Optimizer
 from torch.utils.collect_env import get_pretty_env_info
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader, DistributedSampler, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 from tqdm import tqdm
@@ -258,13 +258,24 @@ class Status:
         Args:
             dataloader (DataLoader): The DataLoader object to log.
         """
+        dataset = dataloader.dataset
+        sampler = dataloader.sampler
+        shuffle = False
+        drop_last = False
+        if isinstance(sampler, RandomSampler):
+            shuffle = True
+            drop_last = dataloader.drop_last
+        elif isinstance(sampler, DistributedSampler):
+            shuffle = sampler.shuffle
+            drop_last = sampler.drop_last
+
         loader_kwargs = dict(
-            TYPE           = dataloader.dataset.__class__.__name__,
-            num_samples    = len(dataloader.dataset),
+            TYPE           = dataset.__class__.__name__,
+            num_samples    = len(dataset),
             num_iterations = len(dataloader),
             batch_size     = dataloader.batch_size,
-            shuffle        = isinstance(dataloader.batch_sampler.sampler, RandomSampler),
-            drop_last      = dataloader.drop_last,
+            shuffle        = shuffle,
+            drop_last      = drop_last,
             num_workers    = dataloader.num_workers,
             pin_memory     = dataloader.pin_memory)
         message = '------------------------- Dataset -----------------------\n'
