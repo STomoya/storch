@@ -8,6 +8,7 @@ import pprint
 import subprocess
 import sys
 import time
+import warnings
 from argparse import ArgumentParser, Namespace
 from collections import deque
 from contextlib import contextmanager
@@ -141,7 +142,8 @@ class Status:
         delta_format: str='{key}: {value: 10.5f}'
     ) -> None:
 
-        self._bar = tqdm(total=max_iters, disable=not bar)
+        if bar:
+            warnings.warn(f'tqdm progress bar in Status is deprecated and will be ignored.')
         self._max_iters = max_iters
         self._batches_done = 0
         self._log_file = log_file
@@ -194,10 +196,9 @@ class Status:
     def print(self, *args, **kwargs) -> None:
         """Print function. If tqdm progress bar is enabled, uses tqdm.write as function.
         """
-        if not self._bar.disable:
-            tqdm.write(*args, **kwargs)
-        else:
-            print(*args, **kwargs)
+        from stutil.exceptions import warn_deprecated
+        warn_deprecated('Status.print')
+        print(*args, **kwargs)
 
     def log(self, message: str, level='info') -> None:
         """log a message
@@ -390,8 +391,6 @@ class Status:
             with record_function('nvidia-smi'):
                 self.log_nvidia_smi()
 
-        self._bar.update(1)
-
         if self._profiler is not None:
             self._profiler.step()
 
@@ -528,10 +527,6 @@ class Status:
         self._collector = state_dict['collector']
         self.batches_done = state_dict['batches_done']
         self._steptimes = state_dict['steptimes']
-        if self.batches_done > 0:
-            # fastforward progress bar if present
-            if self._bar:
-                self._bar.update(self.batches_done)
 
     def state_dict(self) -> dict:
         """make a dictionary to save current training status.
