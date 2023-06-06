@@ -373,33 +373,8 @@ class Status:
             (self.batches_done % self._log_interval == 0) or
             (self.batches_done <= 100 and self.batches_done % 5 == 0))
         ):
-            delta = self._collector.update()
-            delta_str = []
-            for key, value in delta.items():
-                delta_str.append(self._delta_format.format(key=key, value=value))
-            message_parts = [
-                f'STEP: {self.batches_done} / {self.max_iters}',
-                f'INFO: {", ".join(delta_str)}']
-            # ETA
-            # NOTE: this ETA is not exact.
-            #       dealed by avging multiple steps. (see rolling eta)
-            duration = self._steptimes[-1]
-            eta_sec  = int((self.max_iters - self.batches_done) * duration)
-            eta      = datetime.timedelta(seconds=eta_sec)
-            message_parts.append(f'ETA(sec): {eta}')
-            # peak memory
-            if torch.cuda.is_available():
-                peak_mem_byte = torch.cuda.max_memory_allocated()
-                peak_mem_M    = peak_mem_byte / 1024 / 1024
-                message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
-            # rolling eta for more stable ETA
-            if len(self._steptimes) == self._steptimes.maxlen:
-                rolling_duration = mean(self._steptimes)
-                rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
-                rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
-                message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
-            self.log(' '.join(message_parts))
-            self.tb_add_scalars(**delta)
+            self._log_progress()
+
         if self.batches_done == 10:
             # print gpu after some batches
             # for checking memory usage
@@ -412,6 +387,46 @@ class Status:
             self._profiler.step()
 
         self._step_start = time.time()
+
+
+    def _log_progress(self):
+        """log progress.
+        """
+
+        delta = self._collector.update()
+        delta_str = []
+
+        for key, value in delta.items():
+            delta_str.append(self._delta_format.format(key=key, value=value))
+
+        message_parts = [
+            f'STEP: {self.batches_done} / {self.max_iters}',
+            f'INFO: {", ".join(delta_str)}']
+
+        # ETA
+        # NOTE: this ETA is not exact.
+        #       dealed by avging multiple steps. (see rolling eta)
+        duration = self._steptimes[-1]
+        eta_sec  = int((self.max_iters - self.batches_done) * duration)
+        eta      = datetime.timedelta(seconds=eta_sec)
+        message_parts.append(f'ETA(sec): {eta}')
+
+        # peak memory
+        if torch.cuda.is_available():
+            peak_mem_byte = torch.cuda.max_memory_allocated()
+            peak_mem_M    = peak_mem_byte / 1024 / 1024
+            message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
+
+        # rolling eta for more stable ETA
+        if len(self._steptimes) == self._steptimes.maxlen:
+            rolling_duration = mean(self._steptimes)
+            rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
+            rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
+            message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
+
+        self.log(' '.join(message_parts))
+        self.tb_add_scalars(**delta)
+
 
     def tb_add_scalars(self, **kwargs) -> None:
         """add scalars to tensorboard.
