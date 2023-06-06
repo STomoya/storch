@@ -11,6 +11,7 @@ import sys
 import time
 import warnings
 from argparse import ArgumentParser, Namespace
+from collections import deque
 from contextlib import contextmanager
 from statistics import mean
 from typing import Any
@@ -158,7 +159,7 @@ class Status:
 
         self._step_start = time.time()
         self._steptime_num_accum = steptime_num_accum
-        self._steptimes = []
+        self._steptimes = deque(maxlen=steptime_num_accum)
 
         self._tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
         self._tbwriter = SummaryWriter(self._tb_folder)
@@ -364,10 +365,6 @@ class Status:
         self._collector.report_by_dict(kwargs)
         self.batches_done += 1
 
-        _print_rolling_eta = False
-        if len(self._steptimes) == self._steptime_num_accum:
-            self._steptimes = self._steptimes[1:]
-            _print_rolling_eta = True
         self._steptimes.append(time.time() - self._step_start)
 
         # log
@@ -397,7 +394,7 @@ class Status:
                 peak_mem_M    = peak_mem_byte / 1024 / 1024
                 message_parts.append(f'peak_mem(M): {peak_mem_M:.1f}')
             # rolling eta for more stable ETA
-            if _print_rolling_eta:
+            if len(self._steptimes) == self._steptimes.maxlen:
                 rolling_duration = mean(self._steptimes)
                 rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
                 rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
