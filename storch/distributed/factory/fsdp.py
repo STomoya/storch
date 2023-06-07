@@ -75,6 +75,6 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
         state.config = FullStateDictConfig(offload_to_cpu=offload_to_cpu, rank0_only=offload_to_cpu)
 
         mci = FSDPModuleCheckpointInterface(self._wrapped_module, state)
-        oci = FSDPOptimizerCheckpointInterface(optim, self._wrapped_module)
+        oci = optim if optim is None else FSDPOptimizerCheckpointInterface(optim, self._wrapped_module)
 
         return mci, oci
