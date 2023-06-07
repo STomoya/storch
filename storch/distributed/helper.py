@@ -314,6 +314,8 @@ class DistributedHelper:
         Tested to work well with storch.checkpoint.Checkpoint
 
         Args:
+            *optimizers: The optimizers used from training. If multiple models are used, the optimizers must be passed in the same order.
+                If a model is not intended to be trained, pass None.
             offload_to_cpu (bool, optional): When the model is FSDP, configures is the weights are offload to cpu before serialization.
                 When `True`, it also enables `rank0_only`, which will result in returning empty dicts on processes that are `rank!=0`.
                 Default: True.
