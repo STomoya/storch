@@ -294,7 +294,7 @@ class DistributedHelper:
                 shuffle=shuffle, drop_last=drop_last
             )
             dataloader = DataLoader(dataset,
-                batch_size=batch_size, sampler=sampler,
+                batch_size=batch_size, sampler=sampler, drop_last=drop_last,
                 num_workers=num_workers, pin_memory=pin_memory,
                 worker_init_fn=worker_init_fn, generator=generator
             )
