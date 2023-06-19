@@ -92,6 +92,42 @@ def get_linear_schedule(num_training_steps: int, num_warmup_steps: int) -> Calla
     return lr_lambda
 
 
+def get_polynomial_decay_schedule(num_training_steps: int, num_warmup_steps: int, lr_init: float, power: float=1.0, lr_end: float=1e-7) -> Callable:
+    """function for polynomial decay schedule.
+
+    Args:
+        num_training_steps (int): total number of training steps.
+        num_warmup_steps (int): number of warmup steps.
+        power (float, optional): _description_. Defaults to 1.0.
+        lr_end (float, optional): _description_. Defaults to 1e-7.
+
+    Returns:
+        Callable: _description_
+    """
+    if num_training_steps is None:
+        def lr_lambda(current_steps: int):
+            if current_steps > num_training_steps:
+                return lr_end / lr_init
+            lr_range = lr_init = lr_end
+            remaining = 1 - current_steps / num_training_steps
+            decay = lr_range * remaining ** power + lr_end
+            return decay / lr_init
+
+    else:
+        def lr_lambda(current_step: int):
+            if current_step < num_warmup_steps:
+                return _warmup(current_step, num_warmup_steps)
+            if current_step > num_training_steps:
+                return lr_end / lr_init
+            lr_range = lr_init - lr_end
+            steps = num_training_steps - num_warmup_steps
+            remaining = 1 - (current_step - num_warmup_steps) / steps
+            decay = lr_range * remaining ** power + lr_end
+            return decay / lr_init
+    return lr_lambda
+
+
+
 def get_cosine_schedule(num_training_steps: int, num_warmup_steps: int=None, num_cycles: float=0.5) -> Callable:
     """function for consine schedule.
 
@@ -121,9 +157,16 @@ def build_scheduler(
     optimizer: optim.Optimizer, type: str, num_training_steps: int,
     *,
     num_iter_per_step: int=1, num_warmup_steps: int=None,
-    milestones: list[int]=None, gamma: float=0.1, last_epoch: int=-1
+    milestones: list[int]=None, gamma: float=0.1, power: float=1.0, last_epoch: int=-1
 ) -> LambdaLR:
     """build scheduler
+
+    types
+    - constant
+    - linear
+    - poly or polynomial
+    - multistep
+    - cosine
 
     Args:
         optimizer (Optimizer): the optimizer.
@@ -134,6 +177,7 @@ def build_scheduler(
         num_warmup_steps (int, optional): number of warmup steps. If None, no warmup phase. Default: None.
         milestones (list[int], optional): milestones for multistep scheduler. Default: None.
         gamma (float, optional): gamma for multistep scheduler. Default: 0.1.
+        power (float, optional): power for polynomial decay schedule.
         last_epoch (int, optional): last epoch for resume training. Default: -1.
 
     Returns:
@@ -146,6 +190,9 @@ def build_scheduler(
         lr_lambda = get_constant_schedule(num_warmup_steps)
     elif type == 'linear':
         lr_lambda = get_linear_schedule(num_training_steps, num_warmup_steps)
+    elif type == 'poly' or type == 'polynomial':
+        lr_init = optimizer.defaults['lr']
+        lr_lambda = get_polynomial_decay_schedule(num_training_steps, num_warmup_steps, lr_init, power)
     elif type == 'multistep':
         assert milestones is not None
         milestones = [milestone * num_iter_per_step for milestone in milestones]
