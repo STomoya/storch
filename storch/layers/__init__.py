@@ -6,7 +6,8 @@ from storch.layers.droppath import DropPath
 from storch.layers.interpolation import (AABilinearInterp, Blur,
                                          BlurDownsample, BlurUpsample)
 from storch.layers.minibatchstddev import MinibatchStdDev
-from storch.layers.normalization import (AdaptiveNorm2d, get_normalization1d,
+from storch.layers.normalization import (AdaptiveNorm2d, LayerNorm2d,
+                                         get_normalization1d,
                                          get_normalization2d)
 from storch.layers.squeezeexcitation import (
     ChannelSqueezeAndExcitation, SpatialChannelSqueezeAndExcitation,
