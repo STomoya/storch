@@ -1,17 +1,16 @@
 
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 
-import storch
 
-
-def get_normalization2d(name: str, channels: int, affine: bool=None) -> nn.Module:
+def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
     """Get 2d normalization layers by name
 
     Args:
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
-        affine (bool, optional): Whether to enable trainability. If None, uses the default behaviour. Default: None.
 
     Raises:
         Exception: Unknown normalization layer name.
@@ -19,19 +18,21 @@ def get_normalization2d(name: str, channels: int, affine: bool=None) -> nn.Modul
     Returns:
         nn.Module: normalization layer module.
     """
-    if   name == 'bn': return nn.BatchNorm2d(channels,    affine=storch.dynamic_default(affine, True))
-    elif name == 'in': return nn.InstanceNorm2d(channels, affine=storch.dynamic_default(affine, False))
-    elif name == 'ln': return nn.GroupNorm(1, channels,   affine=storch.dynamic_default(affine, True))
-    elif name == 'gn': return nn.GroupNorm(16, channels,  affine=storch.dynamic_default(affine, True))
+    if   name == 'bn': return nn.BatchNorm2d(channels, **kwargs)
+    elif name == 'in': return nn.InstanceNorm2d(channels, **kwargs)
+    elif name == 'ln': return LayerNorm2d(channels, **kwargs)
+    elif name == 'gn':
+        if 'num_groups' not in kwargs:
+            raise Exception(f'Normalization: "{name}" requires "num_groups" argument.')
+        return nn.GroupNorm(num_channels=channels, **kwargs)
     raise Exception(f'Normalization: {name}')
 
-def get_normalization1d(name: str, channels: int, affine: bool=None):
+def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
     """Get 1d normalization layers by name
 
     Args:
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
-        affine (bool, optional): Whether to enable trainability. If None, uses the default behaviour. Default: None.
 
     Raises:
         Exception: Unknown normalization layer name.
@@ -39,11 +40,55 @@ def get_normalization1d(name: str, channels: int, affine: bool=None):
     Returns:
         nn.Module: normalization layer module.
     """
-    if   name == 'bn': return nn.BatchNorm1d(channels,    affine=storch.dynamic_default(affine, True))
-    elif name == 'in': return nn.InstanceNorm1d(channels, affine=storch.dynamic_default(affine, False))
-    elif name == 'ln': return nn.LayerNorm(channels,      affine=storch.dynamic_default(affine, True))
-    elif name == 'gn': return get_normalization2d(name, channels, affine=storch.dynamic_default(affine, True))
+    if   name == 'bn': return nn.BatchNorm1d(channels, **kwargs)
+    elif name == 'in': return nn.InstanceNorm1d(channels, **kwargs)
+    elif name == 'ln': return nn.LayerNorm(channels, **kwargs)
+    elif name == 'gn':
+        if 'num_groups' not in kwargs:
+            raise Exception(f'Normalization: "{name}" requires "num_groups" argument.')
+        return nn.GroupNorm(num_channels=channels, **kwargs)
     raise Exception(f'Normalization: {name}')
+
+
+class LayerNorm2d(nn.Module):
+
+    __constants__ = ['channels', 'eps', 'elementwise_affine']
+    channels: int
+    eps: float
+    elementwise_affine: bool
+
+    def __init__(self,
+        channels: int, eps: float=1e-5, elementwise_affine: bool=True, device=None, dtype=None
+    ):
+        super().__init__()
+        self.channels = channels
+        self.eps = eps
+        self.elementwise_affine = elementwise_affine
+
+        if self.elementwise_affine:
+            factory_kwargs = dict(device=device, dtype=dtype)
+            self.weight = nn.Parameter(torch.empty(channels, **factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(channels, **factory_kwargs))
+        else:
+            self.register_buffer('weight', None)
+            self.register_buffer('bias', None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        if self.elementwise_affine:
+            nn.init.ones_(self.weight)
+            nn.init.zeros_(self.bias)
+
+    def forward(self, x):
+        input_dtype = x.dtype
+        x = x.float()
+        u = x.mean(dim=1, keepdim=True)
+        s = (x - u).pow(2).mean(dim=1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = x.to(dtype=input_dtype)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
+        return x
 
 
 class AdaptiveNorm2d(nn.Module):
