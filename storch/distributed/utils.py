@@ -10,6 +10,19 @@ from torch.distributed import ReduceOp
 
 from storch.distributed._state import DistributedState
 
+__all__ = [
+    'is_available',
+    'is_torchrun',
+    'is_primary',
+    'wait_for_everyone',
+    'get_backend',
+    'get_world_size',
+    'get_rank',
+    'get_device',
+    'gather',
+    'reduce'
+]
+
 
 def is_available() -> bool:
     return dist.is_available()
@@ -46,6 +59,11 @@ def get_world_size() -> int:
 def get_rank() -> int:
     """get rank"""
     return DistributedState().process_index
+
+
+def get_local_rank() -> int:
+    """get local rank"""
+    return DistributedState().local_process_index
 
 
 def get_device() -> torch.device:
