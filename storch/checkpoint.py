@@ -95,7 +95,7 @@ class Checkpoint:
         """load from a saved state_dict
         """
         _storch_version = state_dict.pop('storch_version')
-        if storch.__version__ != _storch_version:
+        if storch.__version__ != _storch_version and distutils.is_primary():
             warnings.warn(
                 f'Checkpoint.load_state_dict: You are using a different version of storch ({_storch_version} -> {storch.__version__}). This might cause errors.',
                 UserWarning)
@@ -199,7 +199,7 @@ class Checkpoint:
             else:
                 not_registered_keys.append(key)
 
-        if len(not_registered_keys):
+        if len(not_registered_keys) and distutils.is_primary():
             warnings.warn(
                 f'Checkpoint.register: The following object could not be registered: {not_registered_keys}',
                 UserWarning

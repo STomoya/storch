@@ -100,7 +100,7 @@ class BestStateKeeper:
         self.value = (1 if self.is_minimize() else -1) * init_abs_value
         self.step = None
 
-        if disthelper is not None:
+        if disthelper is not None and distutils.is_primary():
             warnings.warn(
                 f'This class does not require DistributedHelper anymore, and the argument will be erased in future versions.',
                 FutureWarning
