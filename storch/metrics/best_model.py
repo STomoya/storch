@@ -2,9 +2,12 @@
 """
 
 import os
+import warnings
 
 import torch
 import torch.nn as nn
+
+from storch.distributed import utils as distutils
 
 
 class KeeperCompose:
@@ -85,7 +88,6 @@ class BestStateKeeper:
         assert direction in ['min', 'max', 'minimize', 'maximize']
         self.name = name
         self.direction = 'min' if direction in ['min', 'minimize'] else 'max'
-        self.disthelper = disthelper
 
         # reference to the model.
         if isinstance(model, nn.DataParallel):
@@ -97,6 +99,12 @@ class BestStateKeeper:
         self.filename = os.path.join(folder, f'{name}.torch')
         self.value = (1 if self.is_minimize() else -1) * init_abs_value
         self.step = None
+
+        if disthelper is not None:
+            warnings.warn(
+                f'This class does not require DistributedHelper anymore, and the argument will be erased in future versions.',
+                FutureWarning
+            )
 
 
     def is_minimize(self) -> bool:
@@ -141,16 +149,14 @@ class BestStateKeeper:
 
     def save(self, filename: str, model_state_only: bool=True):
         state_dict = self.state_dict(model_state_only=model_state_only)
-        if self.disthelper is not None and not self.disthelper.is_primary():
-            return
-        torch.save(state_dict, filename)
+        if distutils.is_primary():
+            torch.save(state_dict, filename)
 
 
     def load(self) -> None:
         """load the best state_dict to the model.
         """
-        if self.disthelper is not None:
-            self.disthelper.wait_for_all_processes()
+        distutils.wait_for_everyone()
         state_dict = torch.load(self.filename)
         if 'state_dict' in state_dict:
             state_dict = state_dict.get('state_dict')
