@@ -200,7 +200,7 @@ class DistributedHelper:
 
             # wrap the model. see storch.distributed.factory.
             wrap_kwargs = {}
-            if self.is_initialized():
+            if self._state.is_distributed:
 
                 if mode == 'ddp':
                     factory = DistributedDataParallelFactory()
@@ -260,7 +260,7 @@ class DistributedHelper:
         Returns:
             DataLoader: the created dataloader
         """
-        if self.is_initialized():
+        if self._state.is_distributed:
             # when distributed training, always use DistributedSampler
             sampler = DistributedSampler(dataset,
                 num_replicas=self.world_size, rank=self.local_rank,
