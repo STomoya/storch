@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any, Callable
 
 import torch
@@ -10,6 +9,8 @@ import torch.nn as nn
 from torch.distributed import ReduceOp
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 
+from storch.distributed import utils
+from storch.distributed._state import DistributedState
 from storch.distributed.factory import (DistributedDataParallelFactory,
                                         FullyShardedDataParallelFactory,
                                         NoParallelFactory)
@@ -34,40 +35,21 @@ class DistributedHelper:
         >>> disthelper = DistributedHelper(world_size=world_size, rank=rank)
     """
     def __init__(self,
-        world_size: int=1, rank: int=0
+        **kwargs
     ) -> None:
-        self.backend = None
-        self.master_addr = None
-        self.master_port = None
-        self.world_size = 1
-        self.rank = 0
-        self.device = torch.device('cpu')
 
-        if torch.cuda.is_available(): # CUDA
-            if self.is_torchrun():
-                # torchrun can handle either single GPU and multiple GPU environment.
-                self.master_addr = os.environ['MASTER_ADDR']
-                self.master_port = os.environ['MASTER_PORT']
-                dist.init_process_group(backend='nccl')
-            elif torch.cuda.device_count() > 1:
-                # we don't need distributed setup on single GPU environment.
-                # lets require MASTER_ADDR and MASTER_PORT exported before execution.
-                _ma, _mp = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
-                # NOTE: should we fall back to single process, and not raise an exception?
-                assert _ma is not None and _mp is not None, 'ENV "MASTER_ADDR" and "MASTER_PPORT" must be set.'
-                dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
-
-            if self.is_initialized():
-                self.backend = dist.get_backend()
-                self.world_size = dist.get_world_size()
-                self.rank = dist.get_rank()
-
-            self.device = torch.device('cuda', self.rank)
-            torch.cuda.set_device(self.device)
+        self._state = DistributedState(**kwargs)
+        self.backend = self._state.backend
+        self.world_size = self._state.num_processes
+        self.rank = self._state.process_index
+        self.local_rank = self._state.local_process_index
+        self.device = self._state.device
 
         self._mode = None
         self._factories = []
 
+    def __repr__(self) -> str:
+        return self._state.__repr__()
 
     @staticmethod
     def is_available() -> bool:
@@ -82,7 +64,7 @@ class DistributedHelper:
         return dist.is_torchelastic_launched()
 
     def is_primary(self) -> bool:
-        return self.rank == 0
+        return self._state.is_main_process
 
     # gather functions.
     # these functions work on both single/multi GPU without any specifications.
@@ -97,13 +79,7 @@ class DistributedHelper:
         Returns:
             torch.Tensor: gathered tensor
         """
-        if self.is_initialized():
-            if tensor.ndim == 0:
-                tensor = tensor.clone()[None]
-            output_tensor = torch.cat([torch.empty_like(tensor) for _ in range(self.world_size)], dim=0)
-            dist.all_gather_into_tensor(output_tensor, tensor)
-        else:
-            output_tensor = tensor
+        output_tensor = utils.gather(tensor, dst=None, into_tensor=True)
         return output_tensor
 
     def gather_any(self, val: Any) -> torch.Tensor:
@@ -130,8 +106,7 @@ class DistributedHelper:
         Returns:
             torch.Tensor: the reduced tensor
         """
-        if self.is_initialized():
-            dist.all_reduce(tensor, op=op)
+        tensor = utils.reduce(tensor, dst=None, op=op)
         return tensor
 
     def reduce_any(self, val: Any, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
@@ -170,15 +145,13 @@ class DistributedHelper:
 
     @staticmethod
     def barrier():
-        if dist.is_initialized():
-            dist.barrier()
+        utils.wait_for_everyone()
 
     @staticmethod
     def wait_for_all_processes():
         """torch.distributed.barrier with a recognizable name.
         """
-        if dist.is_initialized():
-            dist.barrier()
+        utils.wait_for_everyone()
 
 
     def get_parallel_mode(self, mode: str=None):
@@ -227,11 +200,11 @@ class DistributedHelper:
 
             # wrap the model. see storch.distributed.factory.
             wrap_kwargs = {}
-            if self.is_initialized():
+            if self._state.is_distributed:
 
                 if mode == 'ddp':
                     factory = DistributedDataParallelFactory()
-                    wrap_kwargs['device_ids'] = [self.rank]
+                    wrap_kwargs['device_ids'] = [self.local_rank]
                 elif mode == 'fsdp':
                     factory = FullyShardedDataParallelFactory()
                     wrap_kwargs['mixed_precision'] = mixed_precision
@@ -287,10 +260,10 @@ class DistributedHelper:
         Returns:
             DataLoader: the created dataloader
         """
-        if self.is_initialized():
+        if self._state.is_distributed:
             # when distributed training, always use DistributedSampler
             sampler = DistributedSampler(dataset,
-                num_replicas=self.world_size, rank=self.rank,
+                num_replicas=self.world_size, rank=self.local_rank,
                 shuffle=shuffle, drop_last=drop_last
             )
             dataloader = DataLoader(dataset,

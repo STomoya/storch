@@ -11,6 +11,7 @@ import numpy as np
 import torch
 
 import storch
+from storch.distributed import utils as distutils
 from storch.path import Path
 
 
@@ -58,7 +59,11 @@ class Checkpoint:
         self.file_deque = deque(maxlen=keep_last)
         self.count = 0
 
-        self.disthelper = disthelper
+        if disthelper is not None:
+            warnings.warn(
+                f'This class does not require DistributedHelper anymore, and the argument will be erased in future versions.',
+                FutureWarning
+            )
 
 
     def _container_as_state_dict(self) -> dict:
@@ -90,7 +95,7 @@ class Checkpoint:
         """load from a saved state_dict
         """
         _storch_version = state_dict.pop('storch_version')
-        if storch.__version__ != _storch_version:
+        if storch.__version__ != _storch_version and distutils.is_primary():
             warnings.warn(
                 f'Checkpoint.load_state_dict: You are using a different version of storch ({_storch_version} -> {storch.__version__}). This might cause errors.',
                 UserWarning)
@@ -120,7 +125,7 @@ class Checkpoint:
 
         state_dict.update({'__checkpoint_state': self.state_dict()})
 
-        if self.disthelper is None or self.disthelper.is_primary():
+        if distutils.is_primary():
             torch.save(state_dict, filename)
 
             if self.file_deque.maxlen is not None and len(self.file_deque) == self.file_deque.maxlen:
@@ -143,8 +148,7 @@ class Checkpoint:
         Returns:
             dict: additional objects saved when save (if any).
         """
-        if self.disthelper is not None:
-            self.disthelper.wait_for_all_processes()
+        distutils.wait_for_everyone()
 
         state_dict = torch.load(path, map_location=map_location)
 
@@ -195,7 +199,7 @@ class Checkpoint:
             else:
                 not_registered_keys.append(key)
 
-        if len(not_registered_keys):
+        if len(not_registered_keys) and distutils.is_primary():
             warnings.warn(
                 f'Checkpoint.register: The following object could not be registered: {not_registered_keys}',
                 UserWarning
