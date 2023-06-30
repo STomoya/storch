@@ -18,6 +18,7 @@ __all__ = [
     'get_backend',
     'get_world_size',
     'get_rank',
+    'get_local_rank',
     'get_device',
     'gather',
     'reduce'
