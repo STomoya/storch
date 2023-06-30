@@ -73,7 +73,19 @@ def get_device() -> torch.device:
 
 
 def gather(obj: Any, dst: int=None, into_tensor: bool=True) -> torch.Tensor | tuple[torch.Tensor] | tuple[Any]:
-    """gather.
+    """gather objects between devices.
+
+    Can be a torch.Tensor or a picklable python object.
+
+    By default tensors are gathered into a single tensor. To gather into a list of tensors,
+    set `into_tensor=False`. Python objects are not affected by this argument and are always
+    gathered into a list.
+
+    By default the objects are gathered to all devices. You can specify the device to gather
+    to by passing a valid process index to the `dst` argument (e.g., 0). If `dst` argument
+    is specified, `None` will be returned to all other processes.
+
+    If is not a distributed environment, this function will just return the input `obj`.
 
     Args:
         obj (Any): object to gather. Can be a Tensor or picklable python object.
@@ -112,7 +124,16 @@ def gather(obj: Any, dst: int=None, into_tensor: bool=True) -> torch.Tensor | tu
 
 
 def reduce(tensor: torch.Tensor, dst: int=None, op: ReduceOp=ReduceOp.SUM) -> torch.Tensor:
-    """reduce
+    """reduce a tensor according to the given `ReduceOp` enum.
+
+    In contrast to `gather`, this function does not support python objects. If reducing
+    a python number, convert object to a Tensor beforehand.
+
+    By default the objects are reduced to all devices. You can specify the device
+    by passing a valid process index to the `dst` argument (e.g., 0). If `dst` argument
+    is specified, `None` will be returned to all other processes.
+
+    If is not a distributed environment, this function will just return the input `obj`.
 
     Args:
         tensor (torch.Tensor): Tensor to reduce.
