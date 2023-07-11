@@ -51,6 +51,7 @@ def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys
         config_dir (str): Relative path to directory where config files are stored.
         config_name (str): Filename of the head config file.
         overrides (list[str], optional): Overrides. Usually from command line arguments. Default: sys.argv[1:].
+        resolve (bool, optional): resolve the config before returning. Default: True.
 
     Returns:
         DictConfig: Loaded config.
@@ -68,6 +69,7 @@ def save_hydra_config(config: DictConfig, filename: str, resolve: bool=True) -> 
     Args:
         config (DictConfig): Config to save.
         filename (str): filename of the saved config.
+        resolve (bool, optional): resolve the config before saving. Default: True.
     """
     if resolve:
         OmegaConf.resolve(config)
