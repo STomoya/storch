@@ -63,7 +63,7 @@ def run():
     ]
 
     fullname = os.path.abspath(args.folder)
-    folders.append(fullname('/')[-1])
+    folders.append(fullname.split('/')[-1])
 
     for folder in folders:
         os.mkdir(os.path.join(args.folder, folder))
