@@ -14,7 +14,7 @@ from hydra.utils import to_absolute_path
 from omegaconf import DictConfig, OmegaConf
 
 
-def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys.argv[1:]) -> DictConfig:
+def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys.argv[1:], resolve: bool=True) -> DictConfig:
     """gather config using hydra.
 
     Args:
@@ -27,15 +27,19 @@ def get_hydra_config(config_dir: str, config_name: str, overrides: list[str]=sys
     """
     with initialize_config_dir(config_dir=to_absolute_path(config_dir), version_base=None):
         cfg = compose(config_name, overrides=overrides)
+    if resolve:
+        OmegaConf.resolve(cfg)
     return cfg
 
 
-def save_hydra_config(config: DictConfig, filename: str) -> None:
+def save_hydra_config(config: DictConfig, filename: str, resolve: bool=True) -> None:
     """save OmegaConf as yaml file
 
     Args:
         config (DictConfig): Config to save.
         filename (str): filename of the saved config.
     """
+    if resolve:
+        OmegaConf.resolve(config)
     with open(filename, 'w') as fout:
         fout.write(OmegaConf.to_yaml(config))
