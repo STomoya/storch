@@ -34,13 +34,13 @@ def get_default_config():
                             name='RandomResizedCrop',
                             scale=[1.67, 1.0],
                             ratio=[3/4, 4/3],
-                            size=['$config.data.image_size', '$config.data.image_size']),
+                            size=['${config.data.image_size}', '${config.data.image_size}']),
                         dict(name='RandomHorizontalFlip', p=0.5),
                         dict(name='ToTensor'),
                         dict(name='Normalize', mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                     ],
                     test=[
-                        dict(name='Resize', size=['$config.data.image_size', '$config.data.image_size']),
+                        dict(name='Resize', size=['${config.data.image_size}', '${config.data.image_size}']),
                         dict(name='ToTensor'),
                         dict(name='Normalize', mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                     ]
