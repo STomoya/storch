@@ -306,7 +306,8 @@ class Status:
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
     def log_gpu_memory(self, stage: str=None, at: list[int]|int=None, as_hook: bool=False) -> None:
-        """log memory summary.
+        """log memory summary. Optionally this function returns a executable hook that logs GPU memory when called.
+        Useful for registering this function as a hook for `OptimizerStep`
 
         Args:
             stage (str, optional): The name of the stage to summarize VRAM. Default: None.
