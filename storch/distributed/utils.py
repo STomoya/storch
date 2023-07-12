@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from functools import wraps
+from typing import Any, Callable
 
 import torch
 import torch.distributed as dist
@@ -155,3 +156,24 @@ def reduce(tensor: torch.Tensor, dst: int=None, op: ReduceOp=ReduceOp.SUM) -> to
     else:
         dist.reduce(tensor, dst, op)
         return tensor if state.process_index == dst else None
+
+
+def only_on_primary(func: Callable) -> Callable:
+    """decorator for executing function only on primary process.
+
+    Examples:
+        >>> @only_on_primary
+        ... def print0(*args, **kwargs):
+        ...     print(*args, **kwargs)
+
+    Args:
+        func (Callable): the function to wrap.
+
+    Returns:
+        Callable: wrapped function.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if is_primary():
+            return func(*args, **kwargs)
+    return wrapper
