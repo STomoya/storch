@@ -40,7 +40,9 @@ def get_optimizer_step(
     gradient_accumulation_steps: int=1,
     num_iters_per_epoch: int=None,
     no_sync_context: Callable=None,
-    module: nn.Module=None
+    module: nn.Module=None,
+    post_backward_hooks: list[Callable]=[],
+    post_optim_step_hooks: list[Callable]=[]
 ):
 
     if module is not None and no_sync_context is None:
@@ -51,6 +53,13 @@ def get_optimizer_step(
         num_iters_per_epoch,
         no_sync_context
     )
+
+    if len(post_backward_hooks) > 0:
+        assert all(callable(hook) for hook in post_backward_hooks), f'all hooks must be callable.'
+        func.register_hooks('backward', *post_backward_hooks)
+    if len(post_optim_step_hooks) > 0:
+        assert all(callable(hook) for hook in post_optim_step_hooks), f'all hooks must be callable.'
+        func.register_hooks('step', *post_optim_step_hooks)
 
     return func
 
