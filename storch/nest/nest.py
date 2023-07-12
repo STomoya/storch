@@ -356,6 +356,7 @@ class NeST:
         log_file: str='log.log',
         log_interval: int=100,
         logger_name: str='logger',
+        log_gpu_memory_at: list[int]|int|None=None,
         steptime_num_accum: int=300,
         delta_format='{key}: {value: 10.5f}',
         to_log: list=[]
@@ -397,6 +398,7 @@ class NeST:
             log_file (str, optional): Output filename for logging. Default: 'log.log'.
             log_interval (int, optional): interval for logging training state. Default: 100.
             logger_name (str, optional): Name of the logger. Default: 'logger'.
+            log_gpu_memory_at (list[int] | int, optional): Log GPU memory at specified iteration. Default: None.
             steptime_num_accum (int, optional): number for how many step time to accumulate for logging rolling ETA.
                 Default: 300.
             delta_format (str, optional): format for logging values. Default: '{key}: {value: 10.5f}'.
@@ -411,11 +413,23 @@ class NeST:
             logger_name=logger_name, steptime_num_accum=steptime_num_accum, delta_format=delta_format
         )
 
-        for dmodel, optimizer in zip(self._dmodels, self._optimizers):
+        for i, (dmodel, optimizer) in enumerate(zip(self._dmodels, self._optimizers)):
+            # if gpu memory logging is enabled instantiate hook and register.
+            if log_gpu_memory_at is not None:
+                if isinstance(log_gpu_memory_at, int):
+                    log_gpu_memory_at = [log_gpu_memory_at]
+                stage_postfix = f' No. {i}' if len(self._optimizers) > 1 else ''
+                post_backward_hook = [self._status.log_gpu_memory('backward()' + stage_postfix, log_gpu_memory_at, as_hook=True)]
+                post_step_hook = [self._status.log_gpu_memory('optimizer.step()' + stage_postfix, log_gpu_memory_at, as_hook=True)]
+            else:
+                post_backward_hook = None
+                post_step_hook = None
+
             self._step_fn[id(optimizer)] = get_optimizer_step(
                 gradient_accumulation_steps=self._grad_accum_steps,
                 num_iters_per_epoch=self._num_iters_per_epoch,
-                module=dmodel
+                module=dmodel,
+                post_backward_hooks=post_backward_hook, post_optim_step_hooks=post_step_hook
             )
 
         if len(self._models) > len(self._optimizers):
