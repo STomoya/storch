@@ -305,13 +305,15 @@ class Status:
         """
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
-    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None) -> None:
-        """log memory summary.
+    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None, as_hook: bool=False) -> None:
+        """log memory summary. Optionally this function returns a executable hook that logs GPU memory when called.
+        Useful for registering this function as a hook for `OptimizerStep`
 
         Args:
             stage (str, optional): The name of the stage to summarize VRAM. Default: None.
             at (list[int], optional): Used to determine when to log summary.
                 If None always log summary. Default: None.
+            as_hook (bool, option): return a function that can be executed without arguments. Default: False.
 
         Usage:
             >>> status = Status(...)
@@ -322,19 +324,25 @@ class Status:
             >>> optimizer.step()
             >>> status.log_gpu_memory('step', [0, 100])
         """
-        if torch.cuda.is_available():
-            message = 'GPU memory summary'
-            if isinstance(stage, str):
-                message += f' of stage "{stage}"'
-            message += f' at iteration {self.batches_done}.'
-            if (
-                (at is None) or
-                (self.batches_done == at if isinstance(at, int) else self.batches_done in at)
-            ):
-                message += f'\n{torch.cuda.memory_summary()}'
-                self.log(message)
-        else:
-            self.log('No GPU available on your enviornment.')
+        def hook():
+            if torch.cuda.is_available():
+                message = 'GPU memory summary'
+                if isinstance(stage, str):
+                    message += f' of stage "{stage}"'
+                message += f' at iteration {self.batches_done}.'
+                if (
+                    (at is None) or
+                    (self.batches_done == at if isinstance(at, int) else self.batches_done in at)
+                ):
+                    message += f'\n{torch.cuda.memory_summary()}'
+                    self.log(message)
+            else:
+                self.log('No GPU available on your enviornment.')
+
+        if as_hook:
+            return hook
+
+        hook()
 
     def log_nvidia_smi(self) -> None:
         """log nvidia-smi output.
