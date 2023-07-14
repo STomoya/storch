@@ -19,7 +19,17 @@ from storch.utils.version import is_torch_version_geq
 
 
 @contextmanager
-def state_dict_type(module, state_dict_type, state_dict_config, optim_state_dict_config=None):
+def state_dict_type(module: FSDP, state_dict_type: StateDictType, state_dict_config, optim_state_dict_config=None) -> None:
+    """sets the state dict type using the api prefered by different pytorch versions.
+    FSDP is in beta, and there might be further changes in the API.
+
+    Args:
+        module (FSDP): The wrapped FSDP module to set the state dict type for.
+        state_dict_type (StateDictType): either one of StateDictType enum.
+        state_dict_config (): The state dict config corresponding to the state_dict_type.
+        optim_state_dict_config (): The optimizer's state dict config corresponding to the state_dict_type.
+            This argument is required for PyTorch>=2.0.0. Deafult: None.
+    """
     if is_torch_version_geq('2.0.0'):
         assert optim_state_dict_config is not None
         with FSDP.state_dict_type(
@@ -34,18 +44,42 @@ def state_dict_type(module, state_dict_type, state_dict_config, optim_state_dict
 
 
 class FSDPModuleCheckpointInterface(CheckpointInterfaceBase):
+    """Interface for checkpointing models wrapped with FSDP. This class will be constructed automatically
+    by `distributed.DistributedHelper.prepare_for_checkpointing`.
+
+    FSDP models shards the parameters and requires special API to proprely get the state_dict of the
+    original model. This interface provides methods to easily get/set the state_dict, automatically
+    configuring state_dict_type.
+
+    Currently this class only support `StateDictType.FULL_STATE_DICT` and currently there are no plans to
+    add support for other types.
+
+    Args:
+        to_checkpoint (nn.Module): The module to wrap witch this interface.
+        state (dict): a dict containing all objects needed for setting state dict type when get/set state_dicts.
+    """
     def __init__(self, module: nn.Module, state: dict) -> None:
         super().__init__(module)
         self.state = state
 
-    def state_dict(self):
+    def state_dict(self) -> OrderedDict:
+        """properly sets the state_dict type and return the state_dict of the original model.
+
+        Returns:
+            OrderedDict: the state dict of the original model
+        """
         with state_dict_type(
             self.to_checkpoint, self.state.type, self.state.config, self.state.optim_config
         ):
             state_dict = self.to_checkpoint.state_dict()
         return state_dict
 
-    def load_state_dict(self, state_dict: OrderedDict):
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """properly sets the state dict type and loads the state dict to the parallelized model.
+
+        Args:
+            state_dict (OrderedDict): the state dict of the non-parallelized model.
+        """
         with state_dict_type(
             self.to_checkpoint, self.state.type, self.state.config, self.state.optim_config
         ):
@@ -53,12 +87,25 @@ class FSDPModuleCheckpointInterface(CheckpointInterfaceBase):
 
 
 class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
+    """Interface for optimizers used to train FSDP wrapped models. As same as the wrapped model, the optimizer
+    also requires a special API to get state_dict properly.
+
+    Args:
+        optimizer (Optimizer): the optimizer.
+        module (FSDP): the correspoing module.
+        state (dict):  a dict containing all objects needed for setting state dict type when get/set state_dicts.
+    """
     def __init__(self, optimizer: Optimizer, module: nn.Module, state: dict) -> None:
         super().__init__(optimizer)
         self.module = module
         self.state = state
 
-    def state_dict(self):
+    def state_dict(self) -> OrderedDict:
+        """properly sets the state_dict type and return the state_dict of the optimizer.
+
+        Returns:
+            OrderedDict: the state dict of the original model
+        """
         if is_torch_version_geq('2.0.0'):
             with state_dict_type(
                 self.module, self.state.type, self.state.config, self.state.optim_config
@@ -68,7 +115,12 @@ class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
             state_dict = FSDP.full_optim_state_dict(self.module, self.to_checkpoint)
         return state_dict
 
-    def load_state_dict(self, state_dict: OrderedDict):
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """properly sets the state dict type and loads the state dict to the optimizer.
+
+        Args:
+            state_dict (OrderedDict): the state dict of the optimizer.
+        """
         if is_torch_version_geq('2.0.0'):
             with state_dict_type(
                 self.module, self.state.type, self.state.config, self.state.optim_config
@@ -81,8 +133,22 @@ class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
 
 
 class FullyShardedDataParallelFactory(ParallelFactoryBase):
+    """Factory class that provides methods to wrap the input model with the pytorch native FSDP class and
+    creates interfaces for checkpointing. This class is only used inside `distributed.DistributedHelper`,
+    and users should not be seeing this class from code.
+    """
+    def wrap_module(self, module: nn.Module, mixed_precision: bool|str, **kwargs) -> FSDP:
+        """This funcion wraps the input `module` using pytorch native FSDP class.
 
-    def wrap_module(self, module: nn.Module, mixed_precision: bool|str, **kwargs):
+        Args:
+            module (nn.Module): module to wrap.
+            mixed_precision (bool | str): use mixed precision?
+            **kwargs: other keyword arguments passed to FSDP class. used when `torch.compile` is used together
+                with FSDP.
+
+        Returns:
+            FSDP: the wrapped module.
+        """
         if mixed_precision:
             dtype = torch.float16
             mixed_precision = MixedPrecision(param_dtype=dtype, reduce_dtype=dtype, buffer_dtype=dtype)
@@ -93,7 +159,16 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
 
         return wrapped_module
 
-    def create_checkpoint_interface(self, optim, offload_to_cpu: bool, **kwargs):
+    def create_checkpoint_interface(self, optim, offload_to_cpu: bool, **kwargs) -> tuple[FSDPModuleCheckpointInterface, FSDPOptimizerCheckpointInterface]:
+        """Create interfaces for checkpointing.
+
+        Args:
+            optim (Optimizer): The corresponding optimizer for training the wrapped module.
+            offload_to_cpu (bool): offload state_dict to CPU when state_dict is called. Default: True.
+
+        Returns:
+            tuple[FSDPModuleCheckpointInterface, FSDPOptimizerCheckpointInterface]: Interface for checkpointing.
+        """
         assert self.is_wrapped, f'Call "wrap_module()" first.'
 
         state = storch.EasyDict()
