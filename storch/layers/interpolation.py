@@ -27,6 +27,7 @@ def _make_blur_kernel(filter_size: int) -> torch.Tensor:
     filter2d /= filter2d.sum()
     return filter2d.unsqueeze(0).unsqueeze(0)
 
+
 class Blur(nn.Module):
     """Blur layer used in StyleGANs
 
@@ -53,6 +54,7 @@ class Blur(nn.Module):
     def extra_repr(self):
         return f'filter_size={self._filter_size}'
 
+
 class BlurUpsample(nn.Sequential):
     """Upsample then blur.
 
@@ -68,6 +70,7 @@ class BlurUpsample(nn.Sequential):
         super().__init__(
             nn.Upsample(scale_factor=scale_factor, mode=mode, align_corners=align_corners),
             Blur(filter_size))
+
 
 class BlurDownsample(nn.Sequential):
     """Blur then downsample
