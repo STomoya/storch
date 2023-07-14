@@ -12,6 +12,8 @@ import torch.nn as nn
 from torch.cuda.amp import GradScaler
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
+from stutil.exceptions import deprecated
+
 
 from storch._optimizer_step import get_optimizer_step
 from storch.utils import version
@@ -163,6 +165,7 @@ def register_init_args(init):
     return inner
 
 
+@deprecated('nest.NeST', 'nest.NeST')
 class Engine:
     """engine for training.
 
