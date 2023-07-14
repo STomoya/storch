@@ -247,8 +247,3 @@ class OptimizerStep:
 
         if update_scaler:
             scaler.update()
-
-
-# aliases for backward compat
-optimizer_step = simple_optimizer_step = OptimizerStep(gradient_accumulation_steps=1)
-optimizer_step_with_gradient_accumulation = simple_optimizer_step_with_gradient_accumulation = OptimizerStep
