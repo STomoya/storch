@@ -5,11 +5,21 @@ import torch.nn as nn
 def get_activation(name: str, **kwargs) -> nn.Module:
     """Get activation layer by name.
 
+    Supported functions:
+      - `relu`: `torch.nn.ReLU`
+      - `lrelu`: `torch.nn.LeakyReLU`
+      - `prelu`: `torch.nn.PReLU`
+      - `gelu`: `torch.nn.GELU`
+      - `silu`: `torch.nn.SiLU`
+      - `tanh`: `torch.nn.Tanh`
+      - `sigmoid`: `torch.nn.Sigmoid`
+
     Args:
         name (str): Name of the activation function.
+        **kwargs: keyword arguments for the activation functions.
 
     Raises:
-        Exception: Unknown name.
+        Exception: Unknown activation name.
 
     Returns:
         nn.Module: The activation function module.
