@@ -27,6 +27,7 @@ def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
         return nn.GroupNorm(num_channels=channels, **kwargs)
     raise Exception(f'Normalization: {name}')
 
+
 def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
     """Get 1d normalization layers by name
 
