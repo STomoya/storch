@@ -12,11 +12,7 @@ from storch.scheduler import build_scheduler
 from storch.status import Status, ThinStatus
 from storch.torchops import (auto_get_device, freeze, get_grad_scaler,
                              get_optimizer_step, inference_mode,
-                             optimizer_step,
-                             optimizer_step_with_gradient_accumulation,
-                             set_seeds, simple_optimizer_step,
-                             simple_optimizer_step_with_gradient_accumulation,
-                             unfreeze, update_ema)
+                             set_seeds, unfreeze, update_ema)
 
 __all__ = [
     'loss',
@@ -34,11 +30,7 @@ __all__ = [
     'build_scheduler',
     'Status',
     'ThinStatus',
-    'optimizer_step',
     'get_optimizer_step',
-    'simple_optimizer_step',
-    'optimizer_step_with_gradient_accumulation',
-    'simple_optimizer_step_with_gradient_accumulation',
     'get_grad_scaler',
     'freeze',
     'unfreeze',
