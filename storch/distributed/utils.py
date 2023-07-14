@@ -22,7 +22,8 @@ __all__ = [
     'get_local_rank',
     'get_device',
     'gather',
-    'reduce'
+    'reduce',
+    'only_on_primary'
 ]
 
 
