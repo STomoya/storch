@@ -18,6 +18,20 @@ from storch.path import Path
 class Checkpoint:
     """class for saving checkpoints.
 
+    Easy saving/loading of intermediate training procedure. The main API of this class is three functions:
+
+    - `register`: register objects which have `state_dict` and `load_state_dict` methods.
+
+    - `save`: serialize the registered model.
+
+    - `load`/`load_latest`: load (latest) checkpoint.
+
+    `save` and `load_latest` does not have any required arguments.
+
+    This class automatically saves/loads the random state of python builtin `random`, numpy, and PyTorch.
+
+    Supports distributed training (serialization only on primary process).
+
     Args:
         folder (str): folder to save the checkpoints to.
         keep_last (int, optional): keep last n checkpoints. None to keep all. Default: 3.
