@@ -28,10 +28,12 @@ __all__ = [
 
 
 def is_available() -> bool:
+    """is distributed package available?"""
     return dist.is_available()
 
 
 def is_torchrun() -> bool:
+    """is python started via torchrun command?"""
     return dist.is_torchelastic_launched()
 
 
