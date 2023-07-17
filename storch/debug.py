@@ -23,6 +23,7 @@ from storch.torchops import print_module_summary
 __all__ = [
     'np',
     'torch',
+    'nn',
     'dummy_tensor',
     'save_image',
     'save_images',

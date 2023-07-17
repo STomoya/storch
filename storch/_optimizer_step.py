@@ -43,7 +43,54 @@ def get_optimizer_step(
     module: nn.Module=None,
     post_backward_hooks: list[Callable]=[],
     post_optim_step_hooks: list[Callable]=[]
-):
+) -> Callable:
+    """creates a function that:
+
+    - Calls `backward` on the loss.
+
+    - Calls `step` on the optimizer.
+
+    - Calls `step` on scheduler if given.
+
+    - Optionally zeros the gradients.
+
+    - Optionally set gradients to `None`.
+
+        - (This is the default behavior after pytorch>=2.0.0 ([PR](https://github.com/pytorch/pytorch/pull/92731)))
+
+    - Optionally clips gradients by gradient norm.
+
+    - Optionally calls `update` on `GradScaler` for native AMP.
+
+    - Automatically takes care of gradient accumulation.
+
+    with one function call.
+
+    Zeroing gradients and updating `GradScaler` is optional for flexibility. Especially, when you have multiple
+    optimizers, you might want to update the `GradScaler` only once per optimization step.
+
+    The scheduler is always updated if it is passed as an argument, so if your scheduler assumes updating on every
+    epoch, you should call them manually, outside of this function.
+
+    Args:
+        trigger_gradient_scaling_via_gradscaler (bool, optional): deprecated argument. Default: False.
+        gradient_accumulation_steps (int, optional): gradient accumulation steps. Default: 1.
+        num_iters_per_epoch (int, optional): number of iterations per epoch. This is used to set the gradient
+            accumulation steps for the last few batches. If `None`, assumes that the dataset is infinite. Default: None.
+        no_sync_context (Callable, optional): context manager for no gradient synchronization. This will speedup
+            gradient accumulation by disabling device synchronization which is performed on every `backward` call.
+            This argument is optional and gradient accumulation will work perfectly fine without this argument.
+            Alternatively you can pass the module to optimize to automatically find `no_sync`. Default: None.
+        module (nn.Module, optional): Use this argument to automatically find if `no_sync` method is available.
+            This argument will be ignored when `no_sync_context` is given. Default: None.
+        post_backward_hooks (list[Callable], optional): list of functions to be called after calling backward on
+            the loss. The function must not require any arguments. Default: [].
+        post_optim_step_hooks (list[Callable], optional): list of functions to be called after calling step on the
+            optimizer. The function must not require any arguments. Default: [].
+
+    Returns:
+        Callable: Optimizer step function.
+    """
 
     if module is not None and no_sync_context is None:
         no_sync_context = getattr(module, 'no_sync', None)
@@ -151,6 +198,34 @@ class OptimizerStep:
     ) -> None:
         """optimization step which supports gradient scaling for AMP.
 
+        Supporting functionalities:
+
+        - Calls `backward` on the loss.
+
+        - Calls `step` on the optimizer.
+
+        - Calls `step` on scheduler if given.
+
+        - Optionally zeros the gradients.
+
+        - Optionally set gradients to `None`.
+
+            - (This is the default behavior after pytorch>=2.0.0 ([PR](https://github.com/pytorch/pytorch/pull/92731)))
+
+        - Optionally clips gradients by gradient norm.
+
+        - Optionally calls `update` on `GradScaler` for native AMP.
+
+        - Automatically takes care of gradient accumulation.
+
+        with one function call.
+
+        Zeroing gradients and updating `GradScaler` is optional for flexibility. Especially, when you have multiple
+        optimizers, you might want to update the `GradScaler` only once per optimization step.
+
+        The scheduler is always updated if it is passed as an argument, so if your scheduler assumes updating on every
+        epoch, you should call them manually, outside of this function.
+
         Args:
             loss (torch.Tensor): loss to backpropagate.
             optimizer (optim.Optimizer): optimizer.
@@ -247,8 +322,3 @@ class OptimizerStep:
 
         if update_scaler:
             scaler.update()
-
-
-# aliases for backward compat
-optimizer_step = simple_optimizer_step = OptimizerStep(gradient_accumulation_steps=1)
-optimizer_step_with_gradient_accumulation = simple_optimizer_step_with_gradient_accumulation = OptimizerStep

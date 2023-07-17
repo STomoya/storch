@@ -2,26 +2,33 @@
 import torch.nn as nn
 
 
-def get_activation(name: str) -> nn.Module:
-    """Get activation layer by name
+def get_activation(name: str, **kwargs) -> nn.Module:
+    """Get activation layer by name.
 
-    NOTE: - Always inplace=True.
-          - negative_slope=0.2 for LeakyReLU
+    Supported functions:
+      - `relu`: `torch.nn.ReLU`
+      - `lrelu`: `torch.nn.LeakyReLU`
+      - `prelu`: `torch.nn.PReLU`
+      - `gelu`: `torch.nn.GELU`
+      - `silu`: `torch.nn.SiLU`
+      - `tanh`: `torch.nn.Tanh`
+      - `sigmoid`: `torch.nn.Sigmoid`
 
     Args:
         name (str): Name of the activation function.
+        **kwargs: keyword arguments for the activation functions.
 
     Raises:
-        Exception: Unknown name.
+        Exception: Unknown activation name.
 
     Returns:
         nn.Module: The activation function module.
     """
-    if   name == 'relu':  return nn.ReLU(True)
-    elif name == 'lrelu': return nn.LeakyReLU(0.2, True)
-    elif name == 'prelu': return nn.PReLU()
-    elif name == 'gelu':  return nn.GELU()
-    elif name in ['swish', 'silu']: return nn.SiLU(True)
-    elif name == 'tanh':  return nn.Tanh()
-    elif name == 'sigmoid': return nn.Sigmoid()
+    if   name == 'relu':  return nn.ReLU(**kwargs)
+    elif name == 'lrelu': return nn.LeakyReLU(**kwargs)
+    elif name == 'prelu': return nn.PReLU(**kwargs)
+    elif name == 'gelu':  return nn.GELU(**kwargs)
+    elif name in ['swish', 'silu']: return nn.SiLU(**kwargs)
+    elif name == 'tanh':  return nn.Tanh(**kwargs)
+    elif name == 'sigmoid': return nn.Sigmoid(**kwargs)
     raise Exception(f'Activation: {name}')

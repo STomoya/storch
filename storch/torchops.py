@@ -28,7 +28,6 @@ __all__ = [
     'unfreeze',
     'update_ema',
     'set_seeds',
-    'deterministic',
     'shuffle_batch',
     'get_optimizer_step',
     'optimizer_step',
@@ -182,26 +181,6 @@ def set_seeds(
     generator.manual_seed(0)
 
     return seed_worker, generator
-
-
-def deterministic(seed: int=3407) -> tuple[Callable, torch.Generator]:
-    """Settings for reproducible training.
-
-    Deprecated
-
-    Args:
-        seed (int, optional): Random number generator seed. Default: 3407.
-
-    Returns:
-        Callable: Function for DataLoader's worker_init_fn option.
-        torch.Generator: torch.Generator for DataLoader's generator option.
-    """
-    import warnings
-    warnings.warn(
-        f'"deterministic" is deprecated in favor of "set_seeds" and will be erased in the future version.',
-        DeprecationWarning
-    )
-    set_seeds(seed, use_deterministic_algorithms=True)
 
 
 def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:

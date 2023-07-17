@@ -22,6 +22,7 @@ class DepthWiseConv2d(nn.Conv2d):
             channels, channels, kernel_size, stride=stride, padding=padding,
             dilation=dilation, groups=channels, bias=bias, padding_mode=padding_mode)
 
+
 class PointWiseConv2d(nn.Conv2d):
     """Point-wise convolution 2d is a convolution layer with 1x1 kernel.
 
@@ -34,6 +35,7 @@ class PointWiseConv2d(nn.Conv2d):
         in_channels: int, out_channels: int, bias: bool=True
     ) -> None:
         super().__init__(in_channels, out_channels, 1, bias=bias)
+
 
 class DepthSepConv2d(nn.Module):
     """Depth-wise separable convolution 2d splits the convolution to depth-wise convolution and

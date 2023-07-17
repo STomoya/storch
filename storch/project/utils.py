@@ -6,7 +6,7 @@ from typing import Callable
 from omegaconf import DictConfig, OmegaConf
 
 from storch import get_now_string
-from storch.distributed import DistributedHelper
+from storch.distributed import DistributedHelper, is_primary
 from storch.hydra_utils import get_hydra_config, save_hydra_config
 from storch.path import Folder, Path
 
@@ -74,7 +74,7 @@ def init_run(
         folder: Folder = get_folder_from_config(config)
         if child_folders != {}:
             folder.add_children(**child_folders)
-        if disthelper is None or disthelper.is_primary():
+        if is_primary():
             folder.mkdir()
             if save_config:
                 save_hydra_config(config, folder.root / config_file)

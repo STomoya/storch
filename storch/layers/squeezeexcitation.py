@@ -4,7 +4,7 @@ import torch.nn as nn
 from storch.layers import get_activation
 
 
-class SpatialSqueezeAndExcitation(nn.Module):
+class SpatialSqueezeAndChannelExcitation(nn.Module):
     """Spatial squeeze and excitation block.
     This is equivalent to the original squeeze and excitation block, but with some options.
 
@@ -34,7 +34,7 @@ class SpatialSqueezeAndExcitation(nn.Module):
         return x
 
 
-class ChannelSqueezeAndExcitation(nn.Module):
+class ChannelSqueezeAndSpatialExcitation(nn.Module):
     """Channel squeeze and excitation block.
     Attention.
 
@@ -54,6 +54,7 @@ class ChannelSqueezeAndExcitation(nn.Module):
         x = x * self.global_content(x)
         return x
 
+
 class SpatialChannelSqueezeAndExcitation(nn.Module):
     """Spatial channel squeeze and excitation block.
 
@@ -67,8 +68,8 @@ class SpatialChannelSqueezeAndExcitation(nn.Module):
         channels: int, reduction: int=4, pool_size: int=1, act_name: str='relu'
     ) -> None:
         super().__init__()
-        self.spatial_se = SpatialSqueezeAndExcitation(channels, reduction, pool_size, act_name)
-        self.channel_se = ChannelSqueezeAndExcitation(channels)
+        self.spatial_se = SpatialSqueezeAndChannelExcitation(channels, reduction, pool_size, act_name)
+        self.channel_se = ChannelSqueezeAndSpatialExcitation(channels)
 
     def forward(self, x):
         s = self.spatial_se(x)
@@ -78,6 +79,6 @@ class SpatialChannelSqueezeAndExcitation(nn.Module):
 
 
 # alias
-sSE = SpatialSqueezeAndExcitation
-cSE = ChannelSqueezeAndExcitation
+SE = cSE = SpatialSqueezeAndChannelExcitation
+sSE = ChannelSqueezeAndSpatialExcitation
 scSE = SpatialChannelSqueezeAndExcitation

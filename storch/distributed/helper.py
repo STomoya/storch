@@ -53,17 +53,21 @@ class DistributedHelper:
 
     @staticmethod
     def is_available() -> bool:
+        """is distributed module available?"""
         return dist.is_available()
 
     @staticmethod
     def is_initialized() -> bool:
+        """is distributed process group initialized?"""
         return dist.is_initialized()
 
     @staticmethod
     def is_torchrun() -> bool:
+        """was python launched using `torchrun` command?"""
         return dist.is_torchelastic_launched()
 
     def is_primary(self) -> bool:
+        """is the process the primary process."""
         return self._state.is_main_process
 
     # gather functions.
@@ -129,22 +133,28 @@ class DistributedHelper:
     reduce = reduce_any
 
     def reduce_sum(self, val: Any) -> torch.Tensor:
+        """reduce distributed tensors by summation"""
         return self.reduce_any(val)
 
     def reduce_mean(self, val: Any) -> torch.Tensor:
+        """reduce distributed tensors by taking the average"""
         return self.reduce_any(val, ReduceOp.AVG)
 
     def reduce_prod(self, val: Any) -> torch.Tensor:
+        """reduce distributed tensors by production"""
         return self.reduce_any(val, ReduceOp.PRODUCT)
 
     def reduce_min(self, val: Any) -> torch.Tensor:
+        """reduce distributed tensors by taking the minmum"""
         return self.reduce_any(val, ReduceOp.MIN)
 
     def reduce_max(self, val: Any) -> torch.Tensor:
+        """reduce distributed tensors by taking the maximum"""
         return self.reduce_any(val, ReduceOp.MAX)
 
     @staticmethod
     def barrier():
+        """syncronize all processes."""
         utils.wait_for_everyone()
 
     @staticmethod
@@ -154,7 +164,20 @@ class DistributedHelper:
         utils.wait_for_everyone()
 
 
-    def get_parallel_mode(self, mode: str=None):
+    def get_parallel_mode(self, mode: str=None) -> str:
+        """get parallelizm strategy. The user should always call this function to get the strategy,
+        because this function forces the `_mode` attr to be set only once.
+
+        If mode is not set, initialize the `_mode` attribute using the given `mode` argument. if
+        `mode is None`, we fallback to `'ddp'` which is more stable than FSDP. If `_mode` attr is
+        already set, returns the value of `_mode`.
+
+        Args:
+            mode (str, optional): the parallelizm mode. Default: None.
+
+        Returns:
+            str: a string representing the parallelizm strategy.
+        """
         if self._mode is None:
             if mode is None:
                 mode = 'ddp'
@@ -245,7 +268,8 @@ class DistributedHelper:
     def prepare_dataset(self, dataset: Dataset, batch_size: int, shuffle: bool=True, drop_last: bool=True,
         num_workers: int=0, pin_memory: bool=True, worker_init_fn: Callable=None, generator: torch.Generator=None
     ) -> DataLoader:
-        """prepare dataset, given dataloader parameters.
+        """prepare dataset, given dataloader parameters. If the distributed packae is initialized, `DistributedSampler`
+        is used as the `sampler`.
 
         Args:
             dataset (Dataset): Dataset
