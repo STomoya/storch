@@ -355,11 +355,13 @@ class NeST:
         max_training_iters: int,
         log_file: str='log.log',
         log_interval: int=100,
+        ckpt_keep_last: int=1,
+        to_log: list=[],
         logger_name: str='logger',
         log_gpu_memory_at: list[int]|int|None=None,
         steptime_num_accum: int=300,
         delta_format='{key}: {value: 10.5f}',
-        to_log: list=[]
+        ckpt_file_format: str='checkpoint.{count}.torch',
     ) -> Status:
         """This function must be called after calling all building functions.
 
@@ -397,12 +399,15 @@ class NeST:
             max_training_iters (int): maximum training iterations. Note that it is not epochs.
             log_file (str, optional): Output filename for logging. Default: 'log.log'.
             log_interval (int, optional): interval for logging training state. Default: 100.
+            ckpt_keep_last (int, optional): keep last n checkpoints. If `None` all saved files are kept. Deafult: 1.
+            to_log (list, optional): a list of objects to log. Default: [].
             logger_name (str, optional): Name of the logger. Default: 'logger'.
             log_gpu_memory_at (list[int] | int, optional): Log GPU memory at specified iteration. Default: None.
             steptime_num_accum (int, optional): number for how many step time to accumulate for logging rolling ETA.
                 Default: 300.
             delta_format (str, optional): format for logging values. Default: '{key}: {value: 10.5f}'.
-            to_log (list, optional): a list of objects to log. Default: [].
+            ckpt_file_format (srt, optional): filename format for the checkpoint. The format must contain '{count}'.
+                Default: 'checkpoint.{count}.torch'.
 
         Returns:
             Status: training status keeper.
@@ -439,7 +444,7 @@ class NeST:
         self._status.log_stuff(*to_log, self._train_loader)
         self._status.log_actual_batch_size(self._train_loader.batch_size, self._grad_accum_steps, self.world_size)
 
-        self._checkpoint = Checkpoint(self._project_folder)
+        self._checkpoint = Checkpoint(self._project_folder, keep_last=ckpt_keep_last, filename_format=ckpt_file_format)
         self._checkpoint.register(nest_grad_scaler=self._grad_scaler, nest_status=self._status)
 
         self._initialized = True
