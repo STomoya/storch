@@ -186,14 +186,8 @@ class Status:
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
 
-    '''print functions'''
 
-    def print(self, *args, **kwargs) -> None:
-        """Print function. If tqdm progress bar is enabled, uses tqdm.write as function.
-        """
-        from stutil.exceptions import warn_deprecated
-        warn_deprecated('Status.print')
-        print(*args, **kwargs)
+    '''print functions'''
 
     def log(self, message: str, level='info') -> None:
         """log a message
