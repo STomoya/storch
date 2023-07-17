@@ -8,7 +8,6 @@ import pprint
 import subprocess
 import sys
 import time
-import warnings
 from argparse import ArgumentParser, Namespace
 from collections import deque
 from contextlib import contextmanager
@@ -135,14 +134,11 @@ class Status:
         >>>     })
     """
     def __init__(self,
-        max_iters: int, log_file: str,
-        bar: bool=False, log_interval: int=1, logger_name: str='logger',
+        max_iters: int, log_file: str, log_interval: int=1, logger_name: str='logger',
         steptime_num_accum: int=300, tb_folder: str|None=None,
         delta_format: str='{key}: {value: 10.5f}'
     ) -> None:
 
-        if bar:
-            warnings.warn(f'tqdm progress bar in Status is deprecated and will be ignored.')
         self._max_iters = max_iters
         self._batches_done = 0
         self._log_file = log_file
