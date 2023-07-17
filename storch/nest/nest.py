@@ -16,6 +16,7 @@ import storch
 from storch.checkpoint import Checkpoint
 from storch.distributed import DistributedHelper
 from storch.distributed import utils as distutils
+from storch.metrics import BestStateKeeper
 from storch.nest import utils as nestutils
 from storch.scheduler import build_scheduler
 from storch.status import Status, ThinStatus
@@ -64,6 +65,8 @@ class NeST:
         self._set_epoch_fn = None
 
         self._models = []
+        self._best_model_keepers = {}
+        self._primary_best = None
         self._dmodels = []
         self._optimizers = []
 
@@ -172,6 +175,11 @@ class NeST:
     def checkpoint(self) -> Checkpoint:
         """`storch.checkpoint.Checkpoint` object. Returns `None` if NeST not initialized."""
         return self._checkpoint
+
+    @property
+    def best_model_keepers(self) -> BestStateKeeper:
+        """best model keeper"""
+        return self._best_model_keepers
 
     @property
     def max_iters(self) -> int:
@@ -451,6 +459,27 @@ class NeST:
 
         return self._status
 
+
+    def set_best_model_keeper(self, name: str, direction: str, model: nn.Module) -> BestStateKeeper:
+        """Setup best model tracker. The best model tracker can easily keep the state_dict of the best performing
+        checkpoint with one function call. See `update_best_model` for the main API. You can set multiple best
+        model keepers. If so, you must use different names to avoid replacing the previously defined object.
+        Also you must pass the `name` argument to both `{update/load}_best_model`.
+
+        Args:
+            name (str): name of the evaluation scores.
+            direction: (str): either `minimize` or `maximize`.
+            model (nn.Module): The model to keep the best states.
+        """
+        self._best_model_keepers[name] = BestStateKeeper(
+            name=name, direction=direction, model=model, folder=self.project_folder
+        )
+        if self._primary_best is None:
+            self._primary_best = name
+
+        self.register(**{f'nest_best_model_keepers_{name}': self._best_model_keepers[name]})
+
+
     """serialization methods"""
 
     def prepare_for_checkpointing(self, *optimizers, offload_to_cpu: bool=True) -> tuple|tuple[tuple]:
@@ -511,6 +540,54 @@ class NeST:
     def load_latest(self, map_location=None) -> dict:
         """loads the latest checkpoint."""
         return self._checkpoint.load_latest(map_location=map_location)
+
+
+    def update_best_model(self, value: float, name: str=None) -> None:
+        """You can use this function to update the best performing model. The input values are automatically compared
+        with the previous best value corresponding to the `direction` argument. If you have set multiple best model
+        keepers, you should explicitly provide the name of the metric.
+
+        Args:
+            value (float): The value used to update the best model.
+            name (str, optional): The name of the model. If only one best model keeper is set, this argument is not
+                needed. If you have set multiple best model keepers this argument is required. Default: None.
+
+        Raises:
+            Exception: no best model keeper is set.
+        """
+        if len(self._best_model_keepers) == 0:
+            raise Exception(f'You have not set any best model keepers. Call `set_best_model_keeper` beforehand.')
+
+        if name is None:
+            assert len(self._best_model_keepers) == 1, '`name` argument is required if you have set multiple best model keepers.'
+            best_keeper = self._best_model_keepers[self._primary_best]
+        else:
+            best_keeper = self.best_model_keepers[name]
+        best_keeper.update(value)
+
+
+    def load_best_model(self, name: str=None) -> None:
+        """You can use this function to load the current best performing parameters to the model. If you have set
+        multiple best model keepers, you should explicitly provide the name of the metric. It is okay to pass `None`,
+        and if so the first best model keeper is used to load parameters.
+
+        Args:
+            name (str, optional): The name of the model. If only one best model keeper is set, this argument is not
+                needed. If you have set multiple best model keepers and `None` is passed, the first model keeper is
+                used to load parameters. Default: None.
+
+        Raises:
+            Exception: no best model keeper is set.
+        """
+        if len(self._best_model_keepers) == 0:
+            raise Exception(f'You have not set any best model keepers. Call `set_best_model_keeper` beforehand.')
+
+        if name is None:
+            best_keeper = self._best_model_keepers[self._primary_best]
+        else:
+            best_keeper = self.best_model_keepers[name]
+        best_keeper.load()
+
 
     """distributed methods"""
 
