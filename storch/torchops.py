@@ -16,10 +16,7 @@ from torch.cuda.amp import GradScaler
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 
 import storch
-from storch._optimizer_step import (
-    get_optimizer_step, grad_nan_to_num_, optimizer_step,
-    optimizer_step_with_gradient_accumulation, simple_optimizer_step,
-    simple_optimizer_step_with_gradient_accumulation)
+from storch._optimizer_step import get_optimizer_step, grad_nan_to_num_
 from storch.utils import version
 
 __all__ = [
@@ -30,10 +27,6 @@ __all__ = [
     'set_seeds',
     'shuffle_batch',
     'get_optimizer_step',
-    'optimizer_step',
-    'simple_optimizer_step',
-    'optimizer_step_with_gradient_accumulation',
-    'simple_optimizer_step_with_gradient_accumulation',
     'assert_shape',
     'print_module_summary',
     'grad_nan_to_num_',
