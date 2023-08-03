@@ -104,11 +104,11 @@ def get_polynomial_decay_schedule(num_training_steps: int, num_warmup_steps: int
     Returns:
         Callable: _description_
     """
-    if num_training_steps is None:
+    if num_warmup_steps is None:
         def lr_lambda(current_steps: int):
             if current_steps > num_training_steps:
                 return lr_end / lr_init
-            lr_range = lr_init = lr_end
+            lr_range = lr_init - lr_end
             remaining = 1 - current_steps / num_training_steps
             decay = lr_range * remaining ** power + lr_end
             return decay / lr_init
