@@ -10,6 +10,6 @@ from storch.layers.normalization import (AdaptiveNorm2d, LayerNorm2d,
                                          get_normalization1d,
                                          get_normalization2d)
 from storch.layers.squeezeexcitation import (
-    ChannelSqueezeAndExcitation, SpatialChannelSqueezeAndExcitation,
-    SpatialSqueezeAndExcitation, cSE, scSE, sSE, SE)
+    SE, ChannelSqueezeAndSpatialExcitation, SpatialChannelSqueezeAndExcitation,
+    SpatialSqueezeAndChannelExcitation, cSE, scSE, sSE)
 from storch.layers.transformer import MetaformerBlock
