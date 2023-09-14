@@ -53,5 +53,5 @@ class FeatureCache:
             tuple[str, str, int]: key.
         """
         key = tuple(folder, model, num_images)
-        assert all(isinstance(elemenet, Hashable) for elemenet in key)
+        assert all(isinstance(element, Hashable) for element in key)
         return key
