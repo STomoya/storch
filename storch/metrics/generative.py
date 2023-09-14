@@ -10,6 +10,7 @@ from scipy import linalg
 from tqdm import tqdm
 
 import storch
+from storch.metrics.utils.cache import FeatureCache
 from storch.metrics.utils.dataset import build_dataset
 from storch.metrics.utils.inceptionv3 import InceptionV3, InceptionV3JIT
 from storch.metrics.utils.resnet import ResNetIN, ResNetSwAVIN
@@ -267,7 +268,7 @@ class MetricFlags:
 
 def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int], device: torch.device,
     metric_flags: MetricFlags=MetricFlags(), model_name: str='jit_inception',
-    batch_size: int=64, num_workers: int=4, num_images: int=None, verbose: bool=False
+    batch_size: int=64, num_workers: int=4, num_images: int=None, cache_features: bool=True, verbose: bool=False
 ) -> dict:
     """calculate metrics for generative models.
 
@@ -307,10 +308,15 @@ def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int
     freeze(model)
     model.to(device)
 
-    real_dataset = build_dataset(real_root, synthesized_size, synthetic=False, batch_size=batch_size,
-        num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
-    real_features = get_features(real_dataset, model, device, verbose)
-    del real_dataset # manual delete to confirm reduce memory.
+    real_features = FeatureCache.get(real_root, model, num_images) if cache_features else None
+    if real_features is None:
+        real_dataset = build_dataset(real_root, synthesized_size, synthetic=False, batch_size=batch_size,
+            num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
+        real_features = get_features(real_dataset, model, device, verbose)
+        del real_dataset # manual delete to confirm reduce memory.
+
+        if cache_features:
+            FeatureCache.set(real_root, model, num_images, real_features)
 
     fake_dataset = build_dataset(fake_root, synthesized_size, synthetic=True, batch_size=batch_size,
         num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
