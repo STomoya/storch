@@ -113,3 +113,58 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
     if is_v2_transforms_available():
         return Tv2.Compose(transform)
     return T.Compose(transform)
+
+
+def make_cutmix_or_mixup(
+    mixup_alpha: float=1.0, cutmix_alpha: float=0.0, prob: float=1.0, switch_prob: float=0.5, num_classes=1000,
+    labels_getter='default'
+) -> Callable:
+    """Mixup or CutMix that uses the torchvision implementation. The arguments of this function acts equivalently to
+    timm's mixup transform implementation. If `prob=0.0` or the alphas are both set to 0.0, returns a function that
+    returns the input as-is.
+
+    Args:
+        mixup_alpha (float, optional): alpha for MixUp. usually 1.0 is used. disabled if 0.0. Default: 1.0.
+        cutmix_alpha (float, optional): alpha for CutMix. usually 1.0 is used. disabled if 0.0. Default: 0.0.
+        prob (float, optional): probability to apply cutmix or mixup. Default: 1.0.
+        switch_prob (float, optional): probability to switch between cutmix or mixup. Default: 0.5.
+        num_classes (int, optional): number of classes. Default: 1000.
+        labels_getter (str, optional): See `torchvision.transforms.v2.{MixUp,CutMix}`. Default: 'default'.
+
+    Raises:
+        Exception: torchvision version does not suport CutMix and MixUp.
+
+    Returns:
+        Callable: _description_
+    """
+
+    if not is_v2_transforms_available():
+        # mixup and cutmix was added at `0.16.0`
+        raise Exception(f'This function uses the `torchvision` implementation of MixUp and CutMix which was added' + \
+                        'in version `0.16.0`.')
+
+    def _noops(*args):
+        return args
+
+    mixup, cutmix = None, None
+
+    if mixup_alpha > 0.0:
+        mixup = Tv2.MixUp(alpha=mixup_alpha, num_classes=num_classes, labels_getter=labels_getter)
+    if cutmix_alpha > 0.0:
+        cutmix = Tv2.CutMix(alpha=cutmix_alpha, num_classes=num_classes, labels_getter=labels_getter)
+
+    cutmix_or_mixup = None
+    if cutmix is not None and mixup is not None:
+        assert 0 < switch_prob < 1.0, '`switch_prob` should be in (0, 1).'
+        cutmix_or_mixup = Tv2.RandomChoice([cutmix, mixup], p=[switch_prob, 1-switch_prob])
+    elif cutmix is not None or mixup is not None:
+        cutmix_or_mixup = cutmix if cutmix is not None else mixup
+    else:
+        return _noops
+
+    if prob != 1.0:
+        cutmix_or_mixup = Tv2.RandomApply([cutmix_or_mixup], p=prob)
+    elif prob == 0.0:
+        return _noops
+
+    return cutmix_or_mixup
