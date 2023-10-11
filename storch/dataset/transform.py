@@ -5,6 +5,14 @@ from typing import Callable
 
 import torchvision.transforms as T
 
+from storch.utils.version import is_v2_transforms_available
+# we do not try, except import because v0.15.x has v2 namespace, but we don't want
+# to use this version, because of some breaking changes.
+if is_v2_transforms_available():
+    import torchvision.transforms.v2 as Tv2
+else:
+    Tv2 = None
+
 import storch
 
 
@@ -43,7 +51,10 @@ def make_simple_transform(
 
 
 def build_transform(name: str, **params) -> Callable:
-    """Build a transform inside torchvision.transforms by their class name
+    """Build a transform inside torchvision.transforms by their class name.
+    If torchvision's v2 namespace is available, the v2 transforms are used preferentially.
+    If you want a python object as the value, pass a string with `pyobj:` prefix (e.g.,
+    `'pyobj:torch.float32'` to pass `torch.float32`).
 
     Args:
         name (str): The name of the transform. ex) ToTenor, Normalize
@@ -52,10 +63,19 @@ def build_transform(name: str, **params) -> Callable:
     Returns:
         Callable: the built transform
     """
+    # convert string to a python object if value starts with 'pyobj:' prefix.
+    transform_kwargs = {}
+    for key, value in params.items():
+        if isinstance(value, str) and value.startswith('pyobj:'):
+            value = storch.get_obj_by_name(value.replace('pyobj:', ''))
+        transform_kwargs[key] = value
+
+    if Tv2 is not None and hasattr(Tv2, name):
+        return getattr(Tv2, name)(**transform_kwargs)
     if hasattr(T, name):
-        return getattr(T, name)(**params)
+        return getattr(T, name)(**transform_kwargs)
     else:
-        transform = storch.construct_class_by_name(class_name=name, **params)
+        transform = storch.construct_class_by_name(class_name=name, **transform_kwargs)
         assert callable(transform), f'User defined tranform {name} is not callable'
         return transform
 
@@ -90,4 +110,6 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
             transform.append(build_transform(config.get('name'), **params))
         else:
             transform.append(build_transform(**config))
+    if is_v2_transforms_available():
+        return Tv2.Compose(transform)
     return T.Compose(transform)
