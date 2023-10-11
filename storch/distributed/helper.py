@@ -190,7 +190,10 @@ class DistributedHelper:
         return self._mode
 
 
-    def prepare_module(self, *modules: nn.Module, mode: str=None, mixed_precision: bool=False, compile: bool|str|dict|None=None) -> tuple[nn.Module]|nn.Module:
+    def prepare_module(self,
+            *modules: nn.Module, mode: str=None, mixed_precision: bool=False, compile: bool|str|dict|None=None,
+            return_intermediates: bool=False
+        ) -> tuple[nn.Module]|nn.Module:
         """prepare the input modules with mode "mode".
 
         - If the device is a cuda device the module is first set to the device, then wrapped.
@@ -216,10 +219,14 @@ class DistributedHelper:
         """
         mode = self.get_parallel_mode(mode)
 
-        wrapped_modules = []
+        original_modules = []
+        parallel_modules = []
+        compiled_modules = []
         for module in modules:
             # confirm send module to device before wrapping the model
             module.to(self.device)
+
+            original_modules.append(module)
 
             # wrap the model. see storch.distributed.factory.
             wrap_kwargs = {}
@@ -250,7 +257,10 @@ class DistributedHelper:
 
             self._factories.append(factory)
 
+            parallel_modules.append(wrapped_module)
+
             # compile model
+            compiled_module = wrapped_module
             if compile and version.is_compiler_available():
                 if isinstance(compile, dict):
                     compile_kwargs = compile
@@ -258,11 +268,20 @@ class DistributedHelper:
                     compile_kwargs = dict(mode=compile)
                 else:
                     compile_kwargs = {}
-                wrapped_module = torch.compile(wrapped_module, **compile_kwargs)
+                compiled_module = torch.compile(wrapped_module, **compile_kwargs)
 
-            wrapped_modules.append(wrapped_module)
+            # wrapped_modules.append(wrapped_module)
+            compiled_modules.append(compiled_module)
 
-        return tuple(wrapped_modules) if len(wrapped_modules) > 1 else wrapped_modules[0]
+        _return_as_tuple = len(compiled_module) > 1
+        if return_intermediates:
+            return (
+                tuple(original_modules) if _return_as_tuple else original_modules[0],
+                tuple(parallel_modules) if _return_as_tuple else parallel_modules[0],
+                tuple(compiled_modules) if _return_as_tuple else compiled_modules[0]
+            )
+
+        return tuple(compiled_modules) if _return_as_tuple else compiled_modules[0]
 
 
     def prepare_dataset(self, dataset: Dataset, batch_size: int, shuffle: bool=True, drop_last: bool=True,
