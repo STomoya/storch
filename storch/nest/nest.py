@@ -147,6 +147,18 @@ class NeST:
         elif where == 'final':
             return self._final_models[index]
 
+    def get_step_fn(self, optimizer: optim.Optimizer) -> Callable:
+        """return optimizer_step function, built for an specific optimizer.
+
+        Args:
+            optimizer (optim.Optimizer): optimizer.
+
+        Returns:
+            Callable: The optimizer_step function.
+        """
+        return self._step_fn.get(id(optimizer), None)
+
+    # a
 
     """distributed properties"""
 
@@ -734,7 +746,7 @@ class NeST:
             update_scaler (bool, optional): update gradient scaler used when AMP is enabled. ignored when AMP is not enabled.
                 Default: True.
         """
-        self._step_fn[id(optimizer)](loss, optimizer, self._grad_scaler, scheduler, module,
+        self.get_step_fn(optimizer)(loss, optimizer, self._grad_scaler, scheduler, module,
             zero_grad=zero_grad, set_to_none=True, update_scaler=update_scaler,
             clip_grad_norm=clip_grad_norm, max_norm=max_norm
         )
