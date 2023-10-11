@@ -39,3 +39,9 @@ def is_multi_weight_api_available():
 
 def is_compiler_available():
     return is_torch_version_geq('2.0.0')
+
+
+def is_v2_transforms_available():
+    # v2 namespace appeared in v0.15.0, but had some breaking changes in v0.16.0,
+    # so we skip v0.15.x series.
+    return is_torchvision_version_geq('0.16.0')

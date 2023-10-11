@@ -5,7 +5,12 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image
-from torchvision import datapoints
+
+from storch.utils.version import is_v2_transforms_available
+if not is_v2_transforms_available():
+    raise Exception(f'v2 transforms is not available. Use torchvision>=0.16.0.')
+
+from torchvision import tv_tensors
 from torchvision.transforms.v2 import Transform
 from torchvision.transforms.v2 import functional as F
 
@@ -16,14 +21,14 @@ from storch.transforms.degradations import (all_kernels, random_gaussian_noise,
 from storch.transforms.resize_right import resize
 
 
-def to_image_dp(image: Image.Image, dtype: torch.dtype=torch.float) -> datapoints.Image:
-    image = datapoints.Image(image)
-    image = F.convert_dtype_image_tensor(image, dtype=dtype)
+def to_image(image: Image.Image, dtype: torch.dtype=torch.float) -> tv_tensors.Image:
+    image = F.to_image(image) # PIL -> torch.Tensor (dtype: uint8)
+    image = F.to_dtype(image, dtype=dtype)
     return image
 
 
-def to_mask_dp(mask: Image.Image) -> datapoints.Mask:
-    return datapoints.Mask(mask)
+def to_mask(mask: Image.Image) -> tv_tensors.Mask:
+    return tv_tensors.Mask(mask)
 
 
 class ToNumpy(Transform):
@@ -39,9 +44,9 @@ class ToNumpy(Transform):
         return inpt
 
 
-class ToTenor(Transform):
+class ToTensor(Transform):
     """ToTensor with same functionality as v1 ToTensor class."""
-    _transformed_types = (datapoints.Image, Image.Image)
+    _transformed_types = (tv_tensors.Image, Image.Image)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, Image.Image):
