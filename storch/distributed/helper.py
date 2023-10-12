@@ -273,7 +273,7 @@ class DistributedHelper:
             # wrapped_modules.append(wrapped_module)
             compiled_modules.append(compiled_module)
 
-        _return_as_tuple = len(compiled_module) > 1
+        _return_as_tuple = len(compiled_modules) > 1
         if return_intermediates:
             return (
                 tuple(original_modules) if _return_as_tuple else original_modules[0],
