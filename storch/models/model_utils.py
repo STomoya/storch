@@ -87,6 +87,7 @@ def get_dtype_from_module(module: nn.Module) -> torch.dtype:
     return first_var.dtype
 
 
+@deprecated('models.model.ModelMixin', 'models.model.ModelMixin')
 class ModelMixin(nn.Module):
 
     def __init_subclass__(cls) -> None:
