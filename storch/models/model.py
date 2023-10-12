@@ -10,9 +10,9 @@ from typing import Any, Callable
 
 import torch
 import torch.nn as nn
-from torch.distributed.fsdp.api import FullStateDictConfig, ShardingStrategy
-from torch.distributed.fsdp import StateDictType
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import StateDictType
+from torch.distributed.fsdp.api import FullStateDictConfig, ShardingStrategy
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 try:
@@ -174,6 +174,7 @@ def save_model(model: ModelMixin, fp: str, framework: str='safetensors'):
         framework = framework.lower()
         if is_safetensors_available() and framework in ['st', 'safetensor', 'safetensors', 'both']:
             from safetensors.torch import save_file
+
             # save model_config dict as string inside __metadata__ of safetensors file header.
             metadata = {'model_config': json.dumps(model_config)}
             save_file(state_dict, fp + WeightExt.SAFETENSORS.value, metadata=metadata)
