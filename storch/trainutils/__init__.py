@@ -11,8 +11,8 @@ from storch.path import Folder, Path
 from storch.scheduler import build_scheduler
 from storch.status import Status, ThinStatus
 from storch.torchops import (auto_get_device, freeze, get_grad_scaler,
-                             get_optimizer_step, inference_mode,
-                             set_seeds, unfreeze, update_ema)
+                             get_optimizer_step, inference_mode, set_seeds,
+                             unfreeze, update_ema)
 
 __all__ = [
     'loss',

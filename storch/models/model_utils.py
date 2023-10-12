@@ -9,11 +9,10 @@ from typing import Iterable
 
 import torch
 import torch.nn as nn
+from stutil.exceptions import deprecated
 from torch.cuda.amp import GradScaler
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
-from stutil.exceptions import deprecated
-
 
 from storch._optimizer_step import get_optimizer_step
 from storch.utils import version
@@ -87,6 +86,7 @@ def get_dtype_from_module(module: nn.Module) -> torch.dtype:
     return first_var.dtype
 
 
+@deprecated('models.model.ModelMixin', 'models.model.ModelMixin')
 class ModelMixin(nn.Module):
 
     def __init_subclass__(cls) -> None:

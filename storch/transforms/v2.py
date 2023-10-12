@@ -7,6 +7,7 @@ import torch
 from PIL import Image
 
 from storch.utils.version import is_v2_transforms_available
+
 if not is_v2_transforms_available():
     raise Exception(f'v2 transforms is not available. Use torchvision>=0.16.0.')
 
