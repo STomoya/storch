@@ -1,3 +1,7 @@
+"""
+classes and functions in this file is for user defined models, not for pre-defined models in
+libraries like timm, etc.
+"""
 from __future__ import annotations
 
 import inspect
