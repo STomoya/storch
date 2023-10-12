@@ -64,10 +64,11 @@ class NeST:
         self._train_loader = None
         self._set_epoch_fn = None
 
-        self._models = []
+        self._org_models = []
+        self._para_models = []
+        self._final_models = []
         self._best_model_keepers = {}
         self._primary_best = None
-        self._dmodels = []
         self._optimizers = []
 
         self._initialized = False
@@ -123,6 +124,41 @@ class NeST:
     def compile(self) -> bool|str|dict:
         """compile"""
         return self._compile
+
+    def get_model(self, index: int, where: str='parallel') -> nn.Module:
+        """This function is for getting models. It supports returning intermediate step of the
+        building function. 'original' returns the original model, 'parallel' returns the model wrapped
+        via parallel wrappers, and 'final' returns the final built model. If no parallel and no
+        `torch.compile` is enabled, all variants return the same model.
+
+        Args:
+            index (int): returns the `index`-th created model.
+            where (str, optional): Default: 'parallel'.
+
+        Returns:
+            nn.Module: the model.
+        """
+        if index >= len(self._org_models):
+            return None
+        if where == 'original':
+            return self._org_models[index]
+        elif where == 'parallel':
+            return self._para_models[index]
+        elif where == 'final':
+            return self._final_models[index]
+
+    def get_step_fn(self, optimizer: optim.Optimizer) -> Callable:
+        """return optimizer_step function, built for an specific optimizer.
+
+        Args:
+            optimizer (optim.Optimizer): optimizer.
+
+        Returns:
+            Callable: The optimizer_step function.
+        """
+        return self._step_fn.get(id(optimizer), None)
+
+    # a
 
     """distributed properties"""
 
@@ -303,16 +339,17 @@ class NeST:
 
         assert isinstance(model, nn.Module), f"The builder's resulting object must be an `nn.Module` object. got {type(model)}"
 
-        self._models.append(model)
-
-        model = self._disthelper.prepare_module(
+        org_model, para_model, compiled = self._disthelper.prepare_module(
             model,
-            mode=self._strategy, mixed_precision=self._mixed_precision, compile=self._compile
+            mode=self._strategy, mixed_precision=self._mixed_precision, compile=self._compile,
+            return_intermediates=True
         )
 
-        self._dmodels.append(model)
+        self._org_models.append(org_model)
+        self._para_models.append(para_model)
+        self._final_models.append(compiled)
 
-        return model
+        return compiled
 
 
     def build_optimizer(self, builder: Callable|str, parameters: OrderedDict, **builder_kwargs) -> optim.Optimizer:
@@ -426,7 +463,7 @@ class NeST:
             logger_name=logger_name, steptime_num_accum=steptime_num_accum, delta_format=delta_format
         )
 
-        for i, (dmodel, optimizer) in enumerate(zip(self._dmodels, self._optimizers)):
+        for i, (dmodel, optimizer) in enumerate(zip(self._para_models, self._optimizers)):
             # if gpu memory logging is enabled instantiate hook and register.
             if log_gpu_memory_at is not None:
                 if isinstance(log_gpu_memory_at, int):
@@ -435,8 +472,8 @@ class NeST:
                 post_backward_hook = [self._status.log_gpu_memory('backward()' + stage_postfix, log_gpu_memory_at, as_hook=True)]
                 post_step_hook = [self._status.log_gpu_memory('optimizer.step()' + stage_postfix, log_gpu_memory_at, as_hook=True)]
             else:
-                post_backward_hook = None
-                post_step_hook = None
+                post_backward_hook = []
+                post_step_hook = []
 
             self._step_fn[id(optimizer)] = get_optimizer_step(
                 gradient_accumulation_steps=self._grad_accum_steps,
@@ -445,9 +482,9 @@ class NeST:
                 post_backward_hooks=post_backward_hook, post_optim_step_hooks=post_step_hook
             )
 
-        if len(self._models) > len(self._optimizers):
-            to_log += self._models[len(self._optimizers):]
-        for model, optimizer in zip(self._models, self._optimizers):
+        if len(self._org_models) > len(self._optimizers):
+            to_log += self._org_models[len(self._optimizers):]
+        for model, optimizer in zip(self._org_models, self._optimizers):
             to_log += [model, optimizer]
         self._status.log_stuff(*to_log, self._train_loader)
         self._status.log_actual_batch_size(self._train_loader.batch_size, self._grad_accum_steps, self.world_size)
@@ -709,7 +746,7 @@ class NeST:
             update_scaler (bool, optional): update gradient scaler used when AMP is enabled. ignored when AMP is not enabled.
                 Default: True.
         """
-        self._step_fn[id(optimizer)](loss, optimizer, self._grad_scaler, scheduler, module,
+        self.get_step_fn(optimizer)(loss, optimizer, self._grad_scaler, scheduler, module,
             zero_grad=zero_grad, set_to_none=True, update_scaler=update_scaler,
             clip_grad_norm=clip_grad_norm, max_norm=max_norm
         )
