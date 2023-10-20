@@ -404,6 +404,10 @@ class NeST:
         to_log: list=[],
         logger_name: str='logger',
         log_gpu_memory_at: list[int]|int|None=None,
+        wandb_project: str|None=None,
+        wandb_name: str|None=None,
+        wandb_tags: list|None=None,
+        wandb_config: dict|None=None,
         steptime_num_accum: int=300,
         delta_format='{key}: {value: 10.5f}',
         ckpt_file_format: str='checkpoint.{count}.torch',
@@ -448,6 +452,11 @@ class NeST:
             to_log (list, optional): a list of objects to log. Default: [].
             logger_name (str, optional): Name of the logger. Default: 'logger'.
             log_gpu_memory_at (list[int] | int, optional): Log GPU memory at specified iteration. Default: None.
+            wandb_project (str, optional): wandb project name. If None, disables wandb logging. wandb requires
+                `WANDB_API_KEY` evironment variable. Default: None.
+            wandb_name (str, optional): wandb name of run. Default: None.
+            wandb_tags (list, optional): list of tags: Default: None.
+            wandb_config (dict|DictConfig, optional): config of the run. accepts omegaconf objects. Default: None.
             steptime_num_accum (int, optional): number for how many step time to accumulate for logging rolling ETA.
                 Default: 300.
             delta_format (str, optional): format for logging values. Default: '{key}: {value: 10.5f}'.
@@ -460,7 +469,9 @@ class NeST:
         StatusCls = Status if self._disthelper.is_primary() else ThinStatus
         self._status = StatusCls(
             max_iters=max_training_iters, log_file=self._project_folder / log_file, log_interval=log_interval,
-            logger_name=logger_name, steptime_num_accum=steptime_num_accum, delta_format=delta_format
+            logger_name=logger_name,
+            wandb_project=wandb_project, wandb_name=wandb_name, wandb_tags=wandb_tags, wandb_config=wandb_config,
+            steptime_num_accum=steptime_num_accum, delta_format=delta_format
         )
 
         for i, (dmodel, optimizer) in enumerate(zip(self._para_models, self._optimizers)):
@@ -806,6 +817,16 @@ class NeST:
             level (str, optional): logging level. Defaults to 'info'.
         """
         self._status.log(message, level)
+
+
+    @nestutils._assert_initialized
+    def finish_wandb(self, quiet: bool=None) -> None:
+        """finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
+
+        Args:
+            quiet (bool, optional): do not log run stats. Default: None.
+        """
+        self._status.finish_wandb(quiet=quiet)
 
 
     @contextmanager
