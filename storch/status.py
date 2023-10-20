@@ -23,6 +23,7 @@ from torch.utils.data import DataLoader, DistributedSampler, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 
+from storch import wandb
 from storch._funtext import ASCII_LOGO
 from storch.path import Path
 from storch.profiler import get_tb_profile, record_function
@@ -107,6 +108,11 @@ class Status:
         bar (bool, optional): Enable tqdm progress bar. Default: False.
         log_interval (int, optional): Interval for logging status. Default: 1.
         logger_name (str, optional): The name of the logger. Default: 'logger'.
+        wandb_project (str, optional): wandb project name. If None, disables wandb logging. wandb requires
+            `WANDB_API_KEY` evironment variable. Default: None.
+        wandb_name (str, optional): wandb name of run. Default: None.
+        wandb_tags (list, optional): list of tags: Default: None.
+        wandb_config (dict|DictConfig, optional): config of the run. accepts omegaconf objects. Default: None.
         steptime_num_accum (int, optional): Number of iterations to accumulate for calculating the rolling ETA.
             Default: 300.
         tb_folder (str | None, optional): Folder to save the tensorboard event.
@@ -135,6 +141,7 @@ class Status:
     """
     def __init__(self,
         max_iters: int, log_file: str, log_interval: int=1, logger_name: str='logger',
+        wandb_project: str=None, wandb_name: str=None, wandb_tags: list=None, wandb_config: dict=None,
         steptime_num_accum: int=300, tb_folder: str|None=None,
         delta_format: str='{key}: {value: 10.5f}'
     ) -> None:
@@ -156,6 +163,11 @@ class Status:
         self._steptime_num_accum = steptime_num_accum
         self._steptimes = deque(maxlen=steptime_num_accum)
 
+        self._wandb_run = wandb.init(
+            project=wandb_project, name=wandb_name, config=wandb_config, tags=wandb_tags,
+            sync_tensorboard=True
+        ) if isinstance(wandb_project, str) else None
+
         self._tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
         self._tbwriter = SummaryWriter(self._tb_folder)
         self._profiler = None
@@ -173,6 +185,17 @@ class Status:
     @batches_done.setter
     def batches_done(self, value):
         self._batches_done = value
+
+
+    def finish_wandb(self, quiet: bool=None) -> None:
+        """finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
+
+        Args:
+            quiet (bool, optional): do not log run stats. Default: None.
+        """
+        if self._wandb_run is not None:
+            wandb.finish(quiet=quiet)
+
 
     def get_kbatches(self, format='{kbatches:.2f}k') -> str:
         """Returns a formated kilo batches.
