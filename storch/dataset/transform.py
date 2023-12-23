@@ -1,3 +1,4 @@
+"""Transforms."""
 
 from __future__ import annotations
 
@@ -18,19 +19,25 @@ import storch
 
 
 def make_simple_transform(
-    image_size: tuple[int]|int, crop: str='center', hflip: bool=True,
-    mean: tuple[float]|float=0.5, std: tuple[float]|float=0.5
+    image_size: tuple[int] | int,
+    crop: str = 'center',
+    hflip: bool = True,
+    mean: tuple[float] | float = 0.5,
+    std: tuple[float] | float = 0.5,
 ) -> Callable:
-    """make a simple transform
+    """Make a simple transform.
 
     Args:
-        image_size (tuple[int] | int): size of the image to be resized to. if a single int value, (image_size, image_size) will be used.
+    ----
+        image_size (tuple[int] | int): size of the image to be resized to. if a single int value,
+            (image_size, image_size) will be used.
         crop (str, optional): 'center': CenterCrop, 'random': RandomResizedCrop. Default: 'center'.
         hflip (bool, optional): If True, add RandomHorizontalFlip. Default: True.
         mean (tuple[float] | float, optional): mean used to normalize the image. Default: 0.5.
         std (tuple[float] | float, optional): std used to normalize the image. Default: 0.5.
 
     Returns:
+    -------
         Callable: transforms
     """
     if isinstance(image_size, int):
@@ -44,31 +51,32 @@ def make_simple_transform(
     if hflip:
         transform.append(T.RandomHorizontalFlip())
 
-    transform.extend([
-        T.ToTensor(),
-        T.Normalize(mean, std)])
+    transform.extend([T.ToTensor(), T.Normalize(mean, std)])
 
     return T.Compose(transform)
 
 
 def build_transform(name: str, **params) -> Callable:
-    """Build a transform inside torchvision.transforms by their class name.
-    If torchvision's v2 namespace is available, the v2 transforms are used preferentially.
-    If you want a python object as the value, pass a string with `pyobj:` prefix (e.g.,
-    `'pyobj:torch.float32'` to pass `torch.float32`).
+    """Build transform given a name and parameters.
+
+    Build a transform inside torchvision.transforms by their class name. If torchvision's v2 namespace is available,
+    the v2 transforms are used preferentially. If you want a python object as the value, pass a string with
+    `pyobj:` prefix (e.g., `'pyobj:torch.float32'` to pass `torch.float32`).
 
     Args:
+    ----
         name (str): The name of the transform. ex) ToTenor, Normalize
         **params: Keyword arguments of passed to the transform.
 
     Returns:
+    -------
         Callable: the built transform
     """
     # convert string to a python object if value starts with 'pyobj:' prefix.
     transform_kwargs = {}
     for key, value in params.items():
         if isinstance(value, str) and value.startswith('pyobj:'):
-            value = storch.get_obj_by_name(value.replace('pyobj:', ''))
+            value = storch.get_obj_by_name(value.replace('pyobj:', ''))  # noqa: PLW2901
         transform_kwargs[key] = value
 
     if Tv2 is not None and hasattr(Tv2, name):
@@ -82,12 +90,14 @@ def build_transform(name: str, **params) -> Callable:
 
 
 def make_transform_from_config(configs: list[dict]) -> Callable:
-    """make transform from list of TransformConfigs
+    """Make transform from list of TransformConfigs.
 
     Args:
+    ----
         configs (list[dict]): List of dicts containing a least 'name' key.
 
     Returns:
+    -------
         Callable: transforms
 
     Examples::
@@ -117,14 +127,20 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
 
 
 def make_cutmix_or_mixup(
-    mixup_alpha: float=1.0, cutmix_alpha: float=0.0, prob: float=1.0, switch_prob: float=0.5, num_classes=1000,
-    labels_getter='default'
+    mixup_alpha: float = 1.0,
+    cutmix_alpha: float = 0.0,
+    prob: float = 1.0,
+    switch_prob: float = 0.5,
+    num_classes=1000,
+    labels_getter='default',
 ) -> Callable:
-    """Mixup or CutMix that uses the torchvision implementation. The arguments of this function acts equivalently to
-    timm's mixup transform implementation. If `prob=0.0` or the alphas are both set to 0.0, returns a function that
-    returns the input as-is.
+    """Mixup or CutMix that uses the torchvision implementation.
+
+    The arguments of this function acts equivalently to timm's mixup transform implementation.
+    If `prob=0.0` or the alphas are both set to 0.0, returns a function that returns the input as-is.
 
     Args:
+    ----
         mixup_alpha (float, optional): alpha for MixUp. usually 1.0 is used. disabled if 0.0. Default: 1.0.
         cutmix_alpha (float, optional): alpha for CutMix. usually 1.0 is used. disabled if 0.0. Default: 0.0.
         prob (float, optional): probability to apply cutmix or mixup. Default: 1.0.
@@ -133,39 +149,42 @@ def make_cutmix_or_mixup(
         labels_getter (str, optional): See `torchvision.transforms.v2.{MixUp,CutMix}`. Default: 'default'.
 
     Raises:
+    ------
         Exception: torchvision version does not suport CutMix and MixUp.
 
     Returns:
+    -------
         Callable: _description_
     """
-
     if not is_v2_transforms_available():
         # mixup and cutmix was added at `0.16.0`
-        raise Exception(f'This function uses the `torchvision` implementation of MixUp and CutMix which was added' + \
-                        'in version `0.16.0`.')
+        raise Exception(
+            'This function uses the `torchvision` implementation of MixUp and CutMix which was added'
+            + 'in version `0.16.0`.'
+        )
 
     def _noops(*args):
         return args
 
     mixup, cutmix = None, None
 
-    if mixup_alpha > 0.0:
+    if mixup_alpha > 0.0:  # noqa: PLR2004
         mixup = Tv2.MixUp(alpha=mixup_alpha, num_classes=num_classes, labels_getter=labels_getter)
-    if cutmix_alpha > 0.0:
+    if cutmix_alpha > 0.0:  # noqa: PLR2004
         cutmix = Tv2.CutMix(alpha=cutmix_alpha, num_classes=num_classes, labels_getter=labels_getter)
 
     cutmix_or_mixup = None
     if cutmix is not None and mixup is not None:
-        assert 0 < switch_prob < 1.0, '`switch_prob` should be in (0, 1).'
-        cutmix_or_mixup = Tv2.RandomChoice([cutmix, mixup], p=[switch_prob, 1-switch_prob])
+        assert 0 < switch_prob < 1.0, '`switch_prob` should be in (0, 1).'  # noqa: PLR2004
+        cutmix_or_mixup = Tv2.RandomChoice([cutmix, mixup], p=[switch_prob, 1 - switch_prob])
     elif cutmix is not None or mixup is not None:
         cutmix_or_mixup = cutmix if cutmix is not None else mixup
     else:
         return _noops
 
-    if prob != 1.0:
+    if prob != 1.0:  # noqa: PLR2004
         cutmix_or_mixup = Tv2.RandomApply([cutmix_or_mixup], p=prob)
-    elif prob == 0.0:
+    elif prob == 0.0:  # noqa: PLR2004
         return _noops
 
     return cutmix_or_mixup

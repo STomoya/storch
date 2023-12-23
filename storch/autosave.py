@@ -1,18 +1,19 @@
+"""autosave."""
 
 import atexit
 import os
 import warnings
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 import torch
 
-__all__ = [
-    'autosave'
-]
+__all__ = ['autosave']
+
 
 class autosave:
     """autosave registered objects when code exits.
+
     This class is only a container for the objects to be saved,
     with functions to register objects.
 
@@ -20,22 +21,25 @@ class autosave:
           forces the user to take care of this, such as registering torch tensors on GPU
           or calling registering functions multiple times.
 
-    Attributes:
+    Attributes
+    ----------
         _container (dict): contains the objects to be saved.
     """
 
-    _container = {}
+    _container: ClassVar[dict] = {}
 
     @classmethod
-    def register_object(cls, name: str, obj: Any, overwrite: bool=False) -> None:
-        """register an object to save
+    def register_object(cls, name: str, obj: Any, overwrite: bool = False) -> None:
+        """Register an object to save.
 
         Args:
+        ----
             name (str): name to identify the object.
             obj (Any): the object to register.
             overwrite (bool, optional): overwrite the object if already exists. Default: False.
 
-        Examples::
+        Examples:
+        --------
             >>> # anything that can be torch.save()-ed can be registered
             >>> # optionally overwrite the object using 'overwrite' argument.
             >>> autosave.register_object('name-of-object', torch.randn(10), overwrite=True)
@@ -44,19 +48,19 @@ class autosave:
             >>> # and only needs to be called once
             >>> autosave.register_object('model', model.state_dict())
         """
-        if name not in cls._container:
-            cls._container[name] = obj
-        elif overwrite:
+        if overwrite or name not in cls._container:
             cls._container[name] = obj
 
     @classmethod
     def register_function_output(cls, func: Callable) -> Callable:
-        """register a function to save the outputs.
+        """Register a function to save the outputs.
 
         Args:
+        ----
             func (Callable): The function to save the outputs of
 
         Returns:
+        -------
             Callable: The registered function.
 
         Examples::
@@ -68,26 +72,33 @@ class autosave:
             >>>     return
         """
         name = func.__qualname__
+
         @wraps(func)
         def inner(*args, **kwargs):
             retval = func(*args, **kwargs)
             cls.register_object(name, retval, overwrite=True)
             return retval
+
         return inner
 
 
-
 def _save(folder='.'):
-    """save registered objects.
+    """Save registered objects.
+
     This function does not need to be called manually. It is automatically called at exit
     via atexit.
 
     Args:
+    ----
         folder (str, optional): The directory to save the registered objects. Default: '.'.
     """
     if len(autosave._container.keys()):
         torch.save(autosave._container, os.path.join(folder, 'autosave.torch'))
 
+
 # these should be always called when this module is imported
-warnings.warn('"autosave" is only for unexpected exits from Python programms. Please save them munually by yourselves.')
+warnings.warn(
+    '"autosave" is only for unexpected exits from Python programms. Please save them munually by yourselves.',
+    stacklevel=1,
+)
 atexit.register(_save)

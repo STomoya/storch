@@ -1,7 +1,8 @@
-'''Trapped-ball segmentation.
+"""Trapped-ball segmentation.
+
 from: https://github.com/hepesu/LineFiller
 modified by: Tomoya Sawada https://github.com/STomoya
-'''
+"""
 
 from __future__ import annotations
 
@@ -14,9 +15,11 @@ from skimage.color import label2rgb
 
 def get_ball_structuring_element(radius: int) -> np.ndarray:
     """Get a ball shape structuring element with specific radius for morphology operation.
+
     The radius of ball usually equals to (leaking_gap_size / 2).
 
     Arguments:
+    ---------
         radius: int
             Radius of ball shape.
     """
@@ -27,20 +30,23 @@ def get_unfilled_point(image: np.ndarray) -> np.ndarray:
     """Get points belong to unfilled(value==255) area.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image.
     """
-    y, x = np.where(image == 255)
+    y, x = np.where(image == 255)  # noqa: PLR2004
     return np.stack((x.astype(int), y.astype(int)), axis=-1)
 
 
 def exclude_area(image: np.ndarray, radius: int) -> np.ndarray:
     """Perform erosion on image to exclude points near the boundary.
+
     We want to pick part using floodfill from the seed point after dilation.
     When the seed point is near boundary, it might not stay in the fill, and would
     not be a valid point for next floodfill operation. So we ignore these points with erosion.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image.
         radius: int
@@ -53,6 +59,7 @@ def trapped_ball_fill_single(image: np.ndarray, seed_point: tuple[int, int], rad
     """Perform a single trapped ball fill operation.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image. the image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -84,10 +91,11 @@ def trapped_ball_fill_single(image: np.ndarray, seed_point: tuple[int, int], rad
     return pass2
 
 
-def trapped_ball_fill_multi(image: np.ndarray, radius: int, method: str='mean', max_iter: int=1000) -> np.ndarray:
+def trapped_ball_fill_multi(image: np.ndarray, radius: int, method: str = 'mean', max_iter: int = 1000) -> np.ndarray:
     """Perform multi trapped ball fill operations until all valid areas are filled.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image. The image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -99,7 +107,6 @@ def trapped_ball_fill_multi(image: np.ndarray, radius: int, method: str='mean', 
         max_iter: int (default: 1000)
             max iteration number.
     """
-
     unfill_area = image
     filled_area, filled_area_size, result = [], [], []
 
@@ -138,7 +145,8 @@ def flood_fill_single(im: np.ndarray, seed_point: tuple[int, int]) -> np.ndarray
     """Perform a single flood fill operation.
 
     Arguments:
-        image: np.ndarray
+    ---------
+        im: np.ndarray
             an image. the image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
         seed_point: tuple[int, int]
@@ -156,16 +164,17 @@ def flood_fill_single(im: np.ndarray, seed_point: tuple[int, int]) -> np.ndarray
 
 def flood_fill_multi(image, max_iter=20000) -> np.ndarray:
     """Perform multi flood fill operations until all valid areas are filled.
+
     This operation will fill all rest areas, which may result large amount of fills.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image. the image should contain white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
         max_iter: int (default: 20000)
             max iteration number.
     """
-
     unfill_area = image
     filled_area = []
 
@@ -187,6 +196,7 @@ def mark_fill(image: np.ndarray, fills: list[np.ndarray]) -> np.ndarray:
     """Mark filled areas with 0.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image.
         fills: list[np.ndarray]
@@ -204,6 +214,7 @@ def build_fill_map(image: np.ndarray, fills: np.ndarray) -> np.ndarray:
     """Make an image(array) with each pixel(element) marked with fills' id. id of line is 0.
 
     Arguments:
+    ---------
         image: np.ndarray
             an image.
         fills: np.ndarray
@@ -221,7 +232,8 @@ def show_fill_map(fillmap: np.ndarray) -> np.ndarray:
     """Mark filled areas with colors. It is useful for visualization.
 
     Arguments:
-        fill_map: np.ndarray
+    ---------
+        fillmap: np.ndarray
     """
     # Generate color for each fill randomly.
     colors = np.random.randint(0, 255, (np.max(fillmap) + 1, 3))
@@ -235,6 +247,7 @@ def get_bounding_rect(points: np.ndarray) -> tuple[int, int, int, int]:
     """Get a bounding rect of points.
 
     Arguments:
+    ---------
         points: np.ndarray
             array of points.
     """
@@ -248,6 +261,7 @@ def get_border_bounding_rect(
     """Get a valid bounding rect in the image with border of specific size.
 
     Arguments:
+    ---------
         h: int
             image max height.
         w: int
@@ -261,19 +275,21 @@ def get_border_bounding_rect(
     """
     x1, y1, x2, y2 = p1[0], p1[1], p2[0], p2[1]
 
-    x1 = x1 - r if 0 < x1 - r else 0
-    y1 = y1 - r if 0 < y1 - r else 0
+    x1 = x1 - r if x1 - r > 0 else 0
+    y1 = y1 - r if y1 - r > 0 else 0
     x2 = x2 + r + 1 if x2 + r + 1 < w else w
     y2 = y2 + r + 1 if y2 + r + 1 < h else h
 
     return x1, y1, x2, y2
 
+
 def get_border_point(
     points: tuple[np.ndarray, np.ndarray], rect: tuple[int, int, int, int], max_height: int, max_width: int
 ) -> tuple[tuple[np.ndarray, np.ndarray], np.ndarray]:
-    """Get border points of a fill area
+    """Get border points of a fill area.
 
     Arguments:
+    ---------
         points: tuple[np.ndarray, np.ndarray]
             points of fill .
         rect: tuple[int, int, int, int]
@@ -283,7 +299,6 @@ def get_border_point(
         max_width: int
             image max width.
     """
-
     # Get a local bounding rect.
     border_rect = get_border_bounding_rect(max_height, max_width, rect[:2], rect[2:], 2)
 
@@ -301,7 +316,7 @@ def get_border_point(
     cross = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
     border_pixel_mask = cv2.morphologyEx(fill, cv2.MORPH_DILATE, cross, anchor=(-1, -1), iterations=1) - fill
 
-    border_pixel_points = np.where(border_pixel_mask == 255)
+    border_pixel_points = np.where(border_pixel_mask == 255)  # noqa: PLR2004
 
     # Transform points back to fillmap.
     border_pixel_points = (border_pixel_points[0] + border_rect[1], border_pixel_points[1] + border_rect[0])
@@ -309,10 +324,11 @@ def get_border_point(
     return border_pixel_points, approx_shape
 
 
-def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
+def merge_fill(fillmap: np.ndarray, max_iter: int = 10) -> np.ndarray:
     """Merge fill areas.
 
     Arguments:
+    ---------
         fillmap: np.ndarray
             an image.
         max_iter: int (default: 10)
@@ -321,7 +337,7 @@ def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
     max_height, max_width = fillmap.shape[:2]
     result = fillmap.copy()
 
-    for i in range(max_iter):
+    for _ in range(max_iter):
         result[np.where(fillmap == 0)] = 0
 
         fill_id = np.unique(result.flatten())
@@ -330,14 +346,9 @@ def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
         for j in fill_id:
             point = np.where(result == j)
 
-            fills.append({
-                'id': j,
-                'point': point,
-                'area': len(point[0]),
-                'rect': get_bounding_rect(point)
-            })
+            fills.append({'id': j, 'point': point, 'area': len(point[0]), 'rect': get_bounding_rect(point)})
 
-        for j, f in enumerate(fills):
+        for f in fills:
             # ignore lines
             if f['id'] == 0:
                 continue
@@ -352,10 +363,10 @@ def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
             if len(ids) == 0:
                 # points with lines around color change to line color
                 # regions surrounded by line remain the same
-                if f['area'] < 5:
+                if f['area'] < 5:  # noqa: PLR2004
                     new_id = 0
             else:
-                # region id may be set to region with largest contact
+                # "region id may be set to region with largest contact
                 new_id = ids[0]
 
             # a point
@@ -363,13 +374,13 @@ def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
                 result[f['point']] = new_id
 
             #
-            if len(approx_shape) in [2, 3, 4, 5] and f['area'] < 500:
+            if len(approx_shape) in [2, 3, 4, 5] and f['area'] < 500:  # noqa: PLR2004
                 result[f['point']] = new_id
 
-            if f['area'] < 250 and len(ids) == 1:
+            if f['area'] < 250 and len(ids) == 1:  # noqa: PLR2004
                 result[f['point']] = new_id
 
-            if f['area'] < 50:
+            if f['area'] < 50:  # noqa: PLR2004
                 result[f['point']] = new_id
 
         if len(fill_id) == len(np.unique(result.flatten())):
@@ -377,10 +388,12 @@ def merge_fill(fillmap: np.ndarray, max_iter: int=10) -> np.ndarray:
 
     return result
 
-def thinning(fillmap: np.ndarray, max_iter: int=100) -> np.ndarray:
+
+def thinning(fillmap: np.ndarray, max_iter: int = 100) -> np.ndarray:
     """Fill area of line with surrounding fill color.
 
     Arguments:
+    ---------
         fillmap: np.ndarray
             an image.
         max_iter: int (default: 10)
@@ -390,7 +403,7 @@ def thinning(fillmap: np.ndarray, max_iter: int=100) -> np.ndarray:
     h, w = fillmap.shape[:2]
     result = fillmap.copy()
 
-    for iterNum in range(max_iter):
+    for _ in range(max_iter):
         # Get points of line. if there is not point, stop.
         line_points = np.where(result == line_id)
         if not len(line_points[0]) > 0:
@@ -399,10 +412,17 @@ def thinning(fillmap: np.ndarray, max_iter: int=100) -> np.ndarray:
         # Get points between lines and fills.
         line_mask = np.full((h, w), 255, np.uint8)
         line_mask[line_points] = 0
-        line_border_mask = cv2.morphologyEx(line_mask, cv2.MORPH_DILATE,
-                                            cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)), anchor=(-1, -1),
-                                            iterations=1) - line_mask
-        line_border_points = np.where(line_border_mask == 255)
+        line_border_mask = (
+            cv2.morphologyEx(
+                line_mask,
+                cv2.MORPH_DILATE,
+                cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
+                anchor=(-1, -1),
+                iterations=1,
+            )
+            - line_mask
+        )
+        line_border_points = np.where(line_border_mask == 255)  # noqa: PLR2004
 
         result_tmp = result.copy()
         # Iterate over points, fill each point with nearest fill's id.
@@ -447,11 +467,16 @@ def thinning(fillmap: np.ndarray, max_iter: int=100) -> np.ndarray:
 
 
 def trappedball_segmentation(
-    line_image: np.ndarray, color_image: np.ndarray=None, max_radius: int=3, method: str='max', threshold: int=220
-) -> tuple[np.ndarray, np.ndarray]|np.ndarray:
-    """Trapped-ball segmentation
+    line_image: np.ndarray,
+    color_image: np.ndarray = None,
+    max_radius: int = 3,
+    method: str = 'max',
+    threshold: int = 220,
+) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
+    """Trapped-ball segmentation.
 
     Args:
+    ----
         line_image (np.ndarray): Image of line drawings.
         color_image (np.ndarray, optional): Color image used to colorize the segments.
             If given, returns the colorized segment image. Default: None.
@@ -460,12 +485,13 @@ def trappedball_segmentation(
         threshold (int, optional): threshold used to binarize line_image. Default: 220.
 
     Returns:
+    -------
         np.ndarray: segment map
         np.ndarray: the filled image.
     """
     _, result = cv2.threshold(line_image, threshold, 255, cv2.THRESH_BINARY)
 
-    radius_list = list(range(1, max_radius+1))
+    radius_list = list(range(1, max_radius + 1))
     fills = []
     for radius in reversed(radius_list):
         if radius != radius_list[-1]:

@@ -1,3 +1,4 @@
+"""Mixup."""
 
 from __future__ import annotations
 
@@ -7,11 +8,12 @@ import torch.nn.functional as F
 
 
 def mixup(
-    images: torch.Tensor, targets: torch.Tensor, alpha: float=0.2, p: float=1.0, sample_wise: bool=True
+    images: torch.Tensor, targets: torch.Tensor, alpha: float = 0.2, p: float = 1.0, sample_wise: bool = True
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Mixup augmentation
+    """Mixup augmentation.
 
     Args:
+    ----
         images (torch.Tensor): Tensor of images to apply Mixup to.
         targets (torch.Tensor): Tensor of targets.
         alpha (float, optional): Parameter for sampling random numbers from the Beta distribution. Default: 0.2.
@@ -20,6 +22,7 @@ def mixup(
         sample_wise (bool, optional): Make a mask for each samples in the batch. Default: True.
 
     Returns:
+    -------
         torch.Tensor: The mixed image.
         torch.Tensor: The target in the order of the shuffled images.
         torch.Tensor: The lambda used to make the mask.
@@ -45,15 +48,17 @@ def mixup(
 def mixed_cross_entropy_loss(
     logits: torch.Tensor, targets_a: torch.Tensor, targets_b: torch.Tensor, lambdas: torch.Tensor
 ) -> torch.Tensor:
-    """Cross entropy loss for mixed images
+    """Cross entropy loss for mixed images.
 
     Args:
+    ----
         logits (torch.Tensor): Output logits of the model.
         targets_a (torch.Tensor): targets of the original batch.
         targets_b (torch.Tensor): targets returned by mixup()
         lambdas (torch.Tensor): lambdas returned by mixup()
 
     Returns:
+    -------
         torch.Tensor: the loss
     """
     ce_loss_a = F.cross_entropy(logits, targets_a, reduction='none') * lambdas

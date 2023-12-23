@@ -1,4 +1,4 @@
-'''PyTorch operations.'''
+"""PyTorch operations."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ __all__ = [
     'local_seed_numpy',
     'local_seed_torch',
     'local_seed',
-    'fixed_random'
+    'fixed_random',
 ]
 
 
@@ -47,22 +47,27 @@ else:
     inference_mode: Callable = torch.no_grad
 
 
-def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.device:
-    """automatically return a torch.device object.
+def auto_get_device(force_cpu: bool = False, no_gpu_msg_type='warn') -> torch.device:
+    """Automatically return a torch.device object.
+
     'cuda' if torch.cuda.is_available() else 'cpu'
 
     Args:
+    ----
         force_cpu (bool, optional): Force device to be CPU. Default: False.
-        no_gpu_msg_type (str, optional): How this function tells you, you do not have any GPUs. Ignored when force_cpu=True.
-            - 'warn': warnings.warn
-            - 'except': raise an exception
-            - any other str: does nothing.
+        no_gpu_msg_type (str, optional): How this function tells you, you do not have any GPUs.
+            Ignored when force_cpu=True.
+                - 'warn': warnings.warn
+                - 'except': raise an exception
+                - any other str: does nothing.
             Default: 'warn'.
 
     Raises:
+    ------
         Exception: Raised when no GPUs found.
 
     Returns:
+    -------
         torch.device: Device.
     """
     if torch.cuda.is_available() or not force_cpu:
@@ -70,9 +75,9 @@ def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.devi
     if force_cpu:
         return torch.device('cpu')
 
-    no_gpu_msg = f'No GPU found on your environment.'
+    no_gpu_msg = 'No GPU found on your environment.'
     if no_gpu_msg_type == 'warn':
-        warnings.warn(no_gpu_msg + ' Falling back to CPU.')
+        warnings.warn(no_gpu_msg + ' Falling back to CPU.', stacklevel=1)
     elif no_gpu_msg_type == 'except':
         raise Exception(no_gpu_msg)
 
@@ -81,11 +86,12 @@ def auto_get_device(force_cpu: bool=False, no_gpu_msg_type='warn') -> torch.devi
 
 @torch.no_grad()
 def freeze(model: nn.Module) -> None:
-    """freeze the model.
+    """Freeze the model.
 
     This is an inplace operation.
 
     Args:
+    ----
         model (nn.Module): The module to freeze.
     """
     model.eval()
@@ -94,11 +100,12 @@ def freeze(model: nn.Module) -> None:
 
 @torch.no_grad()
 def unfreeze(model: nn.Module) -> None:
-    """unfreeze the model
+    """Unfreeze the model.
 
     This is an inplace operation.
 
     Args:
+    ----
         model (nn.Module): The module to unfreeze.
     """
     model.requires_grad_(True)
@@ -107,13 +114,18 @@ def unfreeze(model: nn.Module) -> None:
 
 @torch.no_grad()
 def update_ema(
-    model: torch.nn.Module, model_ema: torch.nn.Module,
-    decay: float=0.999, copy_buffers: bool=False, force_cpu: bool=False
+    model: torch.nn.Module,
+    model_ema: torch.nn.Module,
+    decay: float = 0.999,
+    copy_buffers: bool = False,
+    force_cpu: bool = False,
 ) -> None:
     """Update exponential moving avg.
+
     w'_new = w' * decay + w * (1 - decay)
 
     Args:
+    ----
         model (torch.nn.Module): Model, which actually is updated
         model_ema (torch.nn.Module): Copy of the model, which is updated by exponential moving average.
         decay (float, optional):  Decay for exponential modving average. Default: 0.999.
@@ -127,13 +139,13 @@ def update_ema(
 
     model.eval()
     param_ema = dict(model_ema.named_parameters())
-    param     = dict(model.named_parameters())
-    for key in param_ema.keys():
+    param = dict(model.named_parameters())
+    for key in param_ema:
         param_ema[key].data.mul_(decay).add_(param[key].data, alpha=(1 - decay))
     if copy_buffers:
         buffer_ema = dict(model_ema.named_buffers())
-        buffer     = dict(model.named_buffers())
-        for key in buffer_ema.keys():
+        buffer = dict(model.named_buffers())
+        for key in buffer_ema:
             buffer_ema[key].data.copy_(buffer[key].data)
     model.train()
 
@@ -142,13 +154,12 @@ def update_ema(
 
 
 def set_seeds(
-    seed: int=3407,
-    use_deterministic_algorithms: bool=False, warn_only: bool=False,
-    cudnn_benchmark: bool=False
+    seed: int = 3407, use_deterministic_algorithms: bool = False, warn_only: bool = False, cudnn_benchmark: bool = False
 ) -> tuple[Callable, torch.Generator]:
-    """Settings for reproducible training.
+    """Set variables for reproducible training.
 
     Args:
+    ----
         seed (int, optional): Random number generator seed. Default: 3407.
         use_deterministic_algorithms (bool, optional): use deterministic algorithms?
             True for reproducibility. Default: False.
@@ -157,6 +168,7 @@ def set_seeds(
         cudnn_benchmark (bool, optional): cudnn benchmark. Default: False.
 
     Returns:
+    -------
         Callable: Function for DataLoader's worker_init_fn option.
         torch.Generator: torch.Generator for DataLoader's generator option.
     """
@@ -170,20 +182,25 @@ def set_seeds(
         worker_seed = torch.initial_seed() % 2**32
         np.random.seed(worker_seed)
         random.seed(worker_seed)
+
     generator = torch.Generator()
     generator.manual_seed(0)
 
     return seed_worker, generator
 
 
-def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
-    """randomly shuffle a batched tensor and optionally return pthe permutation.
+def shuffle_batch(
+    batch: torch.Tensor, return_permutation: bool = False
+) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
+    """Randomly shuffle a batched tensor and optionally return pthe permutation.
 
     Args:
+    ----
         batch (torch.Tensor): Batched tensor to shuffle.
         return_permutation (bool, optional): If True, return permutation. Default: False.
 
     Returns:
+    -------
         torch.Tensor: The shuffled tensor.
         torch.Tensor: The permutation. Only when return_permutation==True.
     """
@@ -194,25 +211,34 @@ def shuffle_batch(batch: torch.Tensor, return_permutation: bool=False) -> Union[
     return shuffled
 
 
-def assert_shape(tensor: torch.Tensor, shape: torch.Size|tuple|list) -> None:
-    """assert shape of tensor
+def assert_shape(tensor: torch.Tensor, shape: torch.Size | tuple | list) -> None:
+    """Assert shape of tensor.
 
     Args:
+    ----
         tensor (torch.Tensor): tensor to check the shape of
         shape (torch.Size | tuple | list): expected shape of tensor. -1 or None for arbitrary size.
     """
     assert tensor.ndim == len(shape), f'Wrong number of dimensions: got {tensor.ndim} expected {len(shape)}'
-    for i, (size, exp_size) in enumerate(zip(tensor.size(), shape)):
+    for i, (size, exp_size) in enumerate(zip(tensor.size(), shape, strict=False)):
         if exp_size is None or exp_size == -1:
             continue
         assert size == exp_size, f'Wrong size for dimension {i}: got {size} expected {exp_size}'
 
 
-def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int=3, skip_redundant: bool=True, print_fn: Callable=print):
+def print_module_summary(
+    module: nn.Module,
+    inputs: list | tuple,
+    max_nesting: int = 3,
+    skip_redundant: bool = True,
+    print_fn: Callable = print,
+):
     """Print module summary.
+
     Taken from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/torch_utils/misc.py#L196-L264
 
     Args:
+    ----
         module (nn.Module): The module to summarize.
         inputs (list | tuple): List of input tensors.
         max_nesting (int, optional): Max nested modules to print. Default: 3.
@@ -226,14 +252,17 @@ def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int
     # Register hooks.
     entries = []
     nesting = [0]
+
     def pre_hook(_mod, _inputs):
         nesting[0] += 1
+
     def post_hook(mod, _inputs, outputs):
         nesting[0] -= 1
         if nesting[0] <= max_nesting:
             outputs = list(outputs) if isinstance(outputs, (tuple, list)) else [outputs]
             outputs = [t for t in outputs if isinstance(t, torch.Tensor)]
             entries.append(storch.EasyDict(mod=mod, outputs=outputs))
+
     hooks = [mod.register_forward_pre_hook(pre_hook) for mod in module.modules()]
     hooks += [mod.register_forward_hook(post_hook) for mod in module.modules()]
 
@@ -266,13 +295,15 @@ def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int
         buffer_size = sum(t.numel() for t in e.unique_buffers)
         output_shapes = [str(list(t.shape)) for t in e.outputs]
         output_dtypes = [str(t.dtype).split('.')[-1] for t in e.outputs]
-        rows += [[
-            name + (':0' if len(e.outputs) >= 2 else ''),
-            str(param_size) if param_size else '-',
-            str(buffer_size) if buffer_size else '-',
-            (output_shapes + ['-'])[0],
-            (output_dtypes + ['-'])[0],
-        ]]
+        rows += [
+            [
+                name + (':0' if len(e.outputs) >= 2 else ''),  # noqa: PLR2004
+                str(param_size) if param_size else '-',
+                str(buffer_size) if buffer_size else '-',
+                [*output_shapes, '-'][0],
+                [*output_dtypes, '-'][0],
+            ]
+        ]
         for idx in range(1, len(e.outputs)):
             rows += [[name + f':{idx}', '-', '-', output_shapes[idx], output_dtypes[idx]]]
         param_total += param_size
@@ -281,15 +312,26 @@ def print_module_summary(module: nn.Module, inputs: list|tuple, max_nesting: int
     rows += [['Total', str(param_total), str(buffer_total), '-', '-']]
 
     # Print table.
-    widths = [max(len(cell) for cell in column) for column in zip(*rows)]
+    widths = [max(len(cell) for cell in column) for column in zip(*rows, strict=False)]
     print_fn()
     for row in rows:
-        print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths)))
+        print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths, strict=True)))
     print_fn()
     return outputs
 
 
 def convert_outputs_to_fp32(func: Callable) -> Callable:
+    """Convert function output to fp32 dtype.
+
+    Args:
+    ----
+        func (Callable): the function to wrap.
+
+    Returns:
+    -------
+        Callable: the wrapped function.
+    """
+
     def convert_to_fp32(tensor: torch.Tensor):
         return tensor.float()
 
@@ -302,15 +344,17 @@ def convert_outputs_to_fp32(func: Callable) -> Callable:
     return inner
 
 
-def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> GradScaler|None:
+def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> GradScaler | None:
     """Get the proper gradient scaler.
 
     Args:
+    ----
         enabled (bool, optional): Enable gradient scaling? Default: True.
         is_fsdp (bool, optional): is distributed mode FSDP? Default: False.
         disable_with_none (bool, optional): Disable grdient scaling by returning None. Default: False.
 
     Returns:
+    -------
         GradScaler | None: gradient scaler class
     """
     scaler = GradScaler(enabled=enabled) if not is_fsdp else ShardedGradScaler(enabled=enabled)
@@ -320,10 +364,11 @@ def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> Gra
 
 
 @contextmanager
-def local_seed_builtin(seed: int, enabled: bool=True) -> None:
-    """locally set the seed of builtin random module.
+def local_seed_builtin(seed: int, enabled: bool = True) -> None:
+    """Locally set the seed of builtin random module.
 
     Args:
+    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
     """
@@ -336,10 +381,11 @@ def local_seed_builtin(seed: int, enabled: bool=True) -> None:
 
 
 @contextmanager
-def local_seed_numpy(seed: int, enabled: bool=True) -> None:
-    """locally set the seed of numpy.
+def local_seed_numpy(seed: int, enabled: bool = True) -> None:
+    """Locally set the seed of numpy.
 
     Args:
+    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
     """
@@ -352,10 +398,11 @@ def local_seed_numpy(seed: int, enabled: bool=True) -> None:
 
 
 @contextmanager
-def local_seed_torch(seed: int, enabled: bool=True) -> None:
-    """locally set the seed of torch.
+def local_seed_torch(seed: int, enabled: bool = True) -> None:
+    """Locally set the seed of torch.
 
     Args:
+    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
     """
@@ -368,10 +415,11 @@ def local_seed_torch(seed: int, enabled: bool=True) -> None:
 
 
 @contextmanager
-def local_seed(seed: int, enabled: bool=True, builtin: bool=True, numpy: bool=True, torch: bool=True) -> None:
-    """locally set the seed of builtin random, numpy, and torch.
+def local_seed(seed: int, enabled: bool = True, builtin: bool = True, numpy: bool = True, torch: bool = True) -> None:
+    """Locally set the seed of builtin random, numpy, and torch.
 
     Args:
+    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
         builtin (bool, optional): Independent flag for builtin random. Ignored when enabled=False. Default: True.
@@ -384,23 +432,32 @@ def local_seed(seed: int, enabled: bool=True, builtin: bool=True, numpy: bool=Tr
         yield
 
 
-def fixed_random(seed: int, enabled: bool=True):
-    """decorator that fixes random.
+def fixed_random(seed: int, enabled: bool = True) -> Callable:
+    """Fix random.
 
     Args:
+    ----
         seed (int): seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
 
-    Usages:
+    Returns:
+    -------
+        Callable: wrapped function.
+
+    Examples:
+    --------
         >>> @fixed_random(3407)
         ... def test():
         ...     pass
     """
+
     def decorator(func):
         @wraps(func)
         def inner(*args, **kwargs):
             with local_seed(seed, enabled):
                 retval = func(*args, **kwargs)
             return retval
+
         return inner
+
     return decorator

@@ -1,4 +1,4 @@
-'''import modules used in training.'''
+"""import modules used in training."""
 
 from storch import loss
 from storch.checkpoint import Checkpoint
@@ -10,9 +10,16 @@ from storch.models import Engine
 from storch.path import Folder, Path
 from storch.scheduler import build_scheduler
 from storch.status import Status, ThinStatus
-from storch.torchops import (auto_get_device, freeze, get_grad_scaler,
-                             get_optimizer_step, inference_mode, set_seeds,
-                             unfreeze, update_ema)
+from storch.torchops import (
+    auto_get_device,
+    freeze,
+    get_grad_scaler,
+    get_optimizer_step,
+    inference_mode,
+    set_seeds,
+    unfreeze,
+    update_ema,
+)
 
 __all__ = [
     'loss',
@@ -37,5 +44,5 @@ __all__ = [
     'set_seeds',
     'update_ema',
     'inference_mode',
-    'auto_get_device'
+    'auto_get_device',
 ]

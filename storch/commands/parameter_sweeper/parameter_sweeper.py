@@ -1,3 +1,4 @@
+"""Parameter sweeper."""
 
 import argparse
 import json
@@ -10,7 +11,7 @@ import yaml
 # consts
 # ------------------------------
 
-COMMAND_TEMPLATE ="""
+COMMAND_TEMPLATE = """
 # main command
 if $test ; then
     {test_command}
@@ -39,15 +40,18 @@ _translation_table = str.maketrans({'.': '_', '-': '_', '/': '_'})
 
 
 def _argument_key_to_object_name(key: str) -> str:
-    """convert argument keys to variable names.
+    """Convert argument keys to variable names.
 
     Args:
+    ----
         key (str): argument key.
 
     Returns:
+    -------
         str: name of object used in shell script.
 
     Examples:
+    --------
       1. --foo     => foo
       2. -f        => f
       4. --foo_bar => foo_bar
@@ -62,13 +66,14 @@ def _argument_key_to_object_name(key: str) -> str:
 
 
 def _argument_key_to_list_name(key: str):
-    """this function simply adds "_list" at the end of the object_name
-    indicating a list object.
+    """Add "_list" at the end of the object_name indicating a list object.
 
     Args:
+    ----
         key (str): argument key.
 
     Returns:
+    -------
         str: name of list used in shell script.
     """
     object_name = _argument_key_to_object_name(key)
@@ -76,16 +81,19 @@ def _argument_key_to_list_name(key: str):
 
 
 def _convert_value(value: Any, type: str) -> str:
-    """convert value to string.
+    """Convert value to string.
 
     Args:
+    ----
         value (Any): value.
         type (str): either hydra or argparse.
 
     Returns:
+    -------
         str: value string
 
     Examples:
+    --------
         - iterables:
             type=='hydra':   [1, 2, 3] => "[1,2,3]"
             type=='argparse: [1, 2, 3] => "1 2 3"
@@ -105,42 +113,40 @@ def _convert_value(value: Any, type: str) -> str:
 
 
 def _for_loop(list_name: str, object_name: str, inner: str) -> str:
-    """create a for loop shell script.
+    """Create a for loop shell script.
 
     Args:
+    ----
         list_name (str): name of iterable.
         object_name (str): name of object used to catch items from the iterable.
         inner (str): script running inside the for loop.
 
     Returns:
+    -------
         str: a single for loop script.
     """
     iterator = '"${' + list_name + '[@]}"'
-    return (
-        f'for {object_name} in {iterator}\n'
-        'do\n'
-        f'{inner}\n'
-        'done'
-    )
+    return f'for {object_name} in {iterator}\n' 'do\n' f'{inner}\n' 'done'
 
 
 def create_echo(object_names: list) -> str:
-    message = '\\t'.join(map(lambda x: f'${x}', object_names))
+    """Create echo command script."""
+    message = '\\t'.join(f'${x}' for x in object_names)
     return f'echo -e "{message}"'
 
 
-def create_command(
-    command: str, arguments: dict, argument_type: str, include_test: bool=True
-) -> str:
-    """create command string.
+def create_command(command: str, arguments: dict, argument_type: str, include_test: bool = True) -> str:
+    """Create command string.
 
     Args:
+    ----
         command (str): base command.
         arguments (dict): dictionary containing arguments of "command".
         argument_type (str): argument type. either hydra or argparse.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
+    -------
         str: command with arguments.
     """
     command = f'{command}'
@@ -148,11 +154,11 @@ def create_command(
     num_tabs = 2 if include_test else 1
 
     object_names = []
-    for key in arguments.keys():
+    for key in arguments:
         object_name = _argument_key_to_object_name(key)
         object_names.append(object_name)
         shell_object = '${' + object_name + '}'
-        command += ' \\\n' + '    '*num_tabs  + f'{key}{separator}{shell_object}'
+        command += ' \\\n' + '    ' * num_tabs + f'{key}{separator}{shell_object}'
 
     if include_test:
         echo_command = create_echo(object_names)
@@ -161,17 +167,21 @@ def create_command(
     return command
 
 
-def create_variables(arguments: dict, argument_type: str, excludes: set=set([])) -> str:
-    """create variable definition scripts from arguments.
+def create_variables(arguments: dict, argument_type: str, excludes: set | None = None) -> str:
+    """Create variable definition scripts from arguments.
 
     Args:
+    ----
         arguments (dict): dictionary containing arguments.
         argument_type (str, optional): argument type. either hydra or argparse.
         excludes (set): list of argument keys to exclude.
 
     Returns:
+    -------
         str: variable definition script
     """
+    if excludes is None:
+        excludes = set()
     shell_script_lists = []
     for key, value in arguments.items():
         if isinstance(value, list) and key not in excludes:
@@ -185,17 +195,21 @@ def create_variables(arguments: dict, argument_type: str, excludes: set=set([]))
     return '\n'.join(shell_script_lists)
 
 
-def create_for_loop(command: str, arguments: dict, excludes: set=set([])) -> str:
-    """create for loop for parameter sweep.
+def create_for_loop(command: str, arguments: dict, excludes: set | None = None) -> str:
+    """Create for loop for parameter sweep.
 
     Args:
+    ----
         command (str): the command to execute.
         arguments (dict): dictionary containing arguments.
         excludes (set): list of argument keys to exclude.
 
     Returns:
+    -------
         str: for loop.
     """
+    if excludes is None:
+        excludes = set()
     full_loop = command
     for key, value in arguments.items():
         if isinstance(value, list) and key not in excludes:
@@ -206,11 +220,16 @@ def create_for_loop(command: str, arguments: dict, excludes: set=set([])) -> str
 
 
 def generate_parameter_sweeper_script(
-    main_command: str, arguments: dict, argument_type: str='hydra', excludes: list=[], include_test: bool=True
+    main_command: str,
+    arguments: dict,
+    argument_type: str = 'hydra',
+    excludes: list | None = None,
+    include_test: bool = True,
 ) -> str:
-    """generate parameter sweeper script.
+    """Generate parameter sweeper script.
 
     Args:
+    ----
         main_command (str): base command to run.
         arguments (dict): dictionary containing arguments.
         argument_type (str, optional): argument type. either hydra or argparse. Default: hydra.
@@ -218,8 +237,11 @@ def generate_parameter_sweeper_script(
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
+    -------
         str: sweeper script.
     """
+    if excludes is None:
+        excludes = []
     shell_scripts = dict(variables=None, loop=None, do_test='true' if include_test else 'N/A')
     excludes = set(excludes)
     shell_scripts['variables'] = create_variables(arguments, argument_type, excludes)
@@ -229,20 +251,22 @@ def generate_parameter_sweeper_script(
 
 
 def _assert_config(config):
-    """assertions"""
+    """Check assertions."""
     assert 'main_command' in config, 'Missing required field "main_command".'
     assert 'arguments' in config, 'Missing required field "arguments".'
     assert isinstance(config['arguments'], dict), '"arguments" must be a dictionary'
 
 
-def generate_from_json(path: str, include_test: bool=True) -> str:
-    """generate script from json file.
+def generate_from_json(path: str, include_test: bool = True) -> str:
+    """Generate script from json file.
 
     Args:
+    ----
         path (str): path to the config file.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
+    -------
         str: parameter sweeper script.
     """
     with open(path, 'r') as fp:
@@ -251,14 +275,16 @@ def generate_from_json(path: str, include_test: bool=True) -> str:
     return generate_parameter_sweeper_script(**config, include_test=include_test)
 
 
-def generate_from_yaml(path: str, include_test: bool=True) -> str:
-    """generate script from yaml file.
+def generate_from_yaml(path: str, include_test: bool = True) -> str:
+    """Generate script from yaml file.
 
     Args:
+    ----
         path (str): path to the config file.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
+    -------
         str: parameter sweeper script.
     """
     with open(path, 'r') as fp:
@@ -267,7 +293,7 @@ def generate_from_yaml(path: str, include_test: bool=True) -> str:
     return generate_parameter_sweeper_script(**config, include_test=include_test)
 
 
-def get_args() -> argparse.Namespace:
+def get_args() -> argparse.Namespace:  # noqa: D103
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str)
     parser.add_argument('--output', '-o', default='./sweep-parameters.sh', type=str)
@@ -276,12 +302,12 @@ def get_args() -> argparse.Namespace:
     return args
 
 
-def main():
+def main():  # noqa: D103
     args = get_args()
     config_file: str = args.config
 
     assert os.path.exists(config_file), f'"{config_file}" does not exist.'
-    assert config_file.lower().endswith(('.yaml', '.yml', '.json')), f'Unsupported file format.'
+    assert config_file.lower().endswith(('.yaml', '.yml', '.json')), 'Unsupported file format.'
 
     if config_file.lower().endswith(('.yaml', '.yml')):
         script = generate_from_yaml(config_file, not args.no_test)

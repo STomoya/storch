@@ -1,3 +1,4 @@
+"""NeST utils."""
 
 from functools import wraps
 
@@ -14,4 +15,5 @@ def _assert_initialized(func):
             'before calling this function.'
         )
         return func(self, *args, **kwargs)
+
     return wrapper

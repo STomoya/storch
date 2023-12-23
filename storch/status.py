@@ -30,18 +30,20 @@ from storch.profiler import get_tb_profile, record_function
 
 
 class Collector:
-    '''Collect values by summing values until .update() is called, then reset.
-    '''
+    """Collect values by summing values until .update() is called, then reset."""
+
     def __init__(self) -> None:
+        """Construct object."""
         self._deltas = dict()
 
     @torch.no_grad()
-    def report(self, name: str, value: float|int|torch.Tensor) -> None:
+    def report(self, name: str, value: float | torch.Tensor) -> None:
         """Report a value with an identical name to trace.
 
         Args:
+        ----
             name (str): Key for the value. This name will be used at .add_scalar() of SummaryWriter.
-            value (float | int | torch.Tensor): The value to collect.
+            value (float | torch.Tensor): The value to collect.
         """
         if value is None:
             return
@@ -59,39 +61,40 @@ class Collector:
         self._deltas[name][0] += num
         self._deltas[name][1] += total
 
-
     def report_by_dict(self, step: dict[str, Any]) -> None:
-        """report values using a dict object. See .report() for details.
+        """Report values using a dict object. See .report() for details.
 
         Args:
+        ----
             step (dict[str, Any]): dict of values to report.
         """
         for name, value in step.items():
             self.report(name, value)
 
-
     def mean(self, name: str) -> float:
         """Return the mean value of the collected value. If not exist or total is 0, returns inf.
 
         Args:
+        ----
             name (str): Key used to report values.
 
         Returns:
+        -------
             float: mean of the collected values.
         """
         if name not in self._deltas or self._deltas[name][0] == 0:
             return float('inf')
         return self._deltas[name][1] / self._deltas[name][0]
 
-
     def update(self) -> dict[str, float]:
         """Return mean of all collected values and reset.
 
-        Returns:
+        Returns
+        -------
             dict[str, float]: dict of mean of all reported values.
         """
         output = {}
-        for name in self._deltas.keys():
+        for name in self._deltas:
             mean = self.mean(name)
             if mean != float('inf'):
                 output[name] = self.mean(name)
@@ -102,27 +105,8 @@ class Collector:
 class Status:
     """Class for logging training status.
 
-    Args:
-        max_iters (int): Maximum iterations to train.
-        log_file (str): Path to file for output logging to.
-        bar (bool, optional): Enable tqdm progress bar. Default: False.
-        log_interval (int, optional): Interval for logging status. Default: 1.
-        logger_name (str, optional): The name of the logger. Default: 'logger'.
-        wandb_project (str, optional): wandb project name. If None, disables wandb logging. wandb requires
-            `WANDB_API_KEY` evironment variable. Default: None.
-        wandb_name (str, optional): wandb name of run. Default: None.
-        wandb_tags (list, optional): list of tags: Default: None.
-        wandb_config (dict|DictConfig, optional): config of the run. accepts omegaconf objects. Default: None.
-        steptime_num_accum (int, optional): Number of iterations to accumulate for calculating the rolling ETA.
-            Default: 300.
-        tb_folder (str | None, optional): Folder to save the tensorboard event.
-            If not given, the parent folder of 'log_file' will be used. Default: None.
-        delta_format (_type_, optional): The format used to print the collected values.
-            - key: The name used to identify the value.
-            - value: The value.
-            Default: '{key}: {value: 10.5f}'.
-
-    Examples::
+    Examples
+    --------
         >>> status = Status(1000, './checkpoint/log.log')
         >>> while not status.is_end():
         >>>     output = model(input)
@@ -139,22 +123,62 @@ class Status:
         >>>         'Metrics/accuracy/val': torch.rand(1),
         >>>     })
     """
-    def __init__(self,
-        max_iters: int, log_file: str, log_interval: int=1, logger_name: str='logger',
-        wandb_project: str=None, wandb_name: str=None, wandb_tags: list=None, wandb_config: dict=None,
-        steptime_num_accum: int=300, tb_folder: str|None=None,
-        delta_format: str='{key}: {value: 10.5f}'
-    ) -> None:
 
+    def __init__(
+        self,
+        max_iters: int,
+        log_file: str,
+        log_interval: int = 1,
+        logger_name: str = 'logger',
+        wandb_project: str | None = None,
+        wandb_name: str | None = None,
+        wandb_tags: list | None = None,
+        wandb_config: dict | None = None,
+        steptime_num_accum: int = 300,
+        log_frequently_until: int = 100,
+        log_nvidia_smi_at: int = 10,
+        tb_folder: str | None = None,
+        delta_format: str = '{key}: {value: 10.5f}',
+    ) -> None:
+        """Training status logger.
+
+        Args:
+        ----
+            max_iters (int): Maximum iterations to train.
+            log_file (str): Path to file for output logging to.
+            bar (bool, optional): Enable tqdm progress bar. Default: False.
+            log_interval (int, optional): Interval for logging status. Default: 1.
+            logger_name (str, optional): The name of the logger. Default: 'logger'.
+            wandb_project (str, optional): wandb project name. If None, disables wandb logging. wandb requires
+                `WANDB_API_KEY` evironment variable. Default: None.
+            wandb_name (str, optional): wandb name of run. Default: None.
+            wandb_tags (list, optional): list of tags: Default: None.
+            wandb_config (dict|DictConfig, optional): config of the run. accepts omegaconf objects. Default: None.
+            steptime_num_accum (int, optional): Number of iterations to accumulate for calculating the rolling ETA.
+                Default: 300.
+            log_frequently_until (int): Do logging every 5 update until given int. Default: 100.
+            log_nvidia_smi_at (int): Log `nvidia-smi` command at. Default: 10
+            tb_folder (str | None, optional): Folder to save the tensorboard event.
+                If not given, the parent folder of 'log_file' will be used. Default: None.
+            delta_format (_type_, optional): The format used to print the collected values.
+                - key: The name used to identify the value.
+                - value: The value.
+                Default: '{key}: {value: 10.5f}'.
+        """
         self._max_iters = max_iters
         self._batches_done = 0
         self._log_file = log_file
         self._log_interval = log_interval
-
+        self._log_frequently_until = log_frequently_until
+        self._log_nvidia_smi_at = log_nvidia_smi_at
 
         log_file = Path(log_file)
-        self._logger = get_logger(logger_name, filename=log_file, mode='a',
-            format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s')
+        self._logger = get_logger(
+            logger_name,
+            filename=log_file,
+            mode='a',
+            format='%(asctime)s | %(name)s | %(filename)s | %(levelname)s | - %(message)s',
+        )
         self._delta_format = delta_format
 
         self._collector = Collector()
@@ -163,10 +187,13 @@ class Status:
         self._steptime_num_accum = steptime_num_accum
         self._steptimes = deque(maxlen=steptime_num_accum)
 
-        self._wandb_run = wandb.init(
-            project=wandb_project, name=wandb_name, config=wandb_config, tags=wandb_tags,
-            sync_tensorboard=True
-        ) if isinstance(wandb_project, str) else None
+        self._wandb_run = (
+            wandb.init(
+                project=wandb_project, name=wandb_name, config=wandb_config, tags=wandb_tags, sync_tensorboard=True
+            )
+            if isinstance(wandb_project, str)
+            else None
+        )
 
         self._tb_folder = log_file.resolve().dirname() if tb_folder is None else tb_folder
         self._tbwriter = SummaryWriter(self._tb_folder)
@@ -174,67 +201,71 @@ class Status:
 
         atexit.register(self._shutdown_logger)
 
-        self.log('\n'+ASCII_LOGO)
+        self.log('\n' + ASCII_LOGO)
 
     @property
     def max_iters(self):
+        """Maximum iteration."""
         return self._max_iters
+
     @property
     def batches_done(self):
+        """Current training progress."""
         return self._batches_done
+
     @batches_done.setter
     def batches_done(self, value):
         self._batches_done = value
 
-
-    def finish_wandb(self, quiet: bool=None) -> None:
-        """finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
+    def finish_wandb(self, quiet: bool | None = None) -> None:
+        """Finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
 
         Args:
+        ----
             quiet (bool, optional): do not log run stats. Default: None.
         """
         if self._wandb_run is not None:
             wandb.finish(quiet=quiet)
 
-
     def get_kbatches(self, format='{kbatches:.2f}k') -> str:
-        """Returns a formated kilo batches.
+        """Format `batches_done` to kilo batches.
 
         Args:
+        ----
             format (str, optional): format of the string. Default: '{kbatches:.2f}k'.
 
         Returns:
+        -------
             str: The formated kilo batches.
         """
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
 
-
-    '''print functions'''
+    """print functions"""
 
     def log(self, message: str, level='info') -> None:
-        """log a message
+        """Log a message.
 
         Args:
+        ----
             message (str): The message to log.
             level (str, optional): log level. Default: 'info'.
         """
         getattr(self._logger, level)(message)
 
-
-    '''Information loggers'''
+    """Information loggers"""
 
     def log_command_line(self) -> None:
-        """log command line used to execute the python script.
-        """
+        """Log command line used to execute the python script."""
         command_line = sys.argv
         command_line = pprint.pformat(command_line)
         self.log(f'Execution command\n{command_line}')
 
-    def log_args(self, args: Namespace, parser: ArgumentParser=None, filename: str=None) -> None:
-        """log argparse.Namespace obj.
+    def log_args(self, args: Namespace, parser: ArgumentParser | None = None, filename: str | None = None) -> None:
+        """Log argparse.Namespace obj.
 
         Args:
+        ----
             args (Namespace): The command line arguments parsed by argparse.
             parser (ArgumentParser, optional): Parser used to parse the command line arguments.
                 Used to display the default values. Default: None.
@@ -256,18 +287,20 @@ class Status:
                 fout.write('\n')
 
     def log_omegaconf(self, config: DictConfig) -> None:
-        """log omegaconf.DictConfig obj.
+        """Log omegaconf.DictConfig obj.
 
         Args:
+        ----
             config (DictConfig): The config to log.
         """
         yamlconfig = OmegaConf.to_yaml(config)
         self.log(f'Config:\n{yamlconfig}')
 
     def log_dataset(self, dataloader: DataLoader) -> None:
-        """log DataLoader obj.
+        """Log DataLoader obj.
 
         Args:
+        ----
             dataloader (DataLoader): The DataLoader object to log.
         """
         dataset = dataloader.dataset
@@ -282,14 +315,15 @@ class Status:
             drop_last = sampler.drop_last
 
         loader_kwargs = dict(
-            TYPE           = dataset.__class__.__name__,
-            num_samples    = len(dataset),
-            num_iterations = len(dataloader),
-            batch_size     = dataloader.batch_size,
-            shuffle        = shuffle,
-            drop_last      = drop_last,
-            num_workers    = dataloader.num_workers,
-            pin_memory     = dataloader.pin_memory)
+            TYPE=dataset.__class__.__name__,
+            num_samples=len(dataset),
+            num_iterations=len(dataloader),
+            batch_size=dataloader.batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=dataloader.num_workers,
+            pin_memory=dataloader.pin_memory,
+        )
         message = '------------------------- Dataset -----------------------\n'
         for k, v in sorted(loader_kwargs.items()):
             message += '{:>25}: {:<30}\n'.format(str(k), str(v))
@@ -297,38 +331,45 @@ class Status:
         self.log(f'Dataset\n{message}')
 
     def log_optimizer(self, optimizer: Optimizer) -> None:
-        """log optimizer obj.
+        """Log optimizer obj.
 
         Args:
+        ----
             optimizer (Optimizer): The optimizer object to log.
         """
         self.log(f'Optimizer:\n{optimizer}')
 
     def log_env(self) -> None:
-        """log pytorch build enviornment.
-        """
+        """Log pytorch build enviornment."""
         env = get_pretty_env_info()
         self.log(f'PyTorch environment:\n{env}')
 
     def log_model(self, model: torch.nn.Module) -> None:
-        """log nn.Module obj.
+        """Log nn.Module obj.
 
         Args:
+        ----
             model (torch.nn.Module): The module to log.
         """
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
-    def log_gpu_memory(self, stage: str=None, at: list[int]|int=None, as_hook: bool=False) -> None:
-        """log memory summary. Optionally this function returns a executable hook that logs GPU memory when called.
-        Useful for registering this function as a hook for `OptimizerStep`
+    def log_gpu_memory(
+        self, stage: str | None = None, at: list[int] | int | None = None, as_hook: bool = False
+    ) -> None:
+        """Log memory summary.
+
+        Optionally this function returns a executable hook that logs GPU memory when called.
+        Useful for registering this function as a hook for `OptimizerStep`.
 
         Args:
+        ----
             stage (str, optional): The name of the stage to summarize VRAM. Default: None.
             at (list[int], optional): Used to determine when to log summary.
                 If None always log summary. Default: None.
             as_hook (bool, option): return a function that can be executed without arguments. Default: False.
 
-        Usage:
+        Example:
+        -------
             >>> status = Status(...)
             >>> output = model(input)
             >>> status.log_gpu_memory('forward', [0, 100])
@@ -337,16 +378,14 @@ class Status:
             >>> optimizer.step()
             >>> status.log_gpu_memory('step', [0, 100])
         """
+
         def hook():
             if torch.cuda.is_available():
                 message = 'GPU memory summary'
                 if isinstance(stage, str):
                     message += f' of stage "{stage}"'
                 message += f' at iteration {self.batches_done}.'
-                if (
-                    (at is None) or
-                    (self.batches_done == at if isinstance(at, int) else self.batches_done in at)
-                ):
+                if (at is None) or (self.batches_done == at if isinstance(at, int) else self.batches_done in at):
                     message += f'\n{torch.cuda.memory_summary()}'
                     self.log(message)
             else:
@@ -358,22 +397,22 @@ class Status:
         hook()
 
     def log_nvidia_smi(self) -> None:
-        """log nvidia-smi output.
-        """
+        """Log nvidia-smi output."""
         if torch.cuda.is_available():
             nvidia_smi_output = subprocess.run(
-                'nvidia-smi', shell=True,
-                capture_output=True, universal_newlines=True)
+                'nvidia-smi', shell=True, capture_output=True, universal_newlines=True, check=False
+            )
             self.log(f'\n{nvidia_smi_output.stdout}')
         else:
             self.log('No GPU available on your enviornment.')
 
-    def log_actual_batch_size(self,
-        batch_size_per_proc: int, gradient_accumulation_steps: int, world_size: int
+    def log_actual_batch_size(
+        self, batch_size_per_proc: int, gradient_accumulation_steps: int, world_size: int
     ) -> None:
-        """log actual batch size per optimization step
+        """Log actual batch size per optimization step.
 
         Args:
+        ----
             batch_size_per_proc (int): batch size per process.
             gradient_accumulation_steps (int): gradient accumulation steps.
             world_size (int): world size.
@@ -382,19 +421,21 @@ class Status:
         if real_batch_size == batch_size_per_proc:
             return
 
-        self.log(('Batch size:\n'
-            f'--------------------------------------------------\n'
-            f'            Batch size per process : {batch_size_per_proc}\n'
-            f'       Gradient accumulation steps : {gradient_accumulation_steps}\n'
-            f'               Number of processes : {world_size}\n'
-            f'  ----------------------------------------------\n'
-            f'  Batch size per optimization step : {real_batch_size}\n'
-            f'--------------------------------------------------'
-        ))
+        self.log(
+            (
+                'Batch size:\n'
+                f'--------------------------------------------------\n'
+                f'            Batch size per process : {batch_size_per_proc}\n'
+                f'       Gradient accumulation steps : {gradient_accumulation_steps}\n'
+                f'               Number of processes : {world_size}\n'
+                f'  ----------------------------------------------\n'
+                f'  Batch size per optimization step : {real_batch_size}\n'
+                f'--------------------------------------------------'
+            )
+        )
 
     def log_stuff(self, *to_log) -> None:
-        """log information in one function.
-        """
+        """Log information in one function."""
         self.log_env()
         self.log_command_line()
         for obj in to_log:
@@ -409,28 +450,25 @@ class Status:
             elif isinstance(obj, DictConfig):
                 self.log_omegaconf(obj)
 
-
-    '''information accumulation funcs'''
+    """information accumulation funcs"""
 
     def update(self, **kwargs) -> None:
-        """update status.
-        """
+        """Update status."""
         self._collector.report_by_dict(kwargs)
         self.batches_done += 1
 
         self._steptimes.append(time.time() - self._step_start)
 
         # log
-        if (self._log_file is not None
-            and (
-            (self.batches_done == 1) or
-            (self.batches_done % self._log_interval == 0) or
-            (self.batches_done <= 100 and self.batches_done % 5 == 0) or
-            (self.batches_done == self.max_iters))
+        if self._log_file is not None and (
+            (self.batches_done == 1)
+            or (self.batches_done % self._log_interval == 0)
+            or (self.batches_done <= self._log_frequently_until and self.batches_done % 5 == 0)
+            or (self.batches_done == self.max_iters)
         ):
             self._log_progress()
 
-        if self.batches_done == 10:
+        if self.batches_done == self._log_nvidia_smi_at:
             # print gpu after some batches
             # for checking memory usage
             with record_function('nvidia-smi'):
@@ -441,24 +479,19 @@ class Status:
 
         self._step_start = time.time()
 
-
     def _log_progress(self):
-        """log progress.
-        """
-
+        """Log progress."""
         delta = self._collector.update()
         delta_str = []
 
         for key, value in delta.items():
             delta_str.append(self._delta_format.format(key=key, value=value))
 
-        message_parts = [
-            f'STEP: {self.batches_done} / {self.max_iters}',
-            f'INFO: {", ".join(delta_str)}']
+        message_parts = [f'STEP: {self.batches_done} / {self.max_iters}', f'INFO: {", ".join(delta_str)}']
 
         # Memory usage
         if torch.cuda.is_available():
-            global_empty, global_total = torch.cuda.mem_get_info()
+            _, global_total = torch.cuda.mem_get_info()
             local_usage = torch.cuda.memory_reserved() / global_total * 100
             message_parts.append(f'VRAM_used(%): {local_usage:.1f}')
 
@@ -466,31 +499,32 @@ class Status:
         # NOTE: this ETA is not exact.
         #       dealed by avging multiple steps. (see rolling eta)
         duration = self._steptimes[-1]
-        eta_sec  = int((self.max_iters - self.batches_done) * duration)
-        eta      = datetime.timedelta(seconds=eta_sec)
+        eta_sec = int((self.max_iters - self.batches_done) * duration)
+        eta = datetime.timedelta(seconds=eta_sec)
         message_parts.append(f'ETA(sec): {eta}')
 
         # rolling eta for more stable ETA
         if len(self._steptimes) == self._steptimes.maxlen:
             rolling_duration = mean(self._steptimes)
-            rolling_eta_sec  = int((self.max_iters - self.batches_done) * rolling_duration)
-            rolling_eta      = datetime.timedelta(seconds=rolling_eta_sec)
+            rolling_eta_sec = int((self.max_iters - self.batches_done) * rolling_duration)
+            rolling_eta = datetime.timedelta(seconds=rolling_eta_sec)
             message_parts.append(f'rolling_ETA(sec): {rolling_eta}')
 
         self.log(' '.join(message_parts))
         self.tb_add_scalars(**delta)
 
-
     def tb_add_scalars(self, **kwargs) -> None:
-        """add scalars to tensorboard.
-        """
+        """Add scalars to tensorboard."""
         for key, value in kwargs.items():
             self._tbwriter.add_scalar(key, value, self.batches_done)
 
-    def tb_add_images(self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs) -> None:
+    def tb_add_images(
+        self, tag: str, image_tensor: torch.Tensor, normalize=True, value_range=(-1, 1), nrow=8, **mkgridkwargs
+    ) -> None:
         """Add image to tensorboard.
 
         Args:
+        ----
             tag (str): tag.
             image_tensor (torch.Tensor): tensor of images.
             normalize (bool, optional): argument for make_grid(). Default: True.
@@ -501,19 +535,17 @@ class Status:
         images = make_grid(image_tensor, normalize=normalize, value_range=value_range, nrow=nrow, **mkgridkwargs)
         self._tbwriter.add_images(tag, images, self.batches_done)
 
-
     def dry_update(self, **kwargs):
-        """Update accumulation values without updating iteration counts.
-        """
+        """Update accumulation values without updating iteration counts."""
         self._collector.report_by_dict(kwargs)
         self.tb_add_scalars(**kwargs)
-
 
     @contextmanager
     def profile(self, enabled=True):
         """Context manager to profile a code block using pytorch profiler module.
 
         Args:
+        ----
             enabled (bool, optional): Boolean to enable/disable profiling. Default: True.
         """
         if enabled:
@@ -526,12 +558,12 @@ class Status:
             self._profiler.stop()
             self._profiler = None
 
-
     @contextmanager
     def stop_timer(self, verbose=False) -> None:
-        """context manager to stop the timer.
+        """Context manager to stop the timer.
 
         Args:
+        ----
             verbose (bool, optional): Boolean to enable logging. Default: False.
 
         Examples::
@@ -549,13 +581,11 @@ class Status:
         self._step_start += duration
 
     def is_end(self) -> None:
-        """have reached last batch?
-        """
+        """Have reached last batch."""
         return self.batches_done >= self.max_iters
 
     def _shutdown_logger(self) -> None:
-        """Safely shutdown the loggers. This function will be automatically be called using atexit.
-        """
+        """Safely shutdown the loggers. This function will be automatically be called using atexit."""
         self.log('LOGGER: shutting down logger...')
         handlers = self._logger.handlers
         for handler in handlers:
@@ -563,9 +593,10 @@ class Status:
             handler.close()
 
     def load_state_dict(self, state_dict: dict) -> None:
-        """fast forward training status by the given state_dict.
+        """Fast forward training status by the given state_dict.
 
         Args:
+        ----
             state_dict (dict): a dictionary made by status.state_dict().
         """
         # load
@@ -574,28 +605,24 @@ class Status:
         self._steptimes = state_dict['steptimes']
 
     def state_dict(self) -> dict:
-        """make a dictionary to save current training status.
+        """Make a dictionary to save current training status.
 
-        Returns:
+        Returns
+        -------
             dict: Dict containing the states.
         """
-        return dict(
-            collector=self._collector,
-            batches_done=self.batches_done,
-            steptimes=self._steptimes)
+        return dict(collector=self._collector, batches_done=self.batches_done, steptimes=self._steptimes)
 
 
 class ThinStatus:
-    '''Thin implementation of Status.
+    """Thin implementation of Status.
+
     We will always have to check if the rank is 0 when printing or logging.
     This class is for avoiding this tiresome coding.
 
-    difference:
+    Difference:
         - no logging.
         - no loss accumulation.
-
-    Args:
-        max_iters (int): maximum iteration to train
 
     Eaxmples::
         >>> from storch.status import Status, ThinStatus
@@ -604,61 +631,55 @@ class ThinStatus:
         >>> Status = Status if disthelper.is_primary() else ThinSatus
         >>> status = Status(max_iter, ...)
         >>> # then use the rest should work like Status.
-    '''
-    def __init__(self,
-        max_iters: int, *_args,  **_kwargs
-    ) -> None:
+    """
+
+    def __init__(self, max_iters: int, *_args, **_kwargs) -> None:  # noqa: D107
         self._max_iters = max_iters
         self._batches_done = 0
 
     @property
-    def max_iters(self):
+    def max_iters(self):  # noqa: D102
         return self._max_iters
+
     @property
-    def batches_done(self):
+    def batches_done(self):  # noqa: D102
         return self._batches_done
+
     @batches_done.setter
     def batches_done(self, value):
         self._batches_done = value
 
     def __getattr__(self, __name: str) -> Any:
-        """If "__name" is not specified in ThinStatus but exists in Status, return a function that does nothing.
-        """
+        """If "__name" is not specified in ThinStatus but exists in Status, return a function that does nothing."""
         if __name in Status.__dict__ and callable(Status.__dict__[__name]):
-            def _noop(*args, **kwargs): pass
+
+            def _noop(*args, **kwargs):
+                pass
+
             return _noop
         raise AttributeError(__name)
 
-    def get_kbatches(self, format='{kbatches:.2f}k') -> str:
-        """Returns a formated kilo batches.
-
-        Args:
-            format (str, optional): format of the string. Default: '{kbatches:.2f}k'.
-
-        Returns:
-            str: The formated kilo batches.
-        """
+    def get_kbatches(self, format='{kbatches:.2f}k') -> str:  # noqa: D102
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
 
-    def update(self, **kwargs) -> None:
-        """update status."""
+    def update(self, **kwargs) -> None:  # noqa: D102
         self._batches_done += 1
 
     @contextmanager
-    def profile(self, enabled=True):
+    def profile(self, enabled=True):  # noqa: D102
         yield
 
     @contextmanager
-    def stop_timer(self, verbose=False) -> None:
+    def stop_timer(self, verbose=False) -> None:  # noqa: D102
         yield
 
-    def is_end(self) -> None:
+    def is_end(self) -> None:  # noqa: D102
         return self.batches_done >= self.max_iters
 
-    def load_state_dict(self, state_dict: dict) -> None:
+    def load_state_dict(self, state_dict: dict) -> None:  # noqa: D102
         # load batches_done from the state_dict saved at the primary process.
         self.batches_done = state_dict['batches_done']
 
-    def state_dict(self) -> dict:
+    def state_dict(self) -> dict:  # noqa: D102
         return {}

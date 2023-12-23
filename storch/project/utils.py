@@ -1,3 +1,5 @@
+"""Project initialization."""
+
 from __future__ import annotations
 
 import sys
@@ -28,18 +30,24 @@ def _default_folder_from_config(config: DictConfig) -> Folder:
 
 
 def init_run(
-    config_file: str, child_folders: dict={}, save_config: bool=True,
-    disthelper: DistributedHelper=None,
-    get_folder_from_config: Callable=_default_folder_from_config,
-    config_dir: str='config', default_config_file: str='config.yaml',
+    config_file: str,
+    child_folders: dict | None = None,
+    save_config: bool = True,
+    disthelper: DistributedHelper = None,
+    get_folder_from_config: Callable = _default_folder_from_config,
+    config_dir: str = 'config',
+    default_config_file: str = 'config.yaml',
 ) -> tuple[DictConfig, Folder]:
     """Load config, make workspace dir, and save config.
+
     Optionally resume using saved config file inside a workspace dir.
 
     Args:
+    ----
         config_file (str): name of the config file tobe saved.
         child_folders (dict, optional): child folders inside root dir. Default: {}.
         save_config (bool): save config. pass false on child processes. Default: False
+        disthelper: deprecated.
         get_folder_from_config (Callable, optional): function returning a Folder object.
             Default behavior requires "run", "run.folder", "run.name" and optionally "run.tag".
             Returns "{run.folder}/{run.name}(.{run.tag})"
@@ -48,15 +56,19 @@ def init_run(
         default_config_file (str, optional): base config filename. Default: 'config.yaml'.
 
     Returns:
+    -------
         DictConfig: loaded config.
         Folder: Folder object.
 
     Examples:
+    --------
         >>> # create new run.
         >>> $ python3 train.py
         >>> # resume from a checkpoint
         >>> $ python3 train.py ./path/to/checkpoint/config.yaml
     """
+    if child_folders is None:
+        child_folders = {}
     cmdargs = sys.argv[1:]
 
     # for resuming:

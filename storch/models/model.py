@@ -1,4 +1,5 @@
-"""
+"""Model utils.
+
 classes and functions in this file is for user defined models, not for pre-defined models in
 libraries like timm, etc.
 """
@@ -26,17 +27,14 @@ except ImportError:
 
 from storch.distributed.utils import is_primary, wait_for_everyone
 
-__all__ = [
-    'ModelMixin',
-    'save_model',
-    'load_model',
-    'is_safetensors_available'
-]
+__all__ = ['ModelMixin', 'save_model', 'load_model', 'is_safetensors_available']
 
 
 class ModelMixin(nn.Module):
+    """model mixin."""
 
     def __init_subclass__(cls) -> None:
+        """Initialize subclasses to save constructor args."""
 
         def register_init_args(init: Callable):
             @wraps(init)
@@ -47,36 +45,35 @@ class ModelMixin(nn.Module):
                 signiture = inspect.signature(init)
                 parameters = {k: v.default for k, v in signiture.parameters.items() if k != 'self'}
 
-                for arg, name in zip(args, parameters.keys()):
+                for arg, name in zip(args, parameters.keys(), strict=False):
                     config[name] = arg
-                config.update({
-                    k: kwargs.get(k, default) for k, default in parameters.items() if k not in config
-                })
+                config.update({k: kwargs.get(k, default) for k, default in parameters.items() if k not in config})
                 self.__model_config = config
 
             return inner
 
         cls.__init__ = register_init_args(cls.__init__)
 
-
     @property
     def model_config(self) -> dict:
+        """Model config."""
         return self.__model_config
-
 
     @classmethod
     def from_saved(cls, fp, device='cpu'):
+        """Create model from saved file."""
         model_config, state_dict = load_model(fp, device)
         model = cls(**model_config)
         model.load_state_dict(state_dict)
         return model
 
-
     def extra_repr(self):
+        """repr."""
         return ', '.join([f'{k}={v}' for k, v in self._config_repr.items()])
 
 
 # serialization
+
 
 class WeightExt(Enum):
     TORCH = '.torch'
@@ -84,13 +81,15 @@ class WeightExt(Enum):
 
 
 def is_safetensors_available():
+    """Is safetensors available."""
     return safetensors is not None
 
 
 def parse_safetensors_metadata(file: str) -> dict:
-    """load metadata entry inside file header.
+    """Load metadata entry inside file header.
 
     Args:
+    ----
         file (str): the file to read metadata from.
     """
     with open(file, 'rb') as fp:
@@ -102,13 +101,16 @@ def parse_safetensors_metadata(file: str) -> dict:
 
 
 def unwrap_model(model: nn.Module) -> nn.Module:
-    """unwrap the model from torch.compile and DDP. FSDP is not unwrapped because
-    it needs an special process to get state_dicts. See `get_resolved_state_dict`.
+    """Unwrap the model from torch.compile and DDP.
+
+    FSDP is not unwrapped because it needs an special process to get state_dicts. See `get_resolved_state_dict`.
 
     Args:
+    ----
         model (nn.Module): the model to unwrap.
 
     Returns:
+    -------
         nn.Module: unwrapped model.
     """
     if hasattr(model, 'dynamo_ctx'):
@@ -119,21 +121,26 @@ def unwrap_model(model: nn.Module) -> nn.Module:
 
 
 def get_resolved_state_dict(model: nn.Module) -> dict[str, torch.Tensor]:
-    """returns the `state_dict` that can be loaded by unwrapped models. Supports FSDP and DDP models.
-    `state_dict` for FSDP models are always offloaded to cpu and only gathered to the primary rank.
+    """Return `state_dict` that can be loaded by unwrapped models.
+
+    Supports FSDP and DDP models. `state_dict` for FSDP models are always offloaded to cpu and only gathered to the
+    primary rank.
 
     Args:
+    ----
         model (nn.Module): the model to collect the weights.
 
     Returns:
+    -------
         dict[str, torch.Tensor]: the `state_dict` of the model.
     """
     # FSDP state_dict.
     if isinstance(model, FSDP):
         offload_to_cpu = model.sharding_strategy != ShardingStrategy.NO_SHARD
         with FSDP.state_dict_type(
-            model, StateDictType.FULL_STATE_DICT,
-            FullStateDictConfig(offload_to_cpu=offload_to_cpu, rank0_only=offload_to_cpu)
+            model,
+            StateDictType.FULL_STATE_DICT,
+            FullStateDictConfig(offload_to_cpu=offload_to_cpu, rank0_only=offload_to_cpu),
         ):
             return model.state_dict()
 
@@ -144,20 +151,22 @@ def get_resolved_state_dict(model: nn.Module) -> dict[str, torch.Tensor]:
     return model.state_dict()
 
 
-def save_model(model: ModelMixin, fp: str, framework: str='safetensors'):
-    """save model. `fp` does not need file extension. `framework` does not equal to safetensors'
-    framework keyword argument.
+def save_model(model: ModelMixin, fp: str, framework: str = 'safetensors'):
+    """Save model.
+
+    `fp` does not need file extension. `framework` does not equal to safetensors' framework keyword argument.
 
     The `model` can be one of a normal `nn.Module` or wrapped via `DistributedDataParallel` or
-    `FullyShardedDataParallel` as long as the original model inherits the `ModelMixin` class.
-    The arguments and keyword arguments used to construct the model is automatically saved.
+    `FullyShardedDataParallel` as long as the original model inherits the `ModelMixin` class. The arguments and keyword
+    arguments used to construct the model is automatically saved.
 
-    if `model` is wrapped via FSDP module, you must pass the wrapped model, not the un-wrapped one.
-    Also, the weights will always be offloaded to CPU and gathered only on rank 0.
+    if `model` is wrapped via FSDP module, you must pass the wrapped model, not the un-wrapped one. Also, the weights
+    will always be offloaded to CPU and gathered only on rank 0.
 
     If safetensors is not available, this function fallbacks to `torch.save` to pickle weights.
 
     Args:
+    ----
         model (ModelMixin): the model to save the weights. it can be wrapped via DDP or FSDP. If the model
             is wrapped via FSDP, you must pass the wrapped model for gathering the full state dict properly.
         fp (str): the filename to save the weights. the path does not need an file extension.
@@ -165,11 +174,10 @@ def save_model(model: ModelMixin, fp: str, framework: str='safetensors'):
             'safetensors' will use `safetensors.torch.save_file` to serialize the weights. 'both' will save
             the weights with both ways. Default: 'safetensors'.
     """
-
     model = unwrap_model(model)
     model_config = getattr(model, 'model_config', None)
     if model_config is None:
-        raise Exception(f'The `model` argument must be an object of a class inheriting ModelMixin.')
+        raise Exception('The `model` argument must be an object of a class inheriting ModelMixin.')
 
     state_dict = get_resolved_state_dict(model)
 
@@ -185,23 +193,24 @@ def save_model(model: ModelMixin, fp: str, framework: str='safetensors'):
 
         # fallback to pickle, if safetensors is not available.
         if not is_safetensors_available() or framework in ['pt', 'pytorch', 'torch', 'both']:
-            torch_weight_dict = {
-                'model_config': model_config,
-                'state_dict': state_dict
-            }
+            torch_weight_dict = {'model_config': model_config, 'state_dict': state_dict}
             torch.save(torch_weight_dict, fp + WeightExt.TORCH.value)
 
 
-def load_model(fp: str, device: str|torch.device='cpu') -> tuple[dict[str, Any], dict[str, torch.Tensor]]:
-    """load serialized file. The file must be saved via `save_model` function. This function returns a dict containing
-    keyword arguments to instantiate the model and the saved `state_dict`. It is recommended to use `ModelMixin.from_saved`
-    classmethod that does the instantiation and weigt loading.
+def load_model(fp: str, device: str | torch.device = 'cpu') -> tuple[dict[str, Any], dict[str, torch.Tensor]]:
+    """Load serialized file.
+
+    The file must be saved via `save_model` function. This function returns a dict containing keyword arguments to
+    instantiate the model and the saved `state_dict`. It is recommended to use `ModelMixin.from_saved` classmethod that
+    does the instantiation and weigt loading.
 
     Args:
+    ----
         fp (str): _description_
         device (str | torch.device, optional): _description_. Defaults to 'cpu'.
 
     Returns:
+    -------
         tuple[dict[str, Any], dict[str, torch.Tensor]]: _description_
     """
     # synchronize devices
@@ -212,16 +221,17 @@ def load_model(fp: str, device: str|torch.device='cpu') -> tuple[dict[str, Any],
     if ext == WeightExt.TORCH.value:
         state_dict = torch.load(fp, map_location=device)
         model_config = state_dict.get('model_config', None)
-        assert model_config is not None, f'The file must be saved using `save_model` function.'
+        assert model_config is not None, 'The file must be saved using `save_model` function.'
         state_dict = state_dict.get('state_dict')
 
     elif ext == WeightExt.SAFETENSORS.value:
         if not is_safetensors_available():
-            raise Exception(f'`safetensors` must be installed.')
+            raise Exception('`safetensors` must be installed.')
         from safetensors.torch import load_file
+
         metadata = parse_safetensors_metadata(fp)
         model_config = metadata.get('model_config', None)
-        assert model_config is not None, f'The file must be saved using `save_model` function.'
+        assert model_config is not None, 'The file must be saved using `save_model` function.'
         model_config = json.loads(model_config)
         state_dict = load_file(fp, device=device)
 

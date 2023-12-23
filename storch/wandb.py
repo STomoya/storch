@@ -1,3 +1,4 @@
+"""wandb."""
 
 from __future__ import annotations
 
@@ -13,20 +14,27 @@ except ImportError:
     wandb = None
 
 
-
 ENV_WANDB_API_KEY = 'WANDB_API_KEY'
 
 
 def is_wandb_available():
+    """Check if wandb is available."""
     return wandb is not None
 
 
 def init(
     project: str,
-    name: str|None=None, config: DictConfig|dict|None=None, tags: tuple[str,...]|list[str]|None=None,
-    resume: str|bool|None=True, sync_tensorboard: bool=False, group: str|None=None, entity: str|None=None
+    name: str | None = None,
+    config: DictConfig | dict | None = None,
+    tags: tuple[str, ...] | list[str] | None = None,
+    resume: str | bool | None = True,
+    sync_tensorboard: bool = False,
+    group: str | None = None,
+    entity: str | None = None,
 ) -> None:
-    """Wrapper function of `wandb.init`. This function requires the `WANDB_API_KEY` environment to be set.
+    """Wrap `wandb.init` function.
+
+    This function requires the `WANDB_API_KEY` environment to be set.
     If not, wandb will not be initialized and returns `None`.
     The changes from the original `wandb.init` are:
 
@@ -45,6 +53,7 @@ def init(
 
 
     Args:
+    ----
         project (str): Project name.
         name (str | None, optional): name of the run. Default: None.
         config (DictConfig | dict | None, optional): config for the run. Default: None.
@@ -55,22 +64,34 @@ def init(
         entity (str | None, optional): entity (usename). Default: None.
 
     Returns:
+    -------
         Run: a `wandb.Run` object.
     """
-
     run = None
     if is_wandb_available() and os.getenv(ENV_WANDB_API_KEY, '') != '':
         if isinstance(config, DictConfig):
             config = to_object(config)
 
         run = wandb.init(
-            anonymous='never', project=project, name=name, config=config, tags=tags,
-            resume=resume, sync_tensorboard=sync_tensorboard, group=group, entity=entity
+            anonymous='never',
+            project=project,
+            name=name,
+            config=config,
+            tags=tags,
+            resume=resume,
+            sync_tensorboard=sync_tensorboard,
+            group=group,
+            entity=entity,
         )
 
     return run
 
 
-def finish(quiet: bool|None=None) -> None:
-    """wrapper funtion of `wandb.finish`"""
+def finish(quiet: bool | None = None) -> None:
+    """Wrap `wandb.finish`.
+
+    Args:
+    ----
+        quiet (bool | None): Do not print summary. Default: None.
+    """
     wandb.finish(quiet=quiet)

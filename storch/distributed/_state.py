@@ -1,22 +1,24 @@
 from __future__ import annotations
 
 import os
+from typing import ClassVar
 
 import torch
 import torch.distributed as dist
 
 
 class DistributedState:
-    """singleton class for keeping distributed state for each process.
+    """Singleton class for keeping distributed state for each process.
+
     The user doesn't need to touch this class except for special cases.
 
     originally from: https://github.com/huggingface/accelerate/blob/b16916f44795bd960bc734992d2819a955064935/src/accelerate/state.py#L95-L662
     hacked by: Tomoya Sawada
     """
 
-    _shared_state = dict()
+    _shared_state: ClassVar[dict] = {}
 
-    def __init__(self, cpu: bool=False, **kwargs) -> None:
+    def __init__(self, cpu: bool = False, **kwargs) -> None:
         self.__dict__ = self._shared_state
 
         if not self.initialized:
@@ -36,7 +38,6 @@ class DistributedState:
                 self.process_index = self.local_process_index = 0
                 self.device = torch.device('cpu') if cpu else torch.device('cuda')
 
-
     def __repr__(self) -> str:
         return (
             f'Backend: {self.backend}\n'
@@ -45,16 +46,13 @@ class DistributedState:
             f'Device: {self.device}\n'
         )
 
-
     @property
     def initialized(self):
         return self._shared_state != {}
 
-
     @property
     def is_distributed(self) -> bool:
         return self.num_processes > 1
-
 
     @property
     def is_main_process(self) -> bool:
