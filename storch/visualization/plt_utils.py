@@ -1,4 +1,4 @@
-'''matplotlib.pyplot utils'''
+"""matplotlib.pyplot utils."""
 
 from __future__ import annotations
 
@@ -8,17 +8,15 @@ from contextlib import contextmanager
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-__all__=[
-    'plt_subplots',
-    'ax_setter'
-]
+__all__ = ['plt_subplots', 'ax_setter']
 
 
 @contextmanager
-def plt_subplots(nrows: int=1, ncols: int=1, format_axes: bool=True, filename: str=None, **kwargs):
-    """context manager which makes and yield subplots, then optionally save, finally close the figure.
+def plt_subplots(nrows: int = 1, ncols: int = 1, format_axes: bool = True, filename: str | None = None, **kwargs):
+    """Context manager which makes and yield subplots, then optionally save, finally close the figure.
 
     Args:
+    ----
         nrows (int, optional): Number of subplot rows. Default: 1.
         ncols (int, optional): Number of subplot columns. Default: 1.
         format_axes (bool, optional): Format axes output of plt.subplots to [[ax00, ...], [ax10, ...], ...].
@@ -27,17 +25,18 @@ def plt_subplots(nrows: int=1, ncols: int=1, format_axes: bool=True, filename: s
         **kwargs: keyword arguments for plt.sobplots()
 
     Yields:
+    ------
         Figure: matplotlib.figure.Figure object made by plt.subplot().
         Axes|list[Axes]|list[list[Axes]]: list or object of matplotlib.axes.Axes made by plt.subplot().
     """
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **kwargs)
     if format_axes:
         # format axes to [[ax00, ax01, ...], [ax10, ax11, ...], ...]
-        if nrows == ncols == 1:        # ax00
+        if nrows == ncols == 1:  # ax00
             axes = [[axes]]
-        elif ncols > 1 and nrows == 1: # [ax00, ax01, ...]
+        elif ncols > 1 and nrows == 1:  # [ax00, ax01, ...]
             axes = [axes]
-        elif nrows > 1 and ncols == 1: # [ax00, ax10, ...]
+        elif nrows > 1 and ncols == 1:  # [ax00, ax10, ...]
             axes = [[ax] for ax in axes]
 
     yield fig, axes
@@ -48,19 +47,39 @@ def plt_subplots(nrows: int=1, ncols: int=1, format_axes: bool=True, filename: s
     plt.close(fig)
 
 
-def ax_setter(ax: Axes, *,
-    title: str=None, legend: bool=False, legend_loc: str='best', axis_off: bool=False,
-    xlabel: str=None, ylabel: str=None, grid: bool=False, tick_top: bool=False, tick_right: bool=False,
-    xticks: list[float]=None, xtick_labels: list[str]=None, xtick_rotation: int=None,
-    yticks: list[float]=None, ytick_labels: list[str]=None, ytick_rotation: int=None,
-    xlim: list[float]=None, ylim: list[float]=None, xbound: list[float]=None, ybound: list[float]=None,
-    invert_xaxis: bool=False, invert_yaxis: bool=False, xscale: str=None, yscale: str=None
+def ax_setter(  # noqa: PLR0915
+    ax: Axes,
+    *,
+    title: str | None = None,
+    legend: bool = False,
+    legend_loc: str = 'best',
+    axis_off: bool = False,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    grid: bool = False,
+    tick_top: bool = False,
+    tick_right: bool = False,
+    xticks: list[float] | None = None,
+    xtick_labels: list[str] | None = None,
+    xtick_rotation: int | None = None,
+    yticks: list[float] | None = None,
+    ytick_labels: list[str] | None = None,
+    ytick_rotation: int | None = None,
+    xlim: list[float] | None = None,
+    ylim: list[float] | None = None,
+    xbound: list[float] | None = None,
+    ybound: list[float] | None = None,
+    invert_xaxis: bool = False,
+    invert_yaxis: bool = False,
+    xscale: str | None = None,
+    yscale: str | None = None,
 ):
-    """call setters of Axes object.
+    """Call setters of Axes object.
 
     This is an inplace operation.
 
     Args:
+    ----
         ax (Axes): matplotlib.axes.Axes object.
         title (str, optional): title of the axes. Default: None.
         legend (bool, optional): visualize legend. Default: False.
@@ -86,20 +105,21 @@ def ax_setter(ax: Axes, *,
         xscale (str, optional): scale of x axis. Default: None.
         yscale (str, optional): scale of y axis. Default: None.
     """
-
     if title is not None:
         ax.set_title(title)
 
     if legend:
-        _, l = ax.get_legend_handles_labels()
-        if len(l) > 0:
+        _, labels = ax.get_legend_handles_labels()
+        if len(labels) > 0:
             ax.legend(loc=legend_loc)
         else:
-            warnings.warn('No legends. Pass "label" argument to plotting functions for visualizing legends.')
+            warnings.warn(
+                'No legends. Pass "label" argument to plotting functions for visualizing legends.', stacklevel=1
+            )
 
     if axis_off:
         ax.set_axis_off()
-    else: # these will be disabled of axis is off.
+    else:  # these will be disabled of axis is off.
         # grid
         if grid:
             ax.grid()
@@ -127,18 +147,19 @@ def ax_setter(ax: Axes, *,
             ax.set_yticks(yticks, ytick_labels, rotation=ytick_rotation)
 
     # bound/limit
+    xy_length = 2
     if xbound is not None:
-        assert isinstance(xbound, (tuple, list)) and len(xbound) == 2
+        assert isinstance(xbound, (tuple, list)) and len(xbound) == xy_length
         ax.set_xbound(*xbound)
     if ybound is not None:
-        assert isinstance(ybound, (tuple, list)) and len(ybound) == 2
+        assert isinstance(ybound, (tuple, list)) and len(ybound) == xy_length
         ax.set_ybound(*ybound)
 
     if xlim is not None:
-        assert isinstance(xlim, (tuple, list)) and len(xlim) == 2
+        assert isinstance(xlim, (tuple, list)) and len(xlim) == xy_length
         ax.set_xlim(*xlim)
     if ylim is not None:
-        assert isinstance(ylim, (tuple, list)) and len(ylim) == 2
+        assert isinstance(ylim, (tuple, list)) and len(ylim) == xy_length
         ax.set_ylim(*ylim)
 
     # invert order

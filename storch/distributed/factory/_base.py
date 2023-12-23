@@ -1,5 +1,5 @@
-"""Base container classes for data parallel wrapped modules.
-"""
+"""Base container classes for data parallel wrapped modules."""
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -10,6 +10,7 @@ from torch.optim.optimizer import Optimizer
 
 class CheckpointInterfaceBase:
     """Interface for get/set state_dict from a module.
+
     This class is for enabling checkpointing models without any code changes between
     different parallelization methods (DDP or FSDP).
 
@@ -22,7 +23,8 @@ class CheckpointInterfaceBase:
     >>> state_dict = torch.load('./state_dict')
     >>> ckpt_if.load_state_dict(state_dict)
     """
-    def __init__(self, to_checkpoint: nn.Module|Optimizer) -> None:
+
+    def __init__(self, to_checkpoint: nn.Module | Optimizer) -> None:
         self.to_checkpoint = to_checkpoint
 
     def state_dict(self):
@@ -33,8 +35,8 @@ class CheckpointInterfaceBase:
 
 
 class ParallelFactoryBase:
-    """this class is a factory for wrapped modules.
-    """
+    """Factory for wrapped modules."""
+
     def __init__(self) -> None:
         self._wrapped_module = None
 

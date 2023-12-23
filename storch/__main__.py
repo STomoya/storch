@@ -1,9 +1,11 @@
+"""main."""
+
 import argparse
 
 import storch
 from storch._funtext import HEADER, get_detailed_header
 
-if __name__=='__main__':
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-V', action='store_true', help='What the version?')
     parser.add_argument('--verbose', '-v', action='store_true', help='What more detailed info?')

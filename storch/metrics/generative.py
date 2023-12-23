@@ -1,3 +1,4 @@
+"""Metrics for generative models."""
 
 from __future__ import annotations
 
@@ -16,19 +17,18 @@ from storch.metrics.utils.inceptionv3 import InceptionV3, InceptionV3JIT
 from storch.metrics.utils.resnet import ResNetIN, ResNetSwAVIN
 from storch.torchops import freeze
 
-__all__=[
-    'calc_metrics',
-    'MetricFlags'
-]
+__all__ = ['calc_metrics', 'MetricFlags']
 
 
 """register feature extractors"""
+
 
 def _add_extractor(registry, name, builder, input_size):
     registry.__all__.append(name)
     registry[name] = storch.EasyDict()
     registry[name].builder = builder
     registry[name].input_size = input_size if isinstance(input_size, (tuple, list)) else (input_size, input_size)
+
 
 _EXTRACTORS = storch.EasyDict()
 _EXTRACTORS.__all__ = []
@@ -40,22 +40,25 @@ _add_extractor(_EXTRACTORS, 'resnet_swav_in', ResNetSwAVIN, (224, 224))
 
 """functions"""
 
+
 @torch.no_grad()
-def get_features(dataset, model: torch.nn.Module, device: torch.device, progress: bool=False) -> np.ndarray:
-    """extractor features from all images inside the dataset.
+def get_features(dataset, model: torch.nn.Module, device: torch.device, progress: bool = False) -> np.ndarray:
+    """Extractor features from all images inside the dataset.
 
     Args:
+    ----
         dataset (DataLoader): The dataset.
         model (torch.nn.Module): feature extractor model.
         device (torch.device): device
         progress (boo, optional): show progress bar. Default: False
 
     Returns:
+    -------
         np.ndarray: the extracted features.
     """
     features = []
     for image in tqdm(dataset, disable=not progress):
-        image = image.to(device)
+        image = image.to(device)  # noqa: PLW2901
         output = model(image)
         features.append(output.cpu().numpy())
     features = np.concatenate(features)
@@ -64,13 +67,16 @@ def get_features(dataset, model: torch.nn.Module, device: torch.device, progress
 
 """FID"""
 
+
 def feature_statistics(features: np.ndarray) -> tuple[np.ndarray]:
-    """compute mean and covariance of the given feature array.
+    """Compute mean and covariance of the given feature array.
 
     Args:
+    ----
         features (np.ndarray): the extracted features.
 
     Returns:
+    -------
         np.ndarray: mean
         np.ndarray: covariance
     """
@@ -79,18 +85,21 @@ def feature_statistics(features: np.ndarray) -> tuple[np.ndarray]:
     return mean, sigma
 
 
-def frechet_distance(feature1: np.ndarray, feature2: np.ndarray, eps: float=1e-6) -> float:
-    """calculate Frechet distance between the given two feature arrays.
+def frechet_distance(feature1: np.ndarray, feature2: np.ndarray, eps: float = 1e-6) -> float:
+    """Calculate Frechet distance between the given two feature arrays.
 
     Args:
+    ----
         feature1 (np.ndarray): feature array. shape: [N, feat_dim]
         feature2 (np.ndarray): feature array. shape: [N, feat_dim]
         eps (float, optional): eps. Defaults to 1e-6.
 
     Raises:
+    ------
         ValueError: imaginary value found.
 
     Returns:
+    -------
         float: fid score
     """
     mu1, sigma1 = feature_statistics(feature1)
@@ -128,20 +137,23 @@ def frechet_distance(feature1: np.ndarray, feature2: np.ndarray, eps: float=1e-6
 
 """KID"""
 
+
 def kernel_distance(feature1: np.ndarray, feature2: np.ndarray, num_subsets=100, max_subset_size=1000) -> float:
-    """calculate kernel distance between the given two feature arrays.
+    """Calculate kernel distance between the given two feature arrays.
 
     Args:
+    ----
         feature1 (np.ndarray): feature array. shape: [N, feat_dim]
         feature2 (np.ndarray): feature array. shape: [N, feat_dim]
         num_subsets (int, optional): Defaults to 100.
         max_subset_size (int, optional): Defaults to 1000.
 
     Returns:
+    -------
         float: kid score
     """
     n = feature1.shape[1]
-    m = min(min(feature1.shape[0], feature2.shape[0]), max_subset_size)
+    m = min(feature1.shape[0], feature2.shape[0], max_subset_size)
     t = 0
     for _ in range(num_subsets):
         x = feature2[np.random.choice(feature2.shape[0], m, replace=False)]
@@ -155,89 +167,102 @@ def kernel_distance(feature1: np.ndarray, feature2: np.ndarray, num_subsets=100,
 
 """Precision Recall Density Coverage"""
 
-def pairwise_distance(feature1: np.ndarray, feature2: np.ndarray=None) -> np.ndarray:
-    """calculate pairwise distances.
+
+def pairwise_distance(feature1: np.ndarray, feature2: np.ndarray = None) -> np.ndarray:
+    """Calculate pairwise distances.
 
     Args:
+    ----
         feature1 (np.ndarray): feature array.
         feature2 (np.ndarray, optional): feature array. Defaults to None.
 
     Returns:
+    -------
         np.ndarray: distances.
     """
     if feature2 is None:
         feature2 = feature1
-    distance = sklearn.metrics.pairwise_distances(
-        feature1, feature2, metric='euclidean', n_jobs=8
-    )
+    distance = sklearn.metrics.pairwise_distances(feature1, feature2, metric='euclidean', n_jobs=8)
     return distance
 
 
 def nearest_neighbour_distances(features: np.ndarray, nearest_k: int) -> np.ndarray:
-    """calculate nearest neighbour distances.
+    """Calculate nearest neighbour distances.
 
     Args:
+    ----
         features (np.ndarray): feature array.
         nearest_k (int): nearest k.
 
     Returns:
+    -------
         np.ndarray: Distances to kth nearest neighbours.
     """
     distances = pairwise_distance(features)
-    indices = np.argpartition(distances, nearest_k + 1, axis=-1)[..., :nearest_k + 1]
+    indices = np.argpartition(distances, nearest_k + 1, axis=-1)[..., : nearest_k + 1]
     k_smallests = np.take_along_axis(distances, indices, axis=-1)
     radii = k_smallests.max(axis=-1)
     return radii
 
 
 def precision(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.ndarray) -> float:
-    """precision
+    """precision.
 
     Args:
+    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
+    -------
         float: precision score
     """
     return (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)).any(axis=0).mean()
 
 
 def recall(fake_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.ndarray) -> float:
-    """recall
+    """recall.
 
     Args:
+    ----
         fake_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of fake features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
+    -------
         float: recall score
     """
     return (distance_real_fake < np.expand_dims(fake_nearest_neighbour_distances, axis=0)).any(axis=1).mean()
 
 
 def density(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.ndarray, nearest_k: int) -> float:
-    """density
+    """density.
 
     Args:
+    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
         nearest_k (int): nearest k.
 
     Returns:
+    -------
         float: density
     """
-    return (1. / float(nearest_k)) * (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)).sum(axis=0).mean()
+    return (1.0 / float(nearest_k)) * (
+        distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)
+    ).sum(axis=0).mean()
 
 
 def coverage(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.ndarray) -> float:
-    """coverage
+    """coverage.
 
     Args:
+    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
+    -------
         float: coverage score
     """
     return (distance_real_fake.min(axis=1) < real_nearest_neighbour_distances).mean()
@@ -245,34 +270,46 @@ def coverage(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: n
 
 @dataclass
 class MetricFlags:
+    """Flags for metrics."""
+
     fid: bool = True
     kid: bool = False
     precision: bool = False
-    recall : bool = False
+    recall: bool = False
     density: bool = False
     coverage: bool = False
 
     @classmethod
     def disabled(cls):
-        """all flags disabled."""
+        """All flags disabled."""
         return cls(fid=False)
 
     def need_nn_dists(self):
-        """do we need to calculate nearest neighbour distances?"""
+        """Do we need to calculate nearest neighbour distances."""
         return any([self.precision, self.recall, self.density, self.coverage])
 
     def any(self):
-        """are there any enabled flag?"""
+        """Are there any enabled flag."""
         return any([self.fid, self.kid, self.precision, self.recall, self.density, self.coverage])
 
 
-def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int], device: torch.device,
-    metric_flags: MetricFlags=MetricFlags(), model_name: str='jit_inception',
-    batch_size: int=64, num_workers: int=4, num_images: int=None, cache_features: bool=True, verbose: bool=False
+def calc_metrics(
+    real_root: str,
+    fake_root: str,
+    synthesized_size: int | tuple[int],
+    device: torch.device,
+    metric_flags: MetricFlags | None = None,
+    model_name: str = 'jit_inception',
+    batch_size: int = 64,
+    num_workers: int = 4,
+    num_images: int | None = None,
+    cache_features: bool = True,
+    verbose: bool = False,
 ) -> dict:
-    """calculate metrics for generative models.
+    """Calculate metrics for generative models.
 
     Args:
+    ----
         real_root (str): directory containing real samples
         fake_root (str): directory containing fake samples
         synthesized_size (int | tuple[int]): Synthesized image size. Used to resize large real images
@@ -287,11 +324,16 @@ def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int
         num_workers (int, optional): Default: 4.
         num_images (int, optional): number of images used. specify when using same number of images
             Default: None.
+        cache_features (bool, optional): cache real features for reuse. Default: True.
         verbose (bool, optional): verbose mode. Default: False.
 
     Returns:
+    -------
         dict: dictionary containing the metrics
     """
+    if metric_flags is None:
+        metric_flags = MetricFlags()
+
     results = storch.EasyDict()
 
     # fast exit.
@@ -300,7 +342,7 @@ def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int
     if not metric_flags.any():
         return results
 
-    global _EXTRACTORS
+    global _EXTRACTORS  # noqa: PLW0602
     assert model_name in _EXTRACTORS.__all__, f'model_name must be one of {_EXTRACTORS.__all__}'
     model_config = _EXTRACTORS[model_name]
 
@@ -310,19 +352,32 @@ def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int
 
     real_features = FeatureCache.get(real_root, model, num_images) if cache_features else None
     if real_features is None:
-        real_dataset = build_dataset(real_root, synthesized_size, synthetic=False, batch_size=batch_size,
-            num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
+        real_dataset = build_dataset(
+            real_root,
+            synthesized_size,
+            synthetic=False,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            num_images=num_images,
+            feature_extractor_input_size=model_config.input_size,
+        )
         real_features = get_features(real_dataset, model, device, verbose)
-        del real_dataset # manual delete to confirm reduce memory.
+        del real_dataset  # manual delete to confirm reduce memory.
 
         if cache_features:
             FeatureCache.set(real_root, model, num_images, real_features)
 
-    fake_dataset = build_dataset(fake_root, synthesized_size, synthetic=True, batch_size=batch_size,
-        num_workers=num_workers, num_images=num_images, feature_extractor_input_size=model_config.input_size)
+    fake_dataset = build_dataset(
+        fake_root,
+        synthesized_size,
+        synthetic=True,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        num_images=num_images,
+        feature_extractor_input_size=model_config.input_size,
+    )
     fake_features = get_features(fake_dataset, model, device, verbose)
-    del fake_dataset, model # manual delete to confirm reduce memory.
-
+    del fake_dataset, model  # manual delete to confirm reduce memory.
 
     if metric_flags.fid:
         fid_score = frechet_distance(real_features, fake_features)
@@ -330,7 +385,6 @@ def calc_metrics(real_root: str, fake_root: str, synthesized_size: int|tuple[int
     if metric_flags.kid:
         kid_score = kernel_distance(real_features, fake_features)
         results.kid = kid_score
-
 
     if metric_flags.need_nn_dists():
         nearest_k = 5

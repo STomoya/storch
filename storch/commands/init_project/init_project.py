@@ -1,3 +1,4 @@
+"""Init project."""
 
 import argparse
 import glob
@@ -8,7 +9,7 @@ from omegaconf import OmegaConf
 from storch.project._config import get_default_config
 
 
-def get_args():
+def get_args():  # noqa: D103
     parser = argparse.ArgumentParser()
     parser.add_argument('--folder', default='.', help='The folder to be used for the project.')
     parser.add_argument('--empty-config', default=False, action='store_true', help='Do not use default config.')
@@ -34,7 +35,8 @@ def run():
             compose.yaml
             README.md
 
-    Raises:
+    Raises
+    ------
         Exception: The folder is not empty.
 
     Usage:
@@ -45,12 +47,7 @@ def run():
     if len(glob.glob(os.path.join(args.folder, '*'))) > 0:
         raise Exception(f'The folder "{args.folder}" is not empty.')
 
-    folders = [
-        'config',
-        'docker',
-        'docker/torch',
-        'workspace.local'
-    ]
+    folders = ['config', 'docker', 'docker/torch', 'workspace.local']
     files = [
         'config/config.yaml',
         'docker/torch/Dockerfile',
@@ -59,7 +56,7 @@ def run():
         'compose.yaml',
         'codecheck.py',
         '.env',
-        'README.md'
+        'README.md',
     ]
 
     fullname = os.path.abspath(args.folder)

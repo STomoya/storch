@@ -1,20 +1,20 @@
-
 import storch
 
 __text_length = 62
 
-ASCII_LOGO = r'''
+ASCII_LOGO = r"""
          ______   ______  ______   ______   ______   __  __
         /\  ___\ /\__  _\/\  __ \ /\  == \ /\  ___\ /\ \_\ \
  )\_/(  \ \___  \\/_/\ \/\ \ \/\ \\ \  __< \ \ \____\ \  __ \
 ='o.o'=  \/\_____\  \ \_\ \ \_____\\ \_\ \_\\ \_____\\ \_\ \_\
  (_ _)    \/_____/   \/_/  \/_____/ \/_/ /_/ \/_____/ \/_/\/_/
     U                    version: {version}
-'''.format(version=storch.__version__)
+""".format(version=storch.__version__)
 
 DESCRIPTION = 'pyTORCH utilities for STomoya (storch)'
 
 HEADER = f'{ASCII_LOGO}\n{DESCRIPTION.center(__text_length)}'
+
 
 def _collect_versions(num_cols=2):
     import cv2

@@ -1,3 +1,6 @@
+"""VGG losses."""
+
+# ruff: noqa:PLR2004
 
 from __future__ import annotations
 
@@ -14,10 +17,9 @@ from storch.loss._base import Loss
 
 
 class VGG(nn.Module):
-    '''VGG with only feature layers'''
-    def __init__(self,
-        layers: int=16, pretrained: bool=True
-    ):
+    """VGG with only feature layers."""
+
+    def __init__(self, layers: int = 16, pretrained: bool = True):  # noqa: D107
         super().__init__()
         assert layers in [16, 19], 'only supports VGG16 and VGG19'
         if layers == 16:
@@ -47,7 +49,7 @@ class VGG(nn.Module):
             param.requires_grad = False
         self.eval()
 
-    def forward(self, X):
+    def forward(self, X):  # noqa: D102
         h = self.slice1(X)
         h_relu1 = h
         h = self.slice2(h)
@@ -60,29 +62,28 @@ class VGG(nn.Module):
         h_relu5 = h
         return h_relu1, h_relu2, h_relu3, h_relu4, h_relu5
 
+
 def gram_matrix(x):
+    """Calculate gram matrix."""
     B, C, H, W = x.size()
-    feat = x.reshape(B, C, H*W)
+    feat = x.reshape(B, C, H * W)
     G = torch.bmm(feat, feat.permute(0, 2, 1))
-    return G.div(C*H*W)
+    return G.div(C * H * W)
+
 
 class VGGLoss(Loss):
-    """loss using vgg
+    """loss using vgg.
 
     Args:
+    ----
         device (_type_): the device working on.
         vgg (int, optional): layers of VGG model. 16 or 19. Default: 16.
         p (int, optional): Lp. 1: L1, 2: L2. Default: 2.
         normalized (bool, optional): if the input is normalized or not. Default: True.
         return_all (bool, optional): return all intermediate results Default: False.
     """
-    def __init__(self,
-        device,
-        vgg: int=16,
-        p: int=2,
-        normalized: bool=True,
-        return_all: bool=False
-    ) -> None:
+
+    def __init__(self, device, vgg: int = 16, p: int = 2, normalized: bool = True, return_all: bool = False) -> None:  # noqa: D107
         super().__init__(return_all)
         assert p in [1, 2]
         self.p = p
@@ -90,39 +91,39 @@ class VGGLoss(Loss):
         self.vgg = VGG(vgg, pretrained=True)
         self.vgg.to(device)
 
-    def _check_index(self,
-        index: int
-    ) -> None:
+    def _check_index(self, index: int) -> None:
         def assert_index(index):
             assert 0 <= index <= 4
+
         if isinstance(index, int):
             assert_index(index)
         if isinstance(index, (list, tuple)):
             for i in index:
                 assert_index(i)
 
-    def loss_fn(self,
-        x: torch.Tensor, y: torch.Tensor,
-        p: Optional[int]=None
-    ) -> torch.Tensor:
+    def loss_fn(self, x: torch.Tensor, y: torch.Tensor, p: Optional[int] = None) -> torch.Tensor:  # noqa: D102
         p_ = p if p is not None else self.p
 
-        if p_ == 1:   return F.l1_loss(x, y)
-        elif p_ == 2: return F.mse_loss(x, y)
+        if p_ == 1:
+            return F.l1_loss(x, y)
+        elif p_ == 2:
+            return F.mse_loss(x, y)
 
     def normalize(self, x: torch.Tensor) -> torch.Tensor:
-        '''normalize input tensor'''
+        """Normalize input tensor."""
         return TF.normalize(x, 0.5, 0.5)
 
-    def style_loss(self,
-        real: torch.Tensor, fake: torch.Tensor,
-        block_indices: list[int]=[0, 1, 2, 3],
-        p: Optional[int]=None
+    def style_loss(
+        self, real: torch.Tensor, fake: torch.Tensor, block_indices: list[int] | None = None, p: Optional[int] = None
     ) -> torch.Tensor:
-        '''style loss introduced in
+        """Style loss.
+
+        introduced in
         "Perceptual Losses for Real-Time Style Transfer and Super-Resolution",
         Justin Johnson, Alexandre Alahi, and Li Fei-Fei
-        '''
+        """
+        if block_indices is None:
+            block_indices = [0, 1, 2, 3]
         self._check_index(block_indices)
         if not self.normalized:
             real, fake = self.normalize(real), self.normalize(fake)
@@ -131,21 +132,19 @@ class VGGLoss(Loss):
             real_acts = self.vgg(real.float())
             fake_acts = self.vgg(fake.float())
             for index in block_indices:
-                loss = loss + self.loss_fn(
-                    gram_matrix(fake_acts[index]),
-                    gram_matrix(real_acts[index]), p)
+                loss = loss + self.loss_fn(gram_matrix(fake_acts[index]), gram_matrix(real_acts[index]), p)
 
         return loss
 
-    def content_loss(self,
-        real: torch.Tensor, fake: torch.Tensor,
-        block_index: int=2,
-        p: Optional[int]=None
+    def content_loss(
+        self, real: torch.Tensor, fake: torch.Tensor, block_index: int = 2, p: Optional[int] = None
     ) -> torch.Tensor:
-        '''content loss intruduced in
+        """Content loss.
+
+        intruduced in
         "Perceptual Losses for Real-Time Style Transfer and Super-Resolution",
         Justin Johnson, Alexandre Alahi, and Li Fei-Fei
-        '''
+        """
         self._check_index(block_index)
         if not self.normalized:
             real, fake = self.normalize(real), self.normalize(fake)
@@ -157,16 +156,21 @@ class VGGLoss(Loss):
 
         return loss
 
-    def vgg_loss(self,
-        real: torch.Tensor, fake: torch.Tensor,
-        block_indices: list[int]=[0, 1, 2, 3, 4],
-        p: Optional[int]=None
+    def vgg_loss(
+        self,
+        real: torch.Tensor,
+        fake: torch.Tensor,
+        block_indices: list[int] | None = None,
+        p: Optional[int] = None,
     ) -> torch.Tensor:
-        '''perceptual loss used in pix2pixHD.
+        """Perceptual loss used in pix2pixHD.
+
         They seem to use the activations of all convolution blocks,
         and calculates the distance with L1,
         different from using only 4 blocks and L2 in style loss and content loss.
-        '''
+        """
+        if block_indices is None:
+            block_indices = [0, 1, 2, 3, 4]
         self._check_index(block_indices)
         if not self.normalized:
             real, fake = self.normalize(real), self.normalize(fake)

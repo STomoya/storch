@@ -1,3 +1,4 @@
+"""CutMix."""
 
 from __future__ import annotations
 
@@ -7,21 +8,23 @@ import torch.nn.functional as F
 
 
 def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
-    """Make a random box within size
+    """Make a random box within size.
 
     Args:
+    ----
         size (tuple): size of the image.
         lambda_ (float): lambda sampled from beta.
 
     Returns:
+    -------
         tuple[int]: xyxy
         float: adjusted lambda
     """
     W = size[0]
     H = size[1]
-    cut_rat = np.sqrt(1. - lambda_)
-    cut_w = np.int(W * cut_rat)
-    cut_h = np.int(H * cut_rat)
+    cut_rat = np.sqrt(1.0 - lambda_)
+    cut_w = int(W * cut_rat)
+    cut_h = int(H * cut_rat)
 
     cx = np.random.randint(W)
     cy = np.random.randint(H)
@@ -37,11 +40,12 @@ def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
 
 
 def cutmix(
-    images: torch.Tensor, targets: torch.Tensor, alpha: float=0.2, p: float=1.0, sample_wise: bool=True
+    images: torch.Tensor, targets: torch.Tensor, alpha: float = 0.2, p: float = 1.0, sample_wise: bool = True
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """CutMix augmentation
+    """CutMix augmentation.
 
     Args:
+    ----
         images (torch.Tensor): Tensor of images to apply CutMix to.
         targets (torch.Tensor): Tensor of targets.
         alpha (float, optional): Parameter for sampling random numbers from the Beta distribution. Default: 0.2.
@@ -50,6 +54,7 @@ def cutmix(
         sample_wise (bool, optional): Make a mask for each samples in the batch. Default: True.
 
     Returns:
+    -------
         torch.Tensor: The mixed image.
         torch.Tensor: The target in the order of the shuffled images.
         torch.Tensor: The lambda used to make the mask.
@@ -65,16 +70,15 @@ def cutmix(
             if np.random.random(1) < p:
                 lambda_ = np.random.beta(alpha, alpha)
                 xyxy, adjusted_lambda = random_box((W, H), lambda_)
-                mask[i, :, xyxy[0]:xyxy[2], xyxy[1]:xyxy[3]] = 0.0
+                mask[i, :, xyxy[0] : xyxy[2], xyxy[1] : xyxy[3]] = 0.0
                 lambdas[i] = adjusted_lambda
 
     elif np.random.random(1) < p:
         # share a mask for all samples in the batch
         lambda_ = np.random.beta(alpha, alpha)
         xyxy, adjusted_lambda = random_box((W, H), lambda_)
-        mask[:, :, xyxy[0]:xyxy[2], xyxy[1]:xyxy[3]] = 0.0
+        mask[:, :, xyxy[0] : xyxy[2], xyxy[1] : xyxy[3]] = 0.0
         lambdas = lambdas * adjusted_lambda
-
 
     permutation = torch.randperm(B, device=images.device)
     mixed = images * mask + images[permutation] * (1 - mask)
@@ -85,15 +89,17 @@ def cutmix(
 def mixed_cross_entropy_loss(
     logits: torch.Tensor, targets_a: torch.Tensor, targets_b: torch.Tensor, lambdas: torch.Tensor
 ) -> torch.Tensor:
-    """Cross entropy loss for mixed images
+    """Cross entropy loss for mixed images.
 
     Args:
+    ----
         logits (torch.Tensor): Output logits of the model.
         targets_a (torch.Tensor): targets of the original batch.
         targets_b (torch.Tensor): targets returned by cutmix()
         lambdas (torch.Tensor): lambdas returned by cutmix()
 
     Returns:
+    -------
         torch.Tensor: the loss
     """
     ce_loss_a = F.cross_entropy(logits, targets_a, reduction='none') * lambdas

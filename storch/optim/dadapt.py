@@ -3,11 +3,13 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""D-Adaptation optimizers
+"""D-Adaptation optimizers.
+
 from: DAdaptAdaGrad - https://github.com/facebookresearch/dadaptation/blob/45800aedecb3e6ba9e2c6c8f876b873c9767fbda/dadaptation/dadapt_adagrad.py
       DAdaptAdam    - https://github.com/facebookresearch/dadaptation/blob/45800aedecb3e6ba9e2c6c8f876b873c9767fbda/dadaptation/dadapt_adam.py
       DAdaptSGD     - https://github.com/facebookresearch/dadaptation/blob/45800aedecb3e6ba9e2c6c8f876b873c9767fbda/dadaptation/dadapt_sgd.py
 """
+# ruff: noqa
 
 import math
 from typing import TYPE_CHECKING, Any, Callable, Optional
@@ -22,9 +24,10 @@ else:
 
 
 class DAdaptAdaGrad(torch.optim.Optimizer):
-    """
-    Adagrad with D-Adaptation. Leave LR set to 1 unless you encounter instability.
+    """Adagrad with D-Adaptation. Leave LR set to 1 unless you encounter instability.
+
     Arguments:
+    ---------
         params (iterable):
             Iterable of parameters to optimize or dicts defining parameter groups.
         lr (float):
@@ -43,24 +46,27 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
     """
 
     def __init__(
-        self, params: _params_t,
+        self,
+        params: _params_t,
         lr: float = 1.0,
         momentum: float = 0,
         log_every: int = 0,
         weight_decay: float = 0.0,
         eps: float = 1e-8,
-        d0 = 1e-6, growth_rate=float('inf')
+        d0=1e-6,
+        growth_rate=float('inf'),
     ):
         if d0 <= 0:
-            raise ValueError("Invalid d0 value: {}".format(d0))
+            raise ValueError('Invalid d0 value: {}'.format(d0))
         if lr <= 0:
-            raise ValueError(f"Learning rate {lr} must be positive")
+            raise ValueError(f'Learning rate {lr} must be positive')
         if momentum < 0:
-            raise ValueError(f"Momentum {momentum} must be non-negative")
+            raise ValueError(f'Momentum {momentum} must be non-negative')
         if eps <= 0:
-            raise ValueError("Invalid epsilon value: {}".format(eps))
+            raise ValueError('Invalid epsilon value: {}'.format(eps))
 
-        defaults = dict(lr=lr,
+        defaults = dict(
+            lr=lr,
             momentum=momentum,
             eps=eps,
             weight_decay=weight_decay,
@@ -68,25 +74,21 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
             log_every=log_every,
             d=d0,
             growth_rate=growth_rate,
-            k = 0,
+            k=0,
             sksq_weighted=0.0,
-            skl1=0.0)
+            skl1=0.0,
+        )
         self.d0 = d0
         super().__init__(params, defaults)
 
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
-        """Performs a single optimization step.
-
-        Arguments:
-            closure (callable, optional): A closure that reevaluates the model
-                and returns the loss.
-        """
+        """Single optimization step."""
         loss = None
         if closure is not None:
             loss = closure()
 
         group = self.param_groups[0]
-        lr = group["lr"]
+        lr = group['lr']
         momentum = group['momentum']
         ck = 1 - momentum
 
@@ -98,14 +100,14 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
         skl1 = group['skl1']
         d = group['d']
 
-        dlr = d*lr
+        dlr = d * lr
 
         g_sq = 0.0
         sksq_weighted_change = 0.0
         skl1_change = 0.0
 
         for group in self.param_groups:
-            eps = group["eps"]
+            eps = group['eps']
             k = group['k']
             decay = group['weight_decay']
 
@@ -117,10 +119,10 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
 
                 state = self.state[p]
 
-                if "alphak" not in state:
-                    state["alphak"] = torch.full_like(p.data, fill_value=1e-6).detach()
+                if 'alphak' not in state:
+                    state['alphak'] = torch.full_like(p.data, fill_value=1e-6).detach()
                     state['sk'] = torch.zeros_like(p.data).detach()
-                    state["x0"] = torch.clone(p.data).detach()
+                    state['x0'] = torch.clone(p.data).detach()
 
                     if grad.is_sparse:
                         state['weighted_sk'] = torch.zeros_like(p.data).detach()
@@ -134,7 +136,7 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
 
                     grad = grad.coalesce()
                     grad_vals = grad._values()
-                    vk_vals = grad_vals*grad_vals
+                    vk_vals = grad_vals * grad_vals
 
                     sk_vals = sk.sparse_mask(grad).coalesce()._values()
 
@@ -201,15 +203,17 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
         if skl1 == 0:
             return loss
 
-        gsq_weighted = gsq_weighted + dlr*dlr*g_sq
+        gsq_weighted = gsq_weighted + dlr * dlr * g_sq
         d_hat = d
 
         if lr > 0.0:
-            d_hat = (sksq_weighted - gsq_weighted)/skl1
-            d = group['d'] = max(d, min(d_hat, d*growth_rate))
+            d_hat = (sksq_weighted - gsq_weighted) / skl1
+            d = group['d'] = max(d, min(d_hat, d * growth_rate))
 
         if log_every > 0 and k % log_every == 0:
-            print(f"d_hat: {d_hat}, d: {d}. sksq_weighted={sksq_weighted:1.1e} skl1={skl1:1.1e} gsq_weighted={gsq_weighted:1.1e} lr={lr}")
+            print(
+                f'd_hat: {d_hat}, d: {d}. sksq_weighted={sksq_weighted:1.1e} skl1={skl1:1.1e} gsq_weighted={gsq_weighted:1.1e} lr={lr}'
+            )
 
         for group in self.param_groups:
             group['gsq_weighted'] = gsq_weighted
@@ -222,15 +226,15 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
             k = group['k']
             eps = group['eps']
 
-            for p in group["params"]:
+            for p in group['params']:
                 if p.grad is None:
                     continue
                 grad = p.grad.data
                 state = self.state[p]
 
-                alphak = state["alphak"]
-                sk = state["sk"]
-                x0 = state["x0"]
+                alphak = state['alphak']
+                sk = state['sk']
+                x0 = state['x0']
 
                 if grad.is_sparse:
                     grad = grad.coalesce()
@@ -251,7 +255,7 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
                     z = x0 - sk.div(torch.sqrt(alphak) + eps)
 
                     if momentum != 0:
-                        p.data.mul_(1-ck).add_(z, alpha=ck)
+                        p.data.mul_(1 - ck).add_(z, alpha=ck)
                     else:
                         p.data.copy_(z)
             group['k'] = k + 1
@@ -259,9 +263,10 @@ class DAdaptAdaGrad(torch.optim.Optimizer):
 
 
 class DAdaptSGD(torch.optim.Optimizer):
-    r"""
-    Implements SGD with D-Adaptation automatic step-sizes. Leave LR set to 1 unless you encounter instability.
+    r"""Implements SGD with D-Adaptation automatic step-sizes. Leave LR set to 1 unless you encounter instability.
+
     Arguments:
+    ---------
         params (iterable):
             Iterable of parameters to optimize or dicts defining parameter groups.
         lr (float):
@@ -281,28 +286,28 @@ class DAdaptSGD(torch.optim.Optimizer):
             Default is inf, for unrestricted. More conservative values like 1.02 may
             help if training is unstable.
     """
-    def __init__(self, params,
-        lr=1e-2,
-        momentum=0,
-        weight_decay=0,
-        log_every=0,
-        d0=1e-6, growth_rate=float('inf')):
 
-        if not 0.0 < d0:
-            raise ValueError("Invalid d0 value: {}".format(d0))
-        if not 0.0 < lr:
-            raise ValueError("Invalid learning rate: {}".format(lr))
+    def __init__(self, params, lr=1e-2, momentum=0, weight_decay=0, log_every=0, d0=1e-6, growth_rate=float('inf')):
+        if not d0 > 0.0:
+            raise ValueError('Invalid d0 value: {}'.format(d0))
+        if not lr > 0.0:
+            raise ValueError('Invalid learning rate: {}'.format(lr))
 
-        defaults = dict(lr=lr,
+        defaults = dict(
+            lr=lr,
             momentum=momentum,
-            weight_decay=weight_decay, k=0,
+            weight_decay=weight_decay,
+            k=0,
             log_every=log_every,
-            gsq_weighted=0.0, d=d0, growth_rate=growth_rate)
+            gsq_weighted=0.0,
+            d=d0,
+            growth_rate=growth_rate,
+        )
         self.loggables = {}
 
         try:
             self.rank = torch.distributed.get_rank()
-        except:
+        except Exception as _:
             self.rank = 0
 
         super().__init__(params, defaults)
@@ -336,7 +341,7 @@ class DAdaptSGD(torch.optim.Optimizer):
                 # Apply weight decay
                 if decay != 0:
                     if grad.is_sparse:
-                        raise RuntimeError("weight_decay option is not compatible with sparse gradients")
+                        raise RuntimeError('weight_decay option is not compatible with sparse gradients')
 
                     grad.add_(p.data, alpha=decay)
 
@@ -354,7 +359,7 @@ class DAdaptSGD(torch.optim.Optimizer):
             group['g0_norm'] = g0_norm = math.sqrt(g_sq)
 
         g0_norm = group['g0_norm']
-        dlr = d*lr/g0_norm
+        dlr = d * lr / g0_norm
 
         for group in self.param_groups:
             for p in group['params']:
@@ -373,15 +378,18 @@ class DAdaptSGD(torch.optim.Optimizer):
                 sk_sq += (s * s).sum().item()
             ######
 
-        gsq_weighted = group['gsq_weighted'] = gsq_weighted + dlr*dlr*g_sq
+        gsq_weighted = group['gsq_weighted'] = gsq_weighted + dlr * dlr * g_sq
         d_hat = d
 
         if lr > 0.0:
-            d_hat = (sk_sq - gsq_weighted)/(math.sqrt(sk_sq))
-            d = group['d'] = max(d, min(d_hat, d*growth_rate))
+            d_hat = (sk_sq - gsq_weighted) / (math.sqrt(sk_sq))
+            d = group['d'] = max(d, min(d_hat, d * growth_rate))
 
         if log_every > 0 and k % log_every == 0:
-            print(f"(r={self.rank},k={k}) dlr: {dlr} d_hat: {d_hat}, d: {d}. sk_sq={sk_sq} gsq_weighted={gsq_weighted} g0_norm={g0_norm}", flush=True)
+            print(
+                f'(r={self.rank},k={k}) dlr: {dlr} d_hat: {d_hat}, d: {d}. sk_sq={sk_sq} gsq_weighted={gsq_weighted} g0_norm={g0_norm}',
+                flush=True,
+            )
 
         for group in self.param_groups:
             group['gsq_weighted'] = gsq_weighted
@@ -402,7 +410,7 @@ class DAdaptSGD(torch.optim.Optimizer):
                 z.data.copy_(x0 - s)
 
                 # x step
-                p.data.mul_(1-ck).add_(z, alpha=ck)
+                p.data.mul_(1 - ck).add_(z, alpha=ck)
 
             group['k'] = k + 1
 
@@ -415,10 +423,12 @@ def to_real(x):
     else:
         return x
 
+
 class DAdaptAdam(torch.optim.Optimizer):
-    r"""
-    Implements Adam with D-Adaptation automatic step-sizes. Leave LR set to 1 unless you encounter instability.
+    r"""Implements Adam with D-Adaptation automatic step-sizes. Leave LR set to 1 unless you encounter instability.
+
     Arguments:
+    ---------
         params (iterable):
             Iterable of parameters to optimize or dicts defining parameter groups.
         lr (float):
@@ -442,33 +452,45 @@ class DAdaptAdam(torch.optim.Optimizer):
             Default is inf, for unrestricted. Values like 1.02 give a kind of learning
             rate warmup effect.
     """
-    def __init__(self, params, lr=1.0,
-                 betas=(0.9, 0.999), eps=1e-8,
-                 weight_decay=0, log_every=0,
-                 decouple=False,
-                 d0=1e-6, growth_rate=float('inf')):
-        if not 0.0 < d0:
-            raise ValueError("Invalid d0 value: {}".format(d0))
-        if not 0.0 < lr:
-            raise ValueError("Invalid learning rate: {}".format(lr))
-        if not 0.0 < eps:
-            raise ValueError("Invalid epsilon value: {}".format(eps))
+
+    def __init__(
+        self,
+        params,
+        lr=1.0,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0,
+        log_every=0,
+        decouple=False,
+        d0=1e-6,
+        growth_rate=float('inf'),
+    ):
+        if not d0 > 0.0:
+            raise ValueError('Invalid d0 value: {}'.format(d0))
+        if not lr > 0.0:
+            raise ValueError('Invalid learning rate: {}'.format(lr))
+        if not eps > 0.0:
+            raise ValueError('Invalid epsilon value: {}'.format(eps))
         if not 0.0 <= betas[0] < 1.0:
-            raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
+            raise ValueError('Invalid beta parameter at index 0: {}'.format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
-            raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
+            raise ValueError('Invalid beta parameter at index 1: {}'.format(betas[1]))
 
         if decouple:
-            print(f"Using decoupled weight decay")
+            print('Using decoupled weight decay')
 
-        defaults = dict(lr=lr, betas=betas, eps=eps,
-                        weight_decay=weight_decay,
-                        d = d0,
-                        k=0,
-                        gsq_weighted=0.0,
-                        log_every=log_every,
-                        growth_rate=growth_rate,
-                        decouple=decouple)
+        defaults = dict(
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+            d=d0,
+            k=0,
+            gsq_weighted=0.0,
+            log_every=log_every,
+            growth_rate=growth_rate,
+            decouple=decouple,
+        )
 
         super().__init__(params, defaults)
 
@@ -481,16 +503,10 @@ class DAdaptAdam(torch.optim.Optimizer):
         return True
 
     def step(self, closure=None):
-        """Performs a single optimization step.
-
-        Arguments:
-            closure (callable, optional): A closure that reevaluates the model
-                and returns the loss.
-        """
+        """Single optimization step."""
         loss = None
         if closure is not None:
             loss = closure()
-
 
         g_sq = 0.0
         sksq_weighted = 0.0
@@ -502,7 +518,7 @@ class DAdaptAdam(torch.optim.Optimizer):
         gsq_weighted = group['gsq_weighted']
         d = group['d']
         lr = group['lr']
-        dlr = d*lr
+        dlr = d * lr
 
         growth_rate = group['growth_rate']
         decouple = group['decouple']
@@ -533,28 +549,30 @@ class DAdaptAdam(torch.optim.Optimizer):
                     # Exponential moving average of gradient values
                     state['exp_avg'] = torch.zeros_like(p.data, memory_format=torch.preserve_format).detach()
                     # Exponential moving average of squared gradient values
-                    state['exp_avg_sq'] = torch.zeros_like(to_real(p.data), memory_format=torch.preserve_format).detach()
+                    state['exp_avg_sq'] = torch.zeros_like(
+                        to_real(p.data), memory_format=torch.preserve_format
+                    ).detach()
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
 
                 grad_grad = to_real(grad * grad.conj())
 
                 # Adam EMA updates
-                exp_avg.mul_(beta1).add_(grad, alpha=dlr*(1-beta1))
-                exp_avg_sq.mul_(beta2).add_(grad_grad, alpha=1-beta2)
+                exp_avg.mul_(beta1).add_(grad, alpha=dlr * (1 - beta1))
+                exp_avg_sq.mul_(beta2).add_(grad_grad, alpha=1 - beta2)
 
                 denom = exp_avg_sq.sqrt().add_(eps)
 
                 g_sq += grad_grad.div_(denom).sum().item()
 
                 s = state['s']
-                s.mul_(beta2).add_(grad, alpha=dlr*(1-beta2))
+                s.mul_(beta2).add_(grad, alpha=dlr * (1 - beta2))
                 sksq_weighted += to_real(s * s.conj()).div_(denom).sum().item()
                 sk_l1 += s.abs().sum().item()
 
             ######
 
-        gsq_weighted = beta2*gsq_weighted + g_sq*(dlr**2)*(1-beta2)
+        gsq_weighted = beta2 * gsq_weighted + g_sq * (dlr**2) * (1 - beta2)
         d_hat = d
 
         # if we have not done any progres, return
@@ -563,11 +581,13 @@ class DAdaptAdam(torch.optim.Optimizer):
             return loss
 
         if lr > 0.0:
-            d_hat = (sksq_weighted/(1-beta2) - gsq_weighted)/sk_l1
-            d = max(d, min(d_hat, d*growth_rate))
+            d_hat = (sksq_weighted / (1 - beta2) - gsq_weighted) / sk_l1
+            d = max(d, min(d_hat, d * growth_rate))
 
         if log_every > 0 and k % log_every == 0:
-            print(f"ng: {ngroups} lr: {lr} dlr: {dlr} d_hat: {d_hat}, d: {d}. sksq_weighted={sksq_weighted:1.1e} sk_l1={sk_l1:1.1e} gsq_weighted={gsq_weighted:1.1e}")
+            print(
+                f'ng: {ngroups} lr: {lr} dlr: {dlr} d_hat: {d_hat}, d: {d}. sksq_weighted={sksq_weighted:1.1e} sk_l1={sk_l1:1.1e} gsq_weighted={gsq_weighted:1.1e}'
+            )
 
         for group in self.param_groups:
             group['gsq_weighted'] = gsq_weighted
@@ -594,7 +614,6 @@ class DAdaptAdam(torch.optim.Optimizer):
                 # Apply weight decay (decoupled variant)
                 if decay != 0 and decouple:
                     p.data.add_(p.data, alpha=-decay * dlr)
-
 
                 ### Take step
                 p.data.addcdiv_(exp_avg, denom, value=-1)

@@ -1,8 +1,9 @@
+"""Layer utils."""
 
 from collections.abc import Iterable
 from itertools import repeat
 
-__all__=[
+__all__ = [
     'to_1tuple',
     'to_2tuple',
     'to_3tuple',
@@ -11,7 +12,6 @@ __all__=[
 
 
 def _ntuple(n):
-
     def parse(x):
         if isinstance(x, Iterable):
             if len(x) != n:

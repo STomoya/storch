@@ -1,1 +1,2 @@
-__version__='0.5.5'
+"""Version."""
+__version__ = '0.5.5'

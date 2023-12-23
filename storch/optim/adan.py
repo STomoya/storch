@@ -1,6 +1,8 @@
-'''Adan optimizer
+"""Adan optimizer.
+
 from: https://github.com/sail-sg/Adan/blob/5473cb5316d0d867736e361218a1cd7e79fa916c/adan.py
-'''
+"""
+# ruff: noqa
 
 import math
 
@@ -9,11 +11,11 @@ from torch.optim.optimizer import Optimizer
 
 
 class Adan(Optimizer):
-    """
-    Implements a pytorch variant of Adan
+    """Implements a pytorch variant of Adan.
 
     Adan was proposed in
-    Adan: Adaptive Nesterov Momentum Algorithm for Faster Optimizing Deep Models[J]. arXiv preprint arXiv:2208.06677, 2022.
+    Adan: Adaptive Nesterov Momentum Algorithm for Faster Optimizing Deep Models[J].
+    arXiv preprint arXiv:2208.06677, 2022.
     https://arxiv.org/abs/2208.06677
     Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining parameter groups.
@@ -28,23 +30,24 @@ class Adan(Optimizer):
         no_prox (bool): how to perform the decoupled weight decay (default: False)
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.98, 0.92, 0.99), eps=1e-8,
-                 weight_decay=0.0, max_grad_norm=0.0, no_prox=False):
-        if not 0.0 <= max_grad_norm:
-            raise ValueError("Invalid Max grad norm: {}".format(max_grad_norm))
-        if not 0.0 <= lr:
-            raise ValueError("Invalid learning rate: {}".format(lr))
-        if not 0.0 <= eps:
-            raise ValueError("Invalid epsilon value: {}".format(eps))
+    def __init__(
+        self, params, lr=1e-3, betas=(0.98, 0.92, 0.99), eps=1e-8, weight_decay=0.0, max_grad_norm=0.0, no_prox=False
+    ):
+        if not max_grad_norm >= 0.0:
+            raise ValueError('Invalid Max grad norm: {}'.format(max_grad_norm))
+        if not lr >= 0.0:
+            raise ValueError('Invalid learning rate: {}'.format(lr))
+        if not eps >= 0.0:
+            raise ValueError('Invalid epsilon value: {}'.format(eps))
         if not 0.0 <= betas[0] < 1.0:
-            raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
+            raise ValueError('Invalid beta parameter at index 0: {}'.format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
-            raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
+            raise ValueError('Invalid beta parameter at index 1: {}'.format(betas[1]))
         if not 0.0 <= betas[2] < 1.0:
-            raise ValueError("Invalid beta parameter at index 2: {}".format(betas[2]))
-        defaults = dict(lr=lr, betas=betas, eps=eps,
-                        weight_decay=weight_decay,
-                        max_grad_norm=max_grad_norm, no_prox=no_prox)
+            raise ValueError('Invalid beta parameter at index 2: {}'.format(betas[2]))
+        defaults = dict(
+            lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, max_grad_norm=max_grad_norm, no_prox=no_prox
+        )
         super(Adan, self).__init__(params, defaults)
 
     def __setstate__(self, state):
@@ -70,16 +73,13 @@ class Adan(Optimizer):
 
     @torch.no_grad()
     def step(self):
-        """
-            Performs a single optimization step.
-        """
+        """Single optimization step."""
         if self.defaults['max_grad_norm'] > 0:
             device = self.param_groups[0]['params'][0].device
             global_grad_norm = torch.zeros(1, device=device)
 
             max_grad_norm = torch.tensor(self.defaults['max_grad_norm'], device=device)
             for group in self.param_groups:
-
                 for p in group['params']:
                     if p.grad is not None:
                         grad = p.grad
@@ -131,7 +131,7 @@ class Adan(Optimizer):
                 exp_avg_sq.mul_(beta3).addcmul_(update, update, value=1 - beta3)  # n_t
 
                 denom = ((exp_avg_sq).sqrt() / math.sqrt(bias_correction3)).add_(group['eps'])
-                update = ((exp_avg / bias_correction1 + beta2 * exp_avg_diff / bias_correction2)).div_(denom)
+                update = (exp_avg / bias_correction1 + beta2 * exp_avg_diff / bias_correction2).div_(denom)
 
                 if group['no_prox']:
                     p.data.mul_(1 - group['lr'] * group['weight_decay'])

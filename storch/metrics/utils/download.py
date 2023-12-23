@@ -1,3 +1,4 @@
+"""Download URL."""
 
 import os
 import shutil
@@ -6,15 +7,17 @@ import urllib.request
 from storch.path import Path
 
 
-def download_url(url: str, filename: str, folder: str='./.cache/storch/metrics') -> str:
-    """download url
+def download_url(url: str, filename: str, folder: str = './.cache/storch/metrics') -> str:
+    """Download url.
 
     Args:
+    ----
         url (str): URL to the file to download.
         filename (str): filename to be saved as
         folder (str, optional): the folder to save the downloaded file to. Default: './.cache/storch/metrics'.
 
     Returns:
+    -------
         str: the path to the downloaded file.
     """
     folder = Path(folder)

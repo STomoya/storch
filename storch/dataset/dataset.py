@@ -1,3 +1,4 @@
+"""Datasets."""
 
 from __future__ import annotations
 
@@ -14,20 +15,26 @@ from storch.dataset.utils import get_loader_kwargs, is_image_file
 
 
 class DatasetBase(Dataset):
-    '''Base class for datasets.
+    """Base class for datasets.
+
     Provides functions to easily transform the dataset to a DataLoader object.
-    '''
+    """
+
     def __init__(self) -> None:
+        """Dataset base."""
         super().__init__()
         self.kwargs = get_loader_kwargs()
 
     def setup_loader(self, batch_size: int, **kwargs):
-        """Setup keyword arguments for DataLoader
+        """Set keyword arguments for DataLoader.
 
         Args:
+        ----
             batch_size (int): Batch size
+            **kwargs: other kwargs for DataLoader.
 
         Returns:
+        -------
             Self: Other keyword arguments to be passed to the DataLoader class
         """
         self.kwargs.batch_size = batch_size
@@ -37,9 +44,10 @@ class DatasetBase(Dataset):
         return self
 
     def toloader(self) -> DataLoader:
-        """Transform dataset to DataLoader object
+        """Transform dataset to DataLoader object.
 
-        Returns:
+        Returns
+        -------
             DataLoader: data loader object.
         """
         return DataLoader(self, **self.kwargs)
@@ -54,9 +62,10 @@ def _collect_image_paths(root, filter_fn):
 
 
 class ImageFolder(DatasetBase):
-    """ImageFolder, but w/o class labels
+    """ImageFolder, but w/o class labels.
 
     Args:
+    ----
         data_root (str): Root directory of images. Images are searched recursively inside this folder.
         transform (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -64,21 +73,22 @@ class ImageFolder(DatasetBase):
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
     """
-    def __init__(self,
-        data_root: str, transform: Callable, num_images: int|None =None, filter_fn: Callable|None=None
+
+    def __init__(  # noqa: D107
+        self, data_root: str, transform: Callable, num_images: int | None = None, filter_fn: Callable | None = None
     ) -> None:
         super().__init__()
         images = _collect_image_paths(data_root, filter_fn)
         if num_images is not None and len(images) > num_images:
             random.shuffle(images)
             images = images[:num_images]
-        self.images    = images
+        self.images = images
         self.transform = transform
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return len(self.images)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):  # noqa: D105
         image = self.images[index]
         image = Image.open(image).convert('RGB')
         image = self.transform(image)
@@ -89,6 +99,7 @@ class ImageFolders(DatasetBase):
     """ImageFolder, but w/o class labels and w/ multiple folder support.
 
     Args:
+    ----
         data_roots (list[str]): Root directory of images. Images are searched recursively inside this folder.
         transforms (Callable | list[Callable]): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -96,8 +107,13 @@ class ImageFolders(DatasetBase):
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
     """
-    def __init__(self,
-        data_roots: list[str], transforms: Callable|list[Callable], num_images: int|None=None, filter_fn: Callable|None=None
+
+    def __init__(  # noqa: D107
+        self,
+        data_roots: list[str],
+        transforms: Callable | list[Callable],
+        num_images: int | None = None,
+        filter_fn: Callable | None = None,
     ) -> None:
         super().__init__()
         self.images = {index: _collect_image_paths(data_root, filter_fn) for index, data_root in enumerate(data_roots)}
@@ -111,16 +127,22 @@ class ImageFolders(DatasetBase):
         else:
             self.transforms = [transforms for _ in range(len(self.images))]
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return min([len(value) for value in self.images.values()])
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):  # noqa: D105
         image_paths = [paths[index] for paths in self.images.values()]
         images = [Image.open(image_path).convert('RGB') for image_path in image_paths]
         images = [self.transforms[index](image) for index, image in enumerate(images)]
         return tuple(images)
 
-    def shuffle(self, index: int|None=None):
+    def shuffle(self, index: int | None = None):
+        """Shuffle the data.
+
+        Args:
+        ----
+            index (int | None, optional): which to shuffle. If None, both. Default: None.
+        """
         if index is not None:
             random.shuffle(self.images[index])
         else:
@@ -149,6 +171,7 @@ class ImagePathFile(DatasetBase):
             ...
 
     Args:
+    ----
         path (str): Path to a file with path to images.
         transform (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -156,8 +179,9 @@ class ImagePathFile(DatasetBase):
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
     """
-    def __init__(self,
-        path: str, transform: Callable, num_images: int|None=None, filter_fn: Callable|None=None
+
+    def __init__(  # noqa: D107
+        self, path: str, transform: Callable, num_images: int | None = None, filter_fn: Callable | None = None
     ) -> None:
         super().__init__()
         images = _extract_image_paths(path, filter_fn)
@@ -166,10 +190,10 @@ class ImagePathFile(DatasetBase):
         self.images = images
         self.transform = transform
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return len(self.images)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):  # noqa: D105
         image = self.images[index]
         image = Image.open(image).convert('RGB')
         image = self.transform(image)
@@ -187,6 +211,7 @@ class ImagePathFiles(DatasetBase):
             ...
 
     Args:
+    ----
         path (list[str]): Path to a file with path to images.
         transform (Callable | list[Callable]): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -194,8 +219,13 @@ class ImagePathFiles(DatasetBase):
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
     """
-    def __init__(self,
-        paths: list[str], transforms: Callable|list[Callable], num_images: int|None=None, filter_fn: Callable|None=None
+
+    def __init__(  # noqa: D107
+        self,
+        paths: list[str],
+        transforms: Callable | list[Callable],
+        num_images: int | None = None,
+        filter_fn: Callable | None = None,
     ) -> None:
         super().__init__()
         self.images = {index: _extract_image_paths(path, filter_fn) for index, path in enumerate(paths)}
@@ -208,16 +238,22 @@ class ImagePathFiles(DatasetBase):
         else:
             self.transforms = [transforms for _ in range(len(self.images))]
 
-    def __len__(self):
+    def __len__(self):  # noqa: D105
         return min([len(value) for value in self.images.values()])
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):  # noqa: D105
         image_paths = [paths[index] for paths in self.images.values()]
         images = [Image.open(image_path).convert('RGB') for image_path in image_paths]
         images = [self.transforms[index](image) for index, image in enumerate(images)]
         return tuple(images)
 
-    def shuffle(self, index: int|None=None):
+    def shuffle(self, index: int | None = None):
+        """Shuffle the data.
+
+        Args:
+        ----
+            index (int | None, optional): which to shuffle. If None, both. Default: None.
+        """
         if index is not None:
             random.shuffle(self.images[index])
         else:

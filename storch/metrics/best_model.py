@@ -1,5 +1,4 @@
-"""Classes for keeping the best state_dict for easy saving and loading.
-"""
+"""Classes for keeping the best state_dict for easy saving and loading."""
 
 import os
 import warnings
@@ -13,10 +12,8 @@ from storch.distributed import utils as distutils
 class KeeperCompose:
     """Compose multiple state_dict keepers.
 
-    Args:
-        **keepers: state_dict keepers
-
-    Examples:
+    Examples
+    --------
         >>> model = build_model(...)
         >>> best_models = Compose(dict(
         ...     val_loss=BestStateKeeper('min', model),
@@ -31,37 +28,41 @@ class KeeperCompose:
     """
 
     def __init__(self, **keepers) -> None:
+        """KeeperCompose.
+
+        Args:
+        ----
+            **keepers: state_dict keepers
+        """
         assert all(isinstance(keeper, BestStateKeeper) for keeper in keepers.values())
         self.keepers = keepers
 
-
-    def update(self, step: int=None, **values):
-        """update the state_dict keepers.
+    def update(self, step: int | None = None, **values):
+        """Update the state_dict keepers.
 
         Args:
+        ----
             step (int, optional): current training step. Default: None.
             **values: values for updating the keepers.
         """
         for name, value in values.items():
             self.keepers[name].update(value, step=step)
 
-
     def load(self, name: str):
-        """load the state_dict specified by "name" to the model.
+        """Load the state_dict specified by "name" to the model.
 
         Args:
+        ----
             name (str): the name of the keeper.
         """
         self.keepers[name].load()
 
-
     def state_dict(self):
-        """composed state_dict. a dictionary containing all the keepers' state_dict."""
+        """Composed state_dict. a dictionary containing all the keepers' state_dict."""
         return {name: keeper.state_dict() for name, keeper in self.keepers.items()}
 
-
     def load_state_dict(self, state_dict: dict):
-        """load the state_dict of all keepers."""
+        """Load the state_dict of all keepers."""
         for name, keeper_state_dict in state_dict.items():
             self.keepers[name].load_state_dict(keeper_state_dict)
 
@@ -69,12 +70,8 @@ class KeeperCompose:
 class BestStateKeeper:
     """Class for keeping the best state_dict, based on a certain metric.
 
-    Args:
-        direction (str): 'minimize' or 'maximize'.
-        model (nn.Module): the model to keep the state_dict.
-        init_abs_value (float): the absolute value to initialize the value. Default: 1e10
-
-    Examples:
+    Examples
+    --------
         >>> model = build_model(...)
         >>> # 'min' and 'max' indicates "smaller the better" and vise versa.
         >>> val_loss_model = BestStateKeeper('min', model)
@@ -84,7 +81,27 @@ class BestStateKeeper:
         >>> # to load the best state_dict to the model just call.
         >>> val_loss_model.load()
     """
-    def __init__(self, name: str, direction: str, model: nn.Module, folder: str='.', init_abs_value: float=1e10, disthelper=None) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        direction: str,
+        model: nn.Module,
+        folder: str = '.',
+        init_abs_value: float = 1e10,
+        disthelper=None,
+    ) -> None:
+        """BestStateKeeper.
+
+        Args:
+        ----
+            name (str): Name of the metric.
+            direction (str): 'minimize' or 'maximize'.
+            model (nn.Module): the model to keep the state_dict.
+            folder (str): folder to save the states.
+            init_abs_value (float): the absolute value to initialize the value. Default: 1e10
+            disthelper (None): deprecated.
+        """
         assert direction in ['min', 'max', 'minimize', 'maximize']
         self.name = name
         self.direction = 'min' if direction in ['min', 'minimize'] else 'max'
@@ -102,43 +119,45 @@ class BestStateKeeper:
 
         if disthelper is not None and distutils.is_primary():
             warnings.warn(
-                f'This class does not require DistributedHelper anymore, and the argument will be erased in future versions.',
-                FutureWarning
+                (
+                    'This class does not require DistributedHelper anymore, '
+                    'and the argument will be erased in future versions.'
+                ),
+                FutureWarning,
+                stacklevel=1,
             )
 
-
     def is_minimize(self) -> bool:
-        """is direction minimize?
+        """Is direction minimize.
 
-        Returns:
+        Returns
+        -------
             bool: True if minimize.
         """
         return self.direction == 'min'
 
-
     def is_maximize(self) -> bool:
-        """is direction maximize?
+        """Is direction maximize.
 
-        Returns:
+        Returns
+        -------
             bool: True if maximize.
         """
         return self.direction == 'max'
 
-
-    def update(self, new_value: float, step: int=None) -> bool:
-        """update the state_dict if new_value is better that current value.
+    def update(self, new_value: float, step: int | None = None) -> bool:
+        """Update the state_dict if new_value is better that current value.
 
         Args:
+        ----
             new_value (float): the calculated score to compare.
             step (int, optional): current training step. Default: None.
 
         Returns:
+        -------
             bool: True if updated, else False
         """
-        if (
-            (self.is_minimize() and new_value < self.value) or
-            (self.is_maximize() and new_value > self.value)
-        ):
+        if (self.is_minimize() and new_value < self.value) or (self.is_maximize() and new_value > self.value):
             self.value = new_value
             self.step = step
             self.save(self.filename, model_state_only=False)
@@ -146,27 +165,31 @@ class BestStateKeeper:
 
         return False
 
+    def save(self, filename: str, model_state_only: bool = True):
+        """Save state to file.
 
-    def save(self, filename: str, model_state_only: bool=True):
+        Args:
+        ----
+            filename (str): The file name to save to.
+            model_state_only (bool, optional): Save only the model state. Default: True.
+        """
         state_dict = self.state_dict(model_state_only=model_state_only)
         if distutils.is_primary():
             torch.save(state_dict, filename)
 
-
     def load(self) -> None:
-        """load the best state_dict to the model.
-        """
+        """Load the best state_dict to the model."""
         distutils.wait_for_everyone()
         state_dict = torch.load(self.filename)
         if 'state_dict' in state_dict:
             state_dict = state_dict.get('state_dict')
         self.model.load_state_dict(state_dict)
 
+    def state_dict(self, model_state_only: bool = False) -> dict:
+        """Return this class' state.
 
-    def state_dict(self, model_state_only: bool=False) -> dict:
-        """returns this class' state.
-
-        Returns:
+        Returns
+        -------
             dict: state_dict of this class
         """
         model_state = self.model.state_dict()
@@ -175,18 +198,14 @@ class BestStateKeeper:
             return model_state
 
         return dict(
-            direction = self.direction,
-            value = self.value,
-            step = self.step,
-            filename = self.filename,
-            state_dict = model_state
+            direction=self.direction, value=self.value, step=self.step, filename=self.filename, state_dict=model_state
         )
 
-
     def load_state_dict(self, state_dict: dict):
-        """loads state from specified state_dict.
+        """Load state from specified state_dict.
 
         Args:
+        ----
             state_dict (dict): state_dict.
         """
         self.direction = state_dict.get('direction')

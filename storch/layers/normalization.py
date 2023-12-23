@@ -1,26 +1,36 @@
+"""Normalization."""
 
 from __future__ import annotations
+
+from typing import ClassVar
 
 import torch
 import torch.nn as nn
 
 
 def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
-    """Get 2d normalization layers by name
+    """Get 2d normalization layers by name.
 
     Args:
+    ----
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
+        **kwargs: extra args.
 
     Raises:
+    ------
         Exception: Unknown normalization layer name.
 
     Returns:
+    -------
         nn.Module: normalization layer module.
     """
-    if   name == 'bn': return nn.BatchNorm2d(channels, **kwargs)
-    elif name == 'in': return nn.InstanceNorm2d(channels, **kwargs)
-    elif name == 'ln': return LayerNorm2d(channels, **kwargs)
+    if name == 'bn':
+        return nn.BatchNorm2d(channels, **kwargs)
+    elif name == 'in':
+        return nn.InstanceNorm2d(channels, **kwargs)
+    elif name == 'ln':
+        return LayerNorm2d(channels, **kwargs)
     elif name == 'gn':
         if 'num_groups' not in kwargs:
             raise Exception(f'Normalization: "{name}" requires "num_groups" argument.')
@@ -29,21 +39,28 @@ def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
 
 
 def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
-    """Get 1d normalization layers by name
+    """Get 1d normalization layers by name.
 
     Args:
+    ----
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
+        **kwargs: extra args.
 
     Raises:
+    ------
         Exception: Unknown normalization layer name.
 
     Returns:
+    -------
         nn.Module: normalization layer module.
     """
-    if   name == 'bn': return nn.BatchNorm1d(channels, **kwargs)
-    elif name == 'in': return nn.InstanceNorm1d(channels, **kwargs)
-    elif name == 'ln': return nn.LayerNorm(channels, **kwargs)
+    if name == 'bn':
+        return nn.BatchNorm1d(channels, **kwargs)
+    elif name == 'in':
+        return nn.InstanceNorm1d(channels, **kwargs)
+    elif name == 'ln':
+        return nn.LayerNorm(channels, **kwargs)
     elif name == 'gn':
         if 'num_groups' not in kwargs:
             raise Exception(f'Normalization: "{name}" requires "num_groups" argument.')
@@ -52,15 +69,14 @@ def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
 
 
 class LayerNorm2d(nn.Module):
+    """LayerNorm2d."""
 
-    __constants__ = ['channels', 'eps', 'elementwise_affine']
+    __constants__: ClassVar[list[str, str, str]] = ['channels', 'eps', 'elementwise_affine']
     channels: int
     eps: float
     elementwise_affine: bool
 
-    def __init__(self,
-        channels: int, eps: float=1e-5, elementwise_affine: bool=True, device=None, dtype=None
-    ):
+    def __init__(self, channels: int, eps: float = 1e-5, elementwise_affine: bool = True, device=None, dtype=None):  # noqa: D107
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -76,12 +92,12 @@ class LayerNorm2d(nn.Module):
 
         self.reset_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self):  # noqa: D102
         if self.elementwise_affine:
             nn.init.ones_(self.weight)
             nn.init.zeros_(self.bias)
 
-    def forward(self, x):
+    def forward(self, x):  # noqa: D102
         input_dtype = x.dtype
         x = x.float()
         u = x.mean(dim=1, keepdim=True)
@@ -93,33 +109,37 @@ class LayerNorm2d(nn.Module):
 
 
 class AdaptiveNorm2d(nn.Module):
-    """Adaptive Normalization Layer
+    """Adaptive Normalization Layer.
 
     Args:
+    ----
         norm_name (str): Name of the base normalization layer.
         style_dim (int): Dimension of the style vector
         channels (int): Input tensor channel width
         affine_layer (nn.Module, optional): nn.Module to transform style vector. Default: nn.Linear.
         biasfree (bool, optional): Bias free. Default: False.
     """
-    def __init__(self,
-        norm_name: str, style_dim: int, channels: int, affine_layer: nn.Module=nn.Linear, biasfree: bool=False
+
+    def __init__(  # noqa: D107
+        self, norm_name: str, style_dim: int, channels: int, affine_layer: nn.Module = nn.Linear, biasfree: bool = False
     ) -> None:
         super().__init__()
         self._norm_name = norm_name
         self._style_dim = style_dim
-        self._channels  = channels
-        self._biasfree  = biasfree
+        self._channels = channels
+        self._biasfree = biasfree
 
         self.norm = get_normalization2d(norm_name, channels, affine=False)
 
-        if biasfree: scalebias = channels
-        else:        scalebias = channels * 2
+        if biasfree:
+            scalebias = channels
+        else:
+            scalebias = channels * 2
         self.affine = affine_layer(style_dim, scalebias, bias=False)
         self.affine_bias = nn.Parameter(torch.zeros(scalebias))
-        self.affine_bias.data[:channels] = 1.
+        self.affine_bias.data[:channels] = 1.0
 
-    def forward(self, x, style):
+    def forward(self, x, style):  # noqa: D102
         scale_bias = self.affine(style) + self.affine_bias
 
         if self._biasfree:
@@ -130,5 +150,10 @@ class AdaptiveNorm2d(nn.Module):
         norm = self.norm(x)
         return scale * norm + bias
 
-    def extra_repr(self):
-        return f'norm_name={self._norm_name}, style_dim={self._style_dim}, channels={self._channels}, biasfree={self._biasfree}'
+    def extra_repr(self):  # noqa: D102
+        return (
+            f'norm_name={self._norm_name}, '
+            f'style_dim={self._style_dim}, '
+            f'channels={self._channels}, '
+            f'biasfree={self._biasfree}'
+        )
