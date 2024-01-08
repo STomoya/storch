@@ -7,8 +7,9 @@ from typing import OrderedDict
 
 import torch
 import torch.nn as nn
-from torch.distributed.fsdp import FullStateDictConfig, MixedPrecision, StateDictType
+from torch.distributed.fsdp import FullStateDictConfig
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import MixedPrecision, StateDictType
 from torch.optim.optimizer import Optimizer
 
 import storch
@@ -156,6 +157,8 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
         """
         if mixed_precision:
             dtype = torch.float16
+            if mixed_precision == 'bf16':
+                dtype = torch.bfloat16
             mixed_precision = MixedPrecision(param_dtype=dtype, reduce_dtype=dtype, buffer_dtype=dtype)
         else:
             mixed_precision = None

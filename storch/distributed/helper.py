@@ -272,6 +272,8 @@ class DistributedHelper:
             if mixed_precision and self.device.type == 'cuda':
                 wrapped_module._original_forward = wrapped_module.forward
                 dtype = torch.float16
+                if mixed_precision == 'bf16':
+                    dtype = torch.bfloat16
                 forward = torch.cuda.amp.autocast(dtype=dtype)(wrapped_module.forward)
                 wrapped_module.forward = convert_outputs_to_fp32(forward)
 
