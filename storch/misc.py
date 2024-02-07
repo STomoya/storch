@@ -17,6 +17,7 @@ from stutil import (
     save_command_args,
     save_exec_status,
 )
+from stutil.timer import Timer
 
 __all__ = [
     'calc_num_sampling',
@@ -34,6 +35,7 @@ __all__ = [
     'save_command_args',
     'save_exec_status',
     'import_all_modules',
+    'Timer',
 ]
 
 
@@ -48,6 +50,7 @@ def calc_num_sampling(high_resl: int, low_resl: int) -> int:
     Returns:
     -------
         int: Number of sampling times.
+
     """
     """"""
     return int(math.log2(high_resl) - math.log2(low_resl))
