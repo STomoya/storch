@@ -22,6 +22,7 @@ def _is_version_geq(current, minimum: str) -> bool:
     Returns:
     -------
         bool: result.
+
     """
     if isinstance(minimum, str):
         minimum = parse_version(minimum)
@@ -38,6 +39,7 @@ def is_python_version_geq(minimum) -> bool:
     Returns:
     -------
         bool: result.
+
     """
     return _is_version_geq(_PYTHON_VERSION, minimum)
 
@@ -52,6 +54,7 @@ def is_torch_version_geq(minimum) -> bool:
     Returns:
     -------
         bool: result.
+
     """
     return _is_version_geq(_PYTORCH_VERSION, minimum)
 
@@ -66,6 +69,7 @@ def is_torchvision_version_geq(minimum: str) -> bool:
     Returns:
     -------
         bool: result.
+
     """
     return _is_version_geq(_TORCHVISION_VERSION, minimum)
 
@@ -76,6 +80,7 @@ def is_native_amp_available() -> bool:
     Returns
     -------
         bool: result.
+
     """
     return is_torch_version_geq('1.6.0')
 
@@ -86,6 +91,7 @@ def is_multi_weight_api_available() -> bool:
     Returns
     -------
         bool: result.
+
     """
     return is_torchvision_version_geq('0.13.0')
 
@@ -96,6 +102,7 @@ def is_compiler_available() -> bool:
     Returns
     -------
         bool: result.
+
     """
     return is_torch_version_geq('2.0.0')
 
@@ -108,5 +115,17 @@ def is_v2_transforms_available() -> bool:
     Returns
     -------
         bool: result.
+
     """
     return is_torchvision_version_geq('0.16.0')
+
+
+def is_dist_state_dict_available() -> bool:
+    """Is distributed get / set state_dict API available.
+
+    Returns
+    -------
+        bool: result.
+
+    """
+    return is_torch_version_geq('2.2.0')
