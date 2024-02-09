@@ -24,6 +24,7 @@ def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
     Returns:
     -------
         nn.Module: normalization layer module.
+
     """
     if name == 'bn':
         return nn.BatchNorm2d(channels, **kwargs)
@@ -54,6 +55,7 @@ def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
     Returns:
     -------
         nn.Module: normalization layer module.
+
     """
     if name == 'bn':
         return nn.BatchNorm1d(channels, **kwargs)
@@ -118,6 +120,7 @@ class AdaptiveNorm2d(nn.Module):
         channels (int): Input tensor channel width
         affine_layer (nn.Module, optional): nn.Module to transform style vector. Default: nn.Linear.
         biasfree (bool, optional): Bias free. Default: False.
+
     """
 
     def __init__(  # noqa: D107

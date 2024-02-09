@@ -16,6 +16,7 @@ def random_box(size: tuple, min_size: float = 0, max_size: float = 1.0, margin: 
     Returns:
     -------
         _type_: _description_
+
     """
     width, height = size
     min_x = min_y = margin

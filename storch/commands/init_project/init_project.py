@@ -41,6 +41,7 @@ def run():
 
     Usage:
         $ python -m storch.commands.init_project
+
     """
     args = get_args()
 

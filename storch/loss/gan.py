@@ -21,6 +21,7 @@ class Adversarial(Loss):
         Returns:
         -------
             torch.Tensor: The loss
+
         """
         raise NotImplementedError()
 
@@ -34,6 +35,7 @@ class Adversarial(Loss):
         Returns:
         -------
             torch.Tensor: The loss
+
         """
         raise NotImplementedError()
 
@@ -48,6 +50,7 @@ class Adversarial(Loss):
         Returns:
         -------
             torch.Tensor: The loss
+
         """
         rl = self.real_loss(real_prob)
         fl = self.fake_loss(fake_prob)
@@ -66,6 +69,7 @@ class Adversarial(Loss):
         Returns:
         -------
             torch.Tensor: The loss
+
         """
         return self.real_loss(fake_prob)
 

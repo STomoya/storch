@@ -54,6 +54,7 @@ def cv2_load_image(path: str, rgb: bool = True, dtype: np.dtype = np.uint8) -> n
     Returns:
     -------
         np.ndarray: loaded image as numpy array
+
     """
     image = cv2.imread(path, cv2.IMREAD_COLOR)
     if rgb:
@@ -81,6 +82,7 @@ def xdog(
     Returns:
     -------
         np.ndarray: line image.
+
     """
     if image.max() > 1:
         image = image / 255
@@ -113,6 +115,7 @@ def sobel(image: np.ndarray) -> np.ndarray:
     Returns:
     -------
         np.ndarray: line image.
+
     """
     image = cv2.GaussianBlur(image, (3, 3), 0)
     image = cv2.Sobel(image, cv2.CV_8U, 1, 1, ksize=5)
@@ -133,6 +136,7 @@ def slic(image: np.ndarray, num_segments=200, compactness=10) -> np.ndarray:
     Returns:
     -------
         np.ndarray: segmented image.
+
     """
     segments = segmentation.slic(image, n_segments=num_segments, compactness=compactness, start_label=1)
     image = label2rgb(segments, image, kind='avg', bg_label=0)
@@ -155,6 +159,7 @@ def color_hints(image: np.ndarray, num_dots: int = 25, dot_size=3, superpixeled_
     Returns:
     -------
         np.ndarray: color hint image.
+
     """
     h, w = image.shape[:2]
     hint = np.zeros((h, w, 3), dtype=np.uint8)
@@ -185,6 +190,7 @@ def color_palette(image: np.ndarray, num_colors: int = 5, palette_size: int | tu
     Returns:
     -------
         np.ndarray: color palette
+
     """
     if isinstance(palette_size, tuple):
         x, y = palette_size
@@ -221,6 +227,7 @@ def mosaic(image: np.ndarray, ratio: float = 0.1) -> np.ndarray:
     Returns:
     -------
         np.ndarray: image.
+
     """
     small = cv2.resize(image, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_NEAREST)
     image = cv2.resize(small, image.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
@@ -252,6 +259,7 @@ def mosaic_area(
     Returns:
     -------
         np.ndarray: image.
+
     """
     if box is None:
         box = random_box(image.shape[:2], min_size, max_size, margin)

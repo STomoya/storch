@@ -55,6 +55,7 @@ def get_features(dataset, model: torch.nn.Module, device: torch.device, progress
     Returns:
     -------
         np.ndarray: the extracted features.
+
     """
     features = []
     for image in tqdm(dataset, disable=not progress):
@@ -79,6 +80,7 @@ def feature_statistics(features: np.ndarray) -> tuple[np.ndarray]:
     -------
         np.ndarray: mean
         np.ndarray: covariance
+
     """
     mean = np.mean(features, axis=0)
     sigma = np.cov(features, rowvar=False)
@@ -101,6 +103,7 @@ def frechet_distance(feature1: np.ndarray, feature2: np.ndarray, eps: float = 1e
     Returns:
     -------
         float: fid score
+
     """
     mu1, sigma1 = feature_statistics(feature1)
     mu2, sigma2 = feature_statistics(feature2)
@@ -151,6 +154,7 @@ def kernel_distance(feature1: np.ndarray, feature2: np.ndarray, num_subsets=100,
     Returns:
     -------
         float: kid score
+
     """
     n = feature1.shape[1]
     m = min(feature1.shape[0], feature2.shape[0], max_subset_size)
@@ -179,6 +183,7 @@ def pairwise_distance(feature1: np.ndarray, feature2: np.ndarray = None) -> np.n
     Returns:
     -------
         np.ndarray: distances.
+
     """
     if feature2 is None:
         feature2 = feature1
@@ -197,6 +202,7 @@ def nearest_neighbour_distances(features: np.ndarray, nearest_k: int) -> np.ndar
     Returns:
     -------
         np.ndarray: Distances to kth nearest neighbours.
+
     """
     distances = pairwise_distance(features)
     indices = np.argpartition(distances, nearest_k + 1, axis=-1)[..., : nearest_k + 1]
@@ -216,6 +222,7 @@ def precision(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: 
     Returns:
     -------
         float: precision score
+
     """
     return (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)).any(axis=0).mean()
 
@@ -231,6 +238,7 @@ def recall(fake_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.
     Returns:
     -------
         float: recall score
+
     """
     return (distance_real_fake < np.expand_dims(fake_nearest_neighbour_distances, axis=0)).any(axis=1).mean()
 
@@ -247,6 +255,7 @@ def density(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: np
     Returns:
     -------
         float: density
+
     """
     return (1.0 / float(nearest_k)) * (
         distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)
@@ -264,6 +273,7 @@ def coverage(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: n
     Returns:
     -------
         float: coverage score
+
     """
     return (distance_real_fake.min(axis=1) < real_nearest_neighbour_distances).mean()
 
@@ -330,6 +340,7 @@ def calc_metrics(
     Returns:
     -------
         dict: dictionary containing the metrics
+
     """
     if metric_flags is None:
         metric_flags = MetricFlags()

@@ -58,6 +58,7 @@ def test_model(
         device (str | torch.device, optional): _description_. Defaults to 'cpu'.
         input_sampler (Callable, optional): A callable which is used to sample the dummy inputs.
             Defaults to torch.randn.
+
     """
     if isinstance(models, (list, tuple)):
         assert len(models) == len(input_shapes)

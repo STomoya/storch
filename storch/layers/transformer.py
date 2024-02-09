@@ -17,6 +17,7 @@ class MetaformerBlock(nn.Module):
         feedforward (nn.Module): nn.Module which implements a feed forward network.
         norm_layer1 (nn.Module): Normalization layer applied before the attention.
         norm_layer2 (nn.Module): Normalization layer applied before the feed forward network.
+
     """
 
     def __init__(  # noqa: D107

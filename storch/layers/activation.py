@@ -26,6 +26,7 @@ def get_activation(name: str, **kwargs) -> nn.Module:
     Returns:
     -------
         nn.Module: The activation function module.
+
     """
     if name == 'relu':
         return nn.ReLU(**kwargs)

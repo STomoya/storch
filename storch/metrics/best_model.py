@@ -25,6 +25,7 @@ class KeeperCompose:
         >>> best_models.update(val_loss=loss, accuracy=accracy)
         >>> # to load the best state_dict call load with the name of the metric.
         >>> best_models.load('val_loss')
+
     """
 
     def __init__(self, **keepers) -> None:
@@ -33,6 +34,7 @@ class KeeperCompose:
         Args:
         ----
             **keepers: state_dict keepers
+
         """
         assert all(isinstance(keeper, BestStateKeeper) for keeper in keepers.values())
         self.keepers = keepers
@@ -44,6 +46,7 @@ class KeeperCompose:
         ----
             step (int, optional): current training step. Default: None.
             **values: values for updating the keepers.
+
         """
         for name, value in values.items():
             self.keepers[name].update(value, step=step)
@@ -54,6 +57,7 @@ class KeeperCompose:
         Args:
         ----
             name (str): the name of the keeper.
+
         """
         self.keepers[name].load()
 
@@ -80,6 +84,7 @@ class BestStateKeeper:
         >>> val_loss_model.update(loss)
         >>> # to load the best state_dict to the model just call.
         >>> val_loss_model.load()
+
     """
 
     def __init__(
@@ -101,6 +106,7 @@ class BestStateKeeper:
             folder (str): folder to save the states.
             init_abs_value (float): the absolute value to initialize the value. Default: 1e10
             disthelper (None): deprecated.
+
         """
         assert direction in ['min', 'max', 'minimize', 'maximize']
         self.name = name
@@ -133,6 +139,7 @@ class BestStateKeeper:
         Returns
         -------
             bool: True if minimize.
+
         """
         return self.direction == 'min'
 
@@ -142,6 +149,7 @@ class BestStateKeeper:
         Returns
         -------
             bool: True if maximize.
+
         """
         return self.direction == 'max'
 
@@ -156,6 +164,7 @@ class BestStateKeeper:
         Returns:
         -------
             bool: True if updated, else False
+
         """
         if (self.is_minimize() and new_value < self.value) or (self.is_maximize() and new_value > self.value):
             self.value = new_value
@@ -172,6 +181,7 @@ class BestStateKeeper:
         ----
             filename (str): The file name to save to.
             model_state_only (bool, optional): Save only the model state. Default: True.
+
         """
         state_dict = self.state_dict(model_state_only=model_state_only)
         if distutils.is_primary():
@@ -191,6 +201,7 @@ class BestStateKeeper:
         Returns
         -------
             dict: state_dict of this class
+
         """
         model_state = self.model.state_dict()
 
@@ -207,6 +218,7 @@ class BestStateKeeper:
         Args:
         ----
             state_dict (dict): state_dict.
+
         """
         self.direction = state_dict.get('direction')
         self.value = state_dict.get('value')

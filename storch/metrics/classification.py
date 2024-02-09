@@ -34,6 +34,7 @@ def test_classification(
     Returns:
     -------
         dict: classification report as dict if return_dict is True.
+
     """
     if labels is not None:
         labels = np.array(labels)

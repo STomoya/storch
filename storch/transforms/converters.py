@@ -15,6 +15,7 @@ def pil_to_numpy(image: Image.Image, like_to_tensor: bool = True) -> np.ndarray:
     Returns:
     -------
         np.ndarray: Converted image.
+
     """
     assert isinstance(image, Image.Image)
     image = np.asarray(image)

@@ -19,6 +19,7 @@ class SpatialSqueezeAndChannelExcitation(nn.Module):
         reduction (int, optional): Reduction factor. Default: 4.
         pool_size (int, optional): Adaptive average pooling size. Default: 1.
         act_name (str, optional): Activation function name. Default: 'relu'.
+
     """
 
     def __init__(self, channels: int, reduction: int = 4, pool_size: int = 1, act_name: str = 'relu') -> None:  # noqa: D107
@@ -44,6 +45,7 @@ class ChannelSqueezeAndSpatialExcitation(nn.Module):
     Args:
     ----
         channels (int): Channel width of the input feature vector.
+
     """
 
     def __init__(self, channels: int) -> None:  # noqa: D107
@@ -64,6 +66,7 @@ class SpatialChannelSqueezeAndExcitation(nn.Module):
         reduction (int, optional): Reduction factor. Default: 4.
         pool_size (int, optional): Adaptive average pooling size. Default: 1.
         act_name (str, optional): Activation function name. Default: 'relu'.
+
     """
 
     def __init__(self, channels: int, reduction: int = 4, pool_size: int = 1, act_name: str = 'relu') -> None:  # noqa: D107

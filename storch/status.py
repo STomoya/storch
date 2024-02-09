@@ -44,6 +44,7 @@ class Collector:
         ----
             name (str): Key for the value. This name will be used at .add_scalar() of SummaryWriter.
             value (float | torch.Tensor): The value to collect.
+
         """
         if value is None:
             return
@@ -67,6 +68,7 @@ class Collector:
         Args:
         ----
             step (dict[str, Any]): dict of values to report.
+
         """
         for name, value in step.items():
             self.report(name, value)
@@ -81,6 +83,7 @@ class Collector:
         Returns:
         -------
             float: mean of the collected values.
+
         """
         if name not in self._deltas or self._deltas[name][0] == 0:
             return float('inf')
@@ -92,6 +95,7 @@ class Collector:
         Returns
         -------
             dict[str, float]: dict of mean of all reported values.
+
         """
         output = {}
         for name in self._deltas:
@@ -122,6 +126,7 @@ class Status:
         >>>         'Loss/CE/val': torch.rand(1),
         >>>         'Metrics/accuracy/val': torch.rand(1),
         >>>     })
+
     """
 
     def __init__(
@@ -164,6 +169,7 @@ class Status:
                 - key: The name used to identify the value.
                 - value: The value.
                 Default: '{key}: {value: 10.5f}'.
+
         """
         self._max_iters = max_iters
         self._batches_done = 0
@@ -223,6 +229,7 @@ class Status:
         Args:
         ----
             quiet (bool, optional): do not log run stats. Default: None.
+
         """
         if self._wandb_run is not None:
             wandb.finish(quiet=quiet)
@@ -237,6 +244,7 @@ class Status:
         Returns:
         -------
             str: The formated kilo batches.
+
         """
         kbatches = self._batches_done / 1000
         return format.format(kbatches=kbatches)
@@ -250,6 +258,7 @@ class Status:
         ----
             message (str): The message to log.
             level (str, optional): log level. Default: 'info'.
+
         """
         getattr(self._logger, level)(message)
 
@@ -271,6 +280,7 @@ class Status:
                 Used to display the default values. Default: None.
             filename (str, optional): A filename. if given the arguments will be saved to this file.
                 Default: None.
+
         """
         message = '------------------------- Options -----------------------\n'
         for k, v in sorted(vars(args).items()):
@@ -292,6 +302,7 @@ class Status:
         Args:
         ----
             config (DictConfig): The config to log.
+
         """
         yamlconfig = OmegaConf.to_yaml(config)
         self.log(f'Config:\n{yamlconfig}')
@@ -302,6 +313,7 @@ class Status:
         Args:
         ----
             dataloader (DataLoader): The DataLoader object to log.
+
         """
         dataset = dataloader.dataset
         sampler = dataloader.sampler
@@ -336,6 +348,7 @@ class Status:
         Args:
         ----
             optimizer (Optimizer): The optimizer object to log.
+
         """
         self.log(f'Optimizer:\n{optimizer}')
 
@@ -350,6 +363,7 @@ class Status:
         Args:
         ----
             model (torch.nn.Module): The module to log.
+
         """
         self.log(f'Architecture: {model.__class__.__name__}:\n{model}')
 
@@ -377,6 +391,7 @@ class Status:
             >>> status.log_gpu_memory('backward', [0, 100])
             >>> optimizer.step()
             >>> status.log_gpu_memory('step', [0, 100])
+
         """
 
         def hook():
@@ -416,6 +431,7 @@ class Status:
             batch_size_per_proc (int): batch size per process.
             gradient_accumulation_steps (int): gradient accumulation steps.
             world_size (int): world size.
+
         """
         real_batch_size = batch_size_per_proc * gradient_accumulation_steps * world_size
         if real_batch_size == batch_size_per_proc:
@@ -531,6 +547,7 @@ class Status:
             value_range (tuple, optional): argument for make_grid(). Default: (-1, 1).
             nrow (int, optional): argument for make_grid(). Default: 8.
             **mkgridkwargs: other keyword arguments for make_grid().
+
         """
         images = make_grid(image_tensor, normalize=normalize, value_range=value_range, nrow=nrow, **mkgridkwargs)
         self._tbwriter.add_images(tag, images, self.batches_done)
@@ -547,6 +564,7 @@ class Status:
         Args:
         ----
             enabled (bool, optional): Boolean to enable/disable profiling. Default: True.
+
         """
         if enabled:
             self._profiler = get_tb_profile(self._tb_folder)
@@ -572,6 +590,7 @@ class Status:
             >>>     # this will stop the timer until exiting the with statement.
             >>>     with status.stop_timer():
             >>>         validate(...)
+
         """
         stop_start = time.time()
         yield
@@ -598,6 +617,7 @@ class Status:
         Args:
         ----
             state_dict (dict): a dictionary made by status.state_dict().
+
         """
         # load
         self._collector = state_dict['collector']
@@ -610,6 +630,7 @@ class Status:
         Returns
         -------
             dict: Dict containing the states.
+
         """
         return dict(collector=self._collector, batches_done=self.batches_done, steptimes=self._steptimes)
 

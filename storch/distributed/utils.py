@@ -103,6 +103,7 @@ def gather(
     Returns:
     -------
         torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
+
     """
     state = DistributedState()
     if not state.is_distributed:
@@ -152,6 +153,7 @@ def reduce(tensor: torch.Tensor, dst: int | None = None, op: ReduceOp = ReduceOp
     Returns:
     -------
         torch.Tensor: reduced tensor.
+
     """
     state = DistributedState()
 
@@ -183,6 +185,7 @@ def only_on_primary(func: Callable) -> Callable:
     Returns:
     -------
         Callable: wrapped function.
+
     """
 
     @wraps(func)

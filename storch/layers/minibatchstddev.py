@@ -10,6 +10,7 @@ class MinibatchStdDev(torch.nn.Module):
     ----
         group_size (int): Size of the group to calculate the statistics.
         num_channels (int, optional): Number of channels to be appended. Defaults to 1.
+
     """
 
     def __init__(self, group_size: int, num_channels: int = 1) -> None:  # noqa: D107

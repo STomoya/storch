@@ -15,6 +15,7 @@ class DepthWiseConv2d(nn.Conv2d):
         dilation (int, optional): Dilation. Default: 1.
         bias (bool, optional): Whether to use bias or not. Default: True.
         padding_mode (str, optional): Padding mode. Default: 'zeros'.
+
     """
 
     def __init__(  # noqa: D107
@@ -48,6 +49,7 @@ class PointWiseConv2d(nn.Conv2d):
         in_channels (int): Channel width of the input feature tensor.
         out_channels (int): Channel width of the resulting tensor.
         bias (bool, optional): Whether to use bias or not. Default: True.
+
     """
 
     def __init__(self, in_channels: int, out_channels: int, bias: bool = True) -> None:  # noqa: D107
@@ -70,6 +72,7 @@ class DepthSepConv2d(nn.Module):
         dilation (int, optional): Dilation. Default: 1.
         bias (bool, optional): Whether to use bias or not. Default: True.
         padding_mode (str, optional): Padding mode. Default: 'zeros'.
+
     """
 
     def __init__(  # noqa: D107

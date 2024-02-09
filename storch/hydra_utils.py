@@ -24,6 +24,7 @@ def resolve(config: DictConfig | ListConfig) -> DictConfig | ListConfig:
     Returns:
     -------
         DictConfig | ListConfig: resolved config.
+
     """
     OmegaConf.resolve(config)
     return config
@@ -43,6 +44,7 @@ def to_object(config: DictConfig | ListConfig):
     Returns:
     -------
         dict | list: the converted config.
+
     """
     py_obj = OmegaConf.to_object(config)
     return py_obj
@@ -63,6 +65,7 @@ def get_hydra_config(
     Returns:
     -------
         DictConfig: Loaded config.
+
     """
     with initialize_config_dir(config_dir=to_absolute_path(config_dir), version_base=None):
         cfg = compose(config_name, overrides=overrides)
@@ -79,6 +82,7 @@ def save_hydra_config(config: DictConfig, filename: str, resolve: bool = True) -
         config (DictConfig): Config to save.
         filename (str): filename of the saved config.
         resolve (bool, optional): resolve the config before saving. Default: True.
+
     """
     if resolve:
         OmegaConf.resolve(config)

@@ -81,6 +81,7 @@ class VGGLoss(Loss):
         p (int, optional): Lp. 1: L1, 2: L2. Default: 2.
         normalized (bool, optional): if the input is normalized or not. Default: True.
         return_all (bool, optional): return all intermediate results Default: False.
+
     """
 
     def __init__(self, device, vgg: int = 16, p: int = 2, normalized: bool = True, return_all: bool = False) -> None:  # noqa: D107

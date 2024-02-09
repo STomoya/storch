@@ -32,6 +32,7 @@ def sigma_matrix2(sig_x: float, sig_y: float, theta: float) -> np.ndarray:
     Returns:
     -------
         ndarray: Rotated sigma matrix.
+
     """
     d_matrix = np.array([[sig_x**2, 0], [0, sig_y**2]])
     u_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -50,6 +51,7 @@ def mesh_grid(kernel_size: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         ndarray: with the shape (kernel_size, kernel_size, 2)
         ndarray: with the shape (kernel_size, kernel_size)
         ndarray: with the shape (kernel_size, kernel_size)
+
     """
     ax = np.arange(-kernel_size // 2 + 1.0, kernel_size // 2 + 1.0)
     xx, yy = np.meshgrid(ax, ax)
@@ -71,6 +73,7 @@ def pdf2(sigma_matrix: np.ndarray, grid: np.ndarray) -> np.ndarray:
     Returns:
     -------
         ndarrray: un-normalized kernel.
+
     """
     inverse_sigma = np.linalg.inv(sigma_matrix)
     kernel = np.exp(-0.5 * np.sum(np.dot(grid, inverse_sigma) * grid, 2))
@@ -115,6 +118,7 @@ def bivariate_Gaussian(
     Returns:
     -------
         ndarray: normalized kernel.
+
     """
     if grid is None:
         grid, _, _ = mesh_grid(kernel_size)
@@ -154,6 +158,7 @@ def bivariate_generalized_Gaussian(
     Returns:
     -------
         ndarray:
+
     """
     if grid is None:
         grid, _, _ = mesh_grid(kernel_size)
@@ -195,6 +200,7 @@ def bivariate_plateau(
     Returns:
     -------
         ndarray:
+
     """
     if grid is None:
         grid, _, _ = mesh_grid(kernel_size)
@@ -233,6 +239,7 @@ def random_bivariate_Gaussian(
     Returns:
     -------
         ndarray:
+
     """
     assert kernel_size % 2 == 1, 'Kernel size must be an odd number.'
     assert sigma_x_range[0] < sigma_x_range[1], 'Wrong sigma_x_range.'
@@ -283,6 +290,7 @@ def random_bivariate_generalized_Gaussian(
     Returns:
     -------
         ndarray:
+
     """
     assert kernel_size % 2 == 1, 'Kernel size must be an odd number.'
     assert sigma_x_range[0] < sigma_x_range[1], 'Wrong sigma_x_range.'
@@ -339,6 +347,7 @@ def random_bivariate_plateau(
     Returns:
     -------
         ndarray:
+
     """
     assert kernel_size % 2 == 1, 'Kernel size must be an odd number.'
     assert sigma_x_range[0] < sigma_x_range[1], 'Wrong sigma_x_range.'
@@ -400,6 +409,7 @@ def random_mixed_kernels(
     Returns:
     -------
         ndarray:
+
     """
     kernel_type = np.random.choice(kernel_list, p=kernel_prob)
     if kernel_type == 'iso':
@@ -461,6 +471,7 @@ def circular_lowpass_kernel(cutoff: float, kernel_size: int, pad_to: int = 0) ->
     Returns:
     -------
         ndarray:
+
     """
     assert kernel_size % 2 == 1, 'Kernel size must be an odd number.'
     kernel = np.fromfunction(
@@ -492,6 +503,7 @@ def _clip_rounds(image: np.ndarray, clip: bool = True, rounds: bool = False) -> 
     Returns:
     -------
         ndarray:
+
     """
     if clip and rounds:
         image = np.clip((image * 255.0).round(), 0, 255) / 255.0
@@ -514,6 +526,7 @@ def generate_gaussian_noise(size: tuple[float], sigma: float = 10.0, gray_noise:
     Returns:
     -------
         ndarray:
+
     """
     if gray_noise:
         noise = np.random.randn(*size[:2])
@@ -541,6 +554,7 @@ def add_gaussian_noise(
     Returns:
     -------
         ndarray
+
     """
     noise = generate_gaussian_noise(image.shape, sigma, gray_noise)
     image = image + noise
@@ -568,6 +582,7 @@ def random_gaussian_noise(
     Returns:
     -------
         ndarray:
+
     """
     sigma = np.random.uniform(*sigma_range)
     gray_noise = np.random.rand() < gray_prob
@@ -593,6 +608,7 @@ def generate_poisson_noise(
     Returns:
     -------
         np.ndarray:
+
     """
     if gray_noise:
         image = cv2.cvtColor(image, cv2_cvtcolor_mode)
@@ -629,6 +645,7 @@ def add_poisson_noise(
     Returns:
     -------
         np.ndarray:
+
     """
     noise = generate_poisson_noise(image, scale, gray_noise, cv2_cvtcolor_mode)
     image = image + noise
@@ -658,6 +675,7 @@ def random_poisson_noise(
     Returns:
     -------
         np.ndarray:
+
     """
     scale = np.random.uniform(*scale_range)
     gray_noise = np.random.rand() < gray_prob
@@ -679,6 +697,7 @@ def add_jpg_compression(image: np.ndarray, quality: float = 90) -> np.ndarray:
     Returns:
     -------
         ndarray:
+
     """
     image = np.clip(image, 0, 1)
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), round(quality)]
@@ -699,6 +718,7 @@ def random_jpg_compression(image: np.ndarray, quality_range: tuple[float] = (90,
     Returns:
     -------
         ndarray:
+
     """
     quality = np.random.uniform(*quality_range)
     return add_jpg_compression(image, quality)

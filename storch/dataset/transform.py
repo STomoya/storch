@@ -39,6 +39,7 @@ def make_simple_transform(
     Returns:
     -------
         Callable: transforms
+
     """
     if isinstance(image_size, int):
         image_size = (image_size, image_size)
@@ -71,6 +72,7 @@ def build_transform(name: str, **params) -> Callable:
     Returns:
     -------
         Callable: the built transform
+
     """
     # convert string to a python object if value starts with 'pyobj:' prefix.
     transform_kwargs = {}
@@ -108,6 +110,7 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
         >>>         {'name': 'Normalize', 'mean': 0.5, 'std': 0.5}
         >>>     ]
         >>> )
+
     """
     transform = []
     for config in configs:
@@ -155,6 +158,7 @@ def make_cutmix_or_mixup(
     Returns:
     -------
         Callable: _description_
+
     """
     if not is_v2_transforms_available():
         # mixup and cutmix was added at `0.16.0`

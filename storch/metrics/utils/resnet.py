@@ -21,6 +21,7 @@ class _ResNet(nn.Module):
             feature_dims (int, optional): deprecated.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): filename. Default: 'jit-inception-2015-12-05.torch'.
+
         """
         super().__init__()
         feature_dim2block_index = {256: 0, 512: 1, 1024: 2, 2048: 3}
@@ -83,6 +84,7 @@ class ResNetIN(_ResNet):
         Returns:
         -------
             str, nn.Module: path to the weights and the resnet model.
+
         """
         ckpt_path = None
         if is_multi_weight_api_available():

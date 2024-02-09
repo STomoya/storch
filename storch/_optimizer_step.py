@@ -25,6 +25,7 @@ def grad_nan_to_num_(
         nan (float, optional): Value to replace nan. Default: 0.0.
         posinf (float, optional): Value to replace positive inf. Default: 1e5.
         neginf (float, optional): Value to replace negative inf. Default: 1e-5.
+
     """
     if isinstance(input, nn.Module):
         input = input.parameters()
@@ -96,6 +97,7 @@ def get_optimizer_step(
     Returns:
     -------
         Callable: Optimizer step function.
+
     """
     if post_optim_step_hooks is None:
         post_optim_step_hooks = []
@@ -129,6 +131,7 @@ class OptimizerStep:
     Examples:
     --------
         >>> optimizer_step = OptimizerStep(grad_steps, total_iters)
+
     """
 
     def __init__(
@@ -169,6 +172,7 @@ class OptimizerStep:
         ----
             when (str): either 'backward' or 'step'
             *hooks: callables to be executed.
+
         """
         assert when in ['backward', 'step']
         for hook in hooks:
@@ -260,6 +264,7 @@ class OptimizerStep:
             max_norm (float, optional): Maximum norm used when clipping gradients. Default: 1.0.
             grad_nan_to_num (bool, optional): Replace nan gradient: a number. Default: False.
             update_scaler (bool, optional): Update the scaler if not None. Default: False.
+
         """
         if clip_grad_norm or grad_nan_to_num:
             _assert_require_module(module)
