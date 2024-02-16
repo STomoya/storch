@@ -17,6 +17,7 @@ def _make_blur_kernel(filter_size: int) -> torch.Tensor:
     Returns:
     -------
         torch.Tensor: The resampling filter.
+
     """
 
     def _pascal_triangle():
@@ -42,6 +43,7 @@ class Blur(nn.Module):
     Args:
     ----
         filter_size (int): Size of the low pass filter. Default: 4
+
     """
 
     def __init__(self, filter_size: int = 4) -> None:  # noqa: D107
@@ -74,6 +76,7 @@ class BlurUpsample(nn.Sequential):
         scale_factor (int, optional): Scale factor for upsampling. Default: 2.
         mode (str, optional): Upsampling mode. Default: 'bilinear'.
         align_corners (bool, optional): Align corners. Default: True.
+
     """
 
     def __init__(  # noqa: D107
@@ -91,6 +94,7 @@ class BlurDownsample(nn.Sequential):
     ----
         filter_size (int, optional): Size of the low pass filter. Default: 4.
         scale (int, optional):  Scale for downsampling. Default: 2.
+
     """
 
     def __init__(self, filter_size: int = 4, scale: int = 2) -> None:  # noqa: D107
@@ -104,6 +108,7 @@ class AABilinearInterp(nn.Module):
     ----
         size (int | None, optional): The output size. Default: None.
         scale_factor (int | None, optional): Scale factor.. Default: None.
+
     """
 
     def __init__(self, size: int | None = None, scale_factor: int | None = None) -> None:  # noqa: D107

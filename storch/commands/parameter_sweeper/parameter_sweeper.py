@@ -58,6 +58,7 @@ def _argument_key_to_object_name(key: str) -> str:
       4. --foo-bar => foo_bar
       5. foo.bar   => foo_bar
       6. foo/bar   => foo_bar
+
     """
     if key.startswith('-'):
         key = key.lstrip('-')
@@ -75,6 +76,7 @@ def _argument_key_to_list_name(key: str):
     Returns:
     -------
         str: name of list used in shell script.
+
     """
     object_name = _argument_key_to_object_name(key)
     return object_name + '_list'
@@ -99,6 +101,7 @@ def _convert_value(value: Any, type: str) -> str:
             type=='argparse: [1, 2, 3] => "1 2 3"
         - others:
             str(value)
+
     """
     if type == 'hydra':
         if isinstance(value, list):
@@ -124,6 +127,7 @@ def _for_loop(list_name: str, object_name: str, inner: str) -> str:
     Returns:
     -------
         str: a single for loop script.
+
     """
     iterator = '"${' + list_name + '[@]}"'
     return f'for {object_name} in {iterator}\n' 'do\n' f'{inner}\n' 'done'
@@ -148,6 +152,7 @@ def create_command(command: str, arguments: dict, argument_type: str, include_te
     Returns:
     -------
         str: command with arguments.
+
     """
     command = f'{command}'
     separator = '=' if argument_type == 'hydra' else ' '
@@ -179,6 +184,7 @@ def create_variables(arguments: dict, argument_type: str, excludes: set | None =
     Returns:
     -------
         str: variable definition script
+
     """
     if excludes is None:
         excludes = set()
@@ -207,6 +213,7 @@ def create_for_loop(command: str, arguments: dict, excludes: set | None = None) 
     Returns:
     -------
         str: for loop.
+
     """
     if excludes is None:
         excludes = set()
@@ -239,6 +246,7 @@ def generate_parameter_sweeper_script(
     Returns:
     -------
         str: sweeper script.
+
     """
     if excludes is None:
         excludes = []
@@ -268,6 +276,7 @@ def generate_from_json(path: str, include_test: bool = True) -> str:
     Returns:
     -------
         str: parameter sweeper script.
+
     """
     with open(path, 'r') as fp:
         config = json.load(fp)
@@ -286,6 +295,7 @@ def generate_from_yaml(path: str, include_test: bool = True) -> str:
     Returns:
     -------
         str: parameter sweeper script.
+
     """
     with open(path, 'r') as fp:
         config = yaml.safe_load(fp)

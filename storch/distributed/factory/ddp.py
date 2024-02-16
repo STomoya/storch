@@ -24,6 +24,7 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
     Args:
     ----
         to_checkpoint (nn.Module): The module to wrap witch this interface.
+
     """
 
     def state_dict(self) -> OrderedDict:
@@ -32,6 +33,7 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
         Returns
         -------
             OrderedDict: the state_dict
+
         """
         return self.to_checkpoint.module.state_dict()
 
@@ -41,6 +43,7 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
         Args:
         ----
             state_dict (OrderedDict): The non-parallelized model's state_dict to load.
+
         """
         self.to_checkpoint.module.load_state_dict(state_dict)
 
@@ -65,6 +68,7 @@ class DistributedDataParallelFactory(ParallelFactoryBase):
         Returns:
         -------
             DDP: the wrapped module.
+
         """
         wrapped_module = DDP(module, device_ids=device_ids)
         self._wrapped_module = wrapped_module
@@ -83,6 +87,7 @@ class DistributedDataParallelFactory(ParallelFactoryBase):
         Returns:
         -------
             tuple[DDPModuleCheckpointInterface, Optimizer]: Interface for checkpointing and the optimizer.
+
         """
         assert self.is_wrapped, 'Call "wrap_module()" first.'
         module_interface = DDPModuleCheckpointInterface(self._wrapped_module)

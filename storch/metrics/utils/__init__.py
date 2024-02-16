@@ -14,6 +14,7 @@ def reduce_dimension(tensor: torch.Tensor, mode: str) -> torch.Tensor:
     Returns:
     -------
         torch.Tensor: reduced loss.
+
     """
     if mode == 'sum':
         return tensor.flatten(1).sum()

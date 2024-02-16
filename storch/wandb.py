@@ -66,6 +66,7 @@ def init(
     Returns:
     -------
         Run: a `wandb.Run` object.
+
     """
     run = None
     if is_wandb_available() and os.getenv(ENV_WANDB_API_KEY, '') != '':
@@ -93,5 +94,6 @@ def finish(quiet: bool | None = None) -> None:
     Args:
     ----
         quiet (bool | None): Do not print summary. Default: None.
+
     """
     wandb.finish(quiet=quiet)

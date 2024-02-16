@@ -24,6 +24,7 @@ class PILToNumpy(nn.Module):
         Args:
         ----
             like_to_tensor (bool, optional): Default: True.
+
         """
         super().__init__()
         self.like_to_tensor = like_to_tensor
@@ -58,6 +59,7 @@ class RandomMixedGaussianBlur(nn.Module):
             betag_range (tuple, optional): Default: [0.5, 8].
             betap_range (tuple, optional): Default: [0.5, 8].
             noise_range (tuple | None, optional): Default: None.
+
         """
         super().__init__()
         self.kernel_list = kernel_list
@@ -97,6 +99,7 @@ class RandomGaussianNoise(nn.Module):
         ----
             sigma_range (tuple, optional): Default: [0.0, 10.0].
             gray_prob (float, optional): Default: 0.0.
+
         """
         super().__init__()
         self.sigma_range = sigma_range
@@ -117,6 +120,7 @@ class RandomPoissonNoise(nn.Module):
         ----
             scale_range (tuple, optional): Default: [0.0, 1.0].
             gray_prob (float, optional): Default: 0.0.
+
         """
         super().__init__()
         self.scale_range = scale_range
@@ -136,6 +140,7 @@ class RandomJPEGCompression(nn.Module):
         Args:
         ----
             quality_range (tuple, optional): Default: [90, 100].
+
         """
         super().__init__()
         self.quality_range = quality_range
@@ -156,6 +161,7 @@ class ResizeRight(nn.Module):
             size (_type_): size to resize.
             interp_method (str, optional): Default: 'cubic'.
             antialias (bool, optional): Default: True.
+
         """
         super().__init__()
         self.size = size

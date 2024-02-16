@@ -7,9 +7,8 @@ from typing import OrderedDict
 
 import torch
 import torch.nn as nn
-from torch.distributed.fsdp import FullStateDictConfig
+from torch.distributed.fsdp import FullStateDictConfig, MixedPrecision, StateDictType
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp import MixedPrecision, StateDictType
 from torch.optim.optimizer import Optimizer
 
 import storch
@@ -32,6 +31,7 @@ def state_dict_type(
         state_dict_config (): The state dict config corresponding to the state_dict_type.
         optim_state_dict_config (): The optimizer's state dict config corresponding to the state_dict_type.
             This argument is required for PyTorch>=2.0.0. Deafult: None.
+
     """
     if is_torch_version_geq('2.0.0'):
         assert optim_state_dict_config is not None
@@ -58,6 +58,7 @@ class FSDPModuleCheckpointInterface(CheckpointInterfaceBase):
     ----
         to_checkpoint (nn.Module): The module to wrap witch this interface.
         state (dict): a dict containing all objects needed for setting state dict type when get/set state_dicts.
+
     """
 
     def __init__(self, module: nn.Module, state: dict) -> None:  # noqa: D107
@@ -70,6 +71,7 @@ class FSDPModuleCheckpointInterface(CheckpointInterfaceBase):
         Returns
         -------
             OrderedDict: the state dict of the original model
+
         """
         with state_dict_type(self.to_checkpoint, self.state.type, self.state.config, self.state.optim_config):
             state_dict = self.to_checkpoint.state_dict()
@@ -81,6 +83,7 @@ class FSDPModuleCheckpointInterface(CheckpointInterfaceBase):
         Args:
         ----
             state_dict (OrderedDict): the state dict of the non-parallelized model.
+
         """
         with state_dict_type(self.to_checkpoint, self.state.type, self.state.config, self.state.optim_config):
             self.to_checkpoint.load_state_dict(state_dict)
@@ -96,6 +99,7 @@ class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
         optimizer (Optimizer): the optimizer.
         module (FSDP): the correspoing module.
         state (dict):  a dict containing all objects needed for setting state dict type when get/set state_dicts.
+
     """
 
     def __init__(self, optimizer: Optimizer, module: nn.Module, state: dict) -> None:  # noqa: D107
@@ -109,6 +113,7 @@ class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
         Returns
         -------
             OrderedDict: the state dict of the original model
+
         """
         if is_torch_version_geq('2.0.0'):
             with state_dict_type(self.module, self.state.type, self.state.config, self.state.optim_config):
@@ -123,6 +128,7 @@ class FSDPOptimizerCheckpointInterface(CheckpointInterfaceBase):
         Args:
         ----
             state_dict (OrderedDict): the state dict of the optimizer.
+
         """
         if is_torch_version_geq('2.0.0'):
             with state_dict_type(self.module, self.state.type, self.state.config, self.state.optim_config):
@@ -154,6 +160,7 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
         Returns:
         -------
             FSDP: the wrapped module.
+
         """
         if mixed_precision:
             dtype = torch.float16
@@ -182,6 +189,7 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
         Returns:
         -------
             tuple[FSDPModuleCheckpointInterface, FSDPOptimizerCheckpointInterface]: Interface for checkpointing.
+
         """
         assert self.is_wrapped, 'Call "wrap_module()" first.'
 

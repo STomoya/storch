@@ -33,6 +33,7 @@ def get_tb_profile(
     Returns:
     -------
         profile: profiler.
+
     """
     if activities is None:
         activities = [ProfilerActivity.CPU, ProfilerActivity.CUDA]
@@ -59,6 +60,7 @@ def profiled_function(func: Callable) -> Callable:
     Returns:
     -------
         Callable: The wrapped function.
+
     """
 
     @wraps(func)

@@ -40,6 +40,7 @@ def build_dataset(
     Returns:
     -------
         DataLoader: dataset
+
     """
     dataset = CleanResizeDataset(
         root_dir, synthesized_size, feature_extractor_input_size, synthetic, num_images, filter_fn
@@ -72,6 +73,7 @@ class CleanResizeDataset(Dataset):
             synthetic (bool, optional): Is fake set. Default: False.
             num_images (int, optional): Number of images. Default: None.
             filter_fn (Callable | None, optional): Callable to filter image paths. Default: None.
+
         """
         super().__init__()
         self.image_paths = _collect_image_paths(root_dir, filter_fn)
@@ -121,6 +123,7 @@ class CleanResizeDataset(Dataset):
         Returns:
         -------
             Image.Image: resized image.
+
         """
         image_splits = image.split()
         new_image = []

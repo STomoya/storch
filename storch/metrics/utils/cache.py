@@ -25,6 +25,7 @@ class FeatureCache:
         Returns:
         -------
             np.ndarray | None: cached feature. None when not registered.
+
         """
         return cls._cache.get(cls.make_key(folder, model, num_images), None)
 
@@ -39,6 +40,7 @@ class FeatureCache:
             num_images (int): number of images.
             features (np.ndarray): the extracted features
             force (bool, optional): force to register features exven if already exists. Defaults to False.
+
         """
         key = cls.make_key(folder, model, num_images)
         if force or key not in cls._cache:
@@ -57,6 +59,7 @@ class FeatureCache:
         Returns:
         -------
             tuple[str, str, int]: key.
+
         """
         key = tuple(folder, model, num_images)
         assert all(isinstance(element, Hashable) for element in key)

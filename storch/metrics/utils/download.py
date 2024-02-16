@@ -19,6 +19,7 @@ def download_url(url: str, filename: str, folder: str = './.cache/storch/metrics
     Returns:
     -------
         str: the path to the downloaded file.
+
     """
     folder = Path(folder)
     ckpt_path = folder / filename

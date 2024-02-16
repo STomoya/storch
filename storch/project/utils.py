@@ -66,6 +66,7 @@ def init_run(
         >>> $ python3 train.py
         >>> # resume from a checkpoint
         >>> $ python3 train.py ./path/to/checkpoint/config.yaml
+
     """
     if child_folders is None:
         child_folders = {}

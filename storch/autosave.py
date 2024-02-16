@@ -24,6 +24,7 @@ class autosave:
     Attributes
     ----------
         _container (dict): contains the objects to be saved.
+
     """
 
     _container: ClassVar[dict] = {}
@@ -47,6 +48,7 @@ class autosave:
             >>> # model.state_dict() returns a reference so there is no need to overwrite
             >>> # and only needs to be called once
             >>> autosave.register_object('model', model.state_dict())
+
         """
         if overwrite or name not in cls._container:
             cls._container[name] = obj
@@ -70,6 +72,7 @@ class autosave:
             >>> @autosave.register_function_output
             >>> def func():
             >>>     return
+
         """
         name = func.__qualname__
 
@@ -91,6 +94,7 @@ def _save(folder='.'):
     Args:
     ----
         folder (str, optional): The directory to save the registered objects. Default: '.'.
+
     """
     if len(autosave._container.keys()):
         torch.save(autosave._container, os.path.join(folder, 'autosave.torch'))

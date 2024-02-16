@@ -23,6 +23,7 @@ def is_image_file(path: str) -> bool:
     Returns:
     -------
         bool: file?
+
     """
     ext = set(os.path.splitext(os.path.basename(path))[-1].lower())
     return ext.issubset(IMG_EXTENSIONS)
@@ -34,6 +35,7 @@ def get_loader_kwargs() -> storch.EasyDict:
     Returns
     -------
         storch.EasyDict: default loader keyword arguments as dict.
+
     """
     loader_kwargs = storch.EasyDict()
     loader_kwargs.batch_size = None
@@ -57,6 +59,7 @@ def to(data: torch.Tensor, device: torch.device) -> torch.Tensor:
     Returns:
     -------
         torch.Tensor: tensor on device.
+
     """
     return data.to(device)
 
@@ -72,6 +75,7 @@ def device_placement_collate_fn(batch: Any, device: torch.device) -> Any:
     Returns:
     -------
         Any: The collated batch.
+
     """
     batch = default_collate(batch)
     batch = storch.recursive_apply(partial(to, device=device), batch, torch.is_tensor)

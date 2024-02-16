@@ -30,6 +30,7 @@ class InceptionV3JIT(nn.Module):
             feature_dims (int, optional): deprecated.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): filename. Default: 'jit-inception-2015-12-05.torch'.
+
         """
         super().__init__()
         self.ckpt_path = download_url(JIT_INCEPTION_URL, filename, weight_folder)
@@ -60,6 +61,7 @@ class InceptionV3(nn.Module):
             feature_dims (int, optional): Number of output feature dimension. Default: 2048.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): File to save the weights. Default: 'inception-2015-12-05.torch'.
+
         """
         super().__init__()
         feature_dim2block_index = {64: 0, 192: 1, 768: 2, 2048: 3}

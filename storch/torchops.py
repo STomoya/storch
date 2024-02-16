@@ -69,6 +69,7 @@ def auto_get_device(force_cpu: bool = False, no_gpu_msg_type='warn') -> torch.de
     Returns:
     -------
         torch.device: Device.
+
     """
     if torch.cuda.is_available() or not force_cpu:
         return torch.device('cuda')
@@ -93,6 +94,7 @@ def freeze(model: nn.Module) -> None:
     Args:
     ----
         model (nn.Module): The module to freeze.
+
     """
     model.eval()
     model.requires_grad_(False)
@@ -107,6 +109,7 @@ def unfreeze(model: nn.Module) -> None:
     Args:
     ----
         model (nn.Module): The module to unfreeze.
+
     """
     model.requires_grad_(True)
     model.train()
@@ -131,6 +134,7 @@ def update_ema(
         decay (float, optional):  Decay for exponential modving average. Default: 0.999.
         copy_buffers (bool, optional): If True, also copy buffers inside the model. Default: False.
         force_cpu (bool, optional): If True, process on cpu. Expects the model_ema to be on CPU. Default: False.
+
     """
     if force_cpu:
         org_device = next(model.parameters()).device
@@ -171,6 +175,7 @@ def set_seeds(
     -------
         Callable: Function for DataLoader's worker_init_fn option.
         torch.Generator: torch.Generator for DataLoader's generator option.
+
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -203,6 +208,7 @@ def shuffle_batch(
     -------
         torch.Tensor: The shuffled tensor.
         torch.Tensor: The permutation. Only when return_permutation==True.
+
     """
     permutation = torch.randperm(batch.size(0))
     shuffled = batch[permutation]
@@ -218,6 +224,7 @@ def assert_shape(tensor: torch.Tensor, shape: torch.Size | tuple | list) -> None
     ----
         tensor (torch.Tensor): tensor to check the shape of
         shape (torch.Size | tuple | list): expected shape of tensor. -1 or None for arbitrary size.
+
     """
     assert tensor.ndim == len(shape), f'Wrong number of dimensions: got {tensor.ndim} expected {len(shape)}'
     for i, (size, exp_size) in enumerate(zip(tensor.size(), shape, strict=False)):
@@ -244,6 +251,7 @@ def print_module_summary(
         max_nesting (int, optional): Max nested modules to print. Default: 3.
         skip_redundant (bool, optional): Filter out redundant entries. Default: True.
         print_fn (Callable, optional): Function for printing the summary. Default: print.
+
     """
     assert isinstance(module, torch.nn.Module)
     assert not isinstance(module, torch.jit.ScriptModule)
@@ -330,6 +338,7 @@ def convert_outputs_to_fp32(func: Callable) -> Callable:
     Returns:
     -------
         Callable: the wrapped function.
+
     """
 
     def convert_to_fp32(tensor: torch.Tensor):
@@ -356,6 +365,7 @@ def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> Gra
     Returns:
     -------
         GradScaler | None: gradient scaler class
+
     """
     scaler = GradScaler(enabled=enabled) if not is_fsdp else ShardedGradScaler(enabled=enabled)
     if not enabled and disable_with_none:
@@ -371,6 +381,7 @@ def local_seed_builtin(seed: int, enabled: bool = True) -> None:
     ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
+
     """
     if enabled:
         random_state = random.getstate()
@@ -388,6 +399,7 @@ def local_seed_numpy(seed: int, enabled: bool = True) -> None:
     ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
+
     """
     if enabled:
         random_state = np.random.get_state()
@@ -405,6 +417,7 @@ def local_seed_torch(seed: int, enabled: bool = True) -> None:
     ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
+
     """
     if enabled:
         random_state = torch.get_rng_state()
@@ -425,6 +438,7 @@ def local_seed(seed: int, enabled: bool = True, builtin: bool = True, numpy: boo
         builtin (bool, optional): Independent flag for builtin random. Ignored when enabled=False. Default: True.
         numpy (bool, optional): Independent flag for numpy. Ignored when enabled=False. Default: True.
         torch (bool, optional): Independent flag for torch. Ignored when enabled=False. Default: True.
+
     """
     if not enabled:
         builtin = numpy = torch = False
@@ -449,6 +463,7 @@ def fixed_random(seed: int, enabled: bool = True) -> Callable:
         >>> @fixed_random(3407)
         ... def test():
         ...     pass
+
     """
 
     def decorator(func):

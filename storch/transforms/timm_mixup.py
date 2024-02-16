@@ -23,6 +23,7 @@ def rand_bbox(image_shape, lam, margin=0.0, count=None):
         lam (float): Cutmix lambda value
         margin (float): Percentage of bbox dimension to enforce as margin (reduce amount of box outside image)
         count (int): Number of bbox to generate
+
     """
     ratio = np.sqrt(1 - lam)
     img_h, img_w = image_shape[-2:]
@@ -49,6 +50,7 @@ def rand_bbox_minmax(image_shape, minmax, count=None):
         image_shape (tuple): Image shape as tuple
         minmax (tuple or list): Min and max bbox ratios (as percent of image size)
         count (int): Number of bbox to generate
+
     """
     assert len(minmax) == 2
     img_h, img_w = image_shape[-2:]
@@ -97,6 +99,7 @@ class Mixup(torch.nn.Module):
             switch_prob (float, optional): Probability to switch to CutMix. Default: 0.5.
             mode (str, optional): Apply Mixup {batch,element}-wise. Default: 'batch'.
             correct_lambda (bool, optional): correct lambda. Default: True.
+
         """
         super().__init__()
         self.mixup_alpha = mixup_alpha
@@ -213,6 +216,7 @@ class Mixup(torch.nn.Module):
         Returns:
         -------
             torch.Tensor: the loss
+
         """
         ce_loss_a = F.cross_entropy(logits, targets, reduction='none', label_smoothing=label_smoothing) * lambdas
         ce_loss_b = F.cross_entropy(logits, targets.flip(0), reduction='none', label_smoothing=label_smoothing) * (

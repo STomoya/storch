@@ -23,6 +23,7 @@ def calc_grad(outputs: torch.Tensor, inputs: torch.Tensor, scaler: Optional[Grad
     Returns:
     -------
         torch.Tensor: The gradients of the input.
+
     """
     if isinstance(scaler, GradScaler):
         outputs = scaler.scale(outputs)
@@ -57,6 +58,7 @@ class Penalty(Loss):
         >>> gp_input = gp.prepare_input(real, fake)
         >>> gradients = calc_grad(D(gp_input), gp_input)
         >>> loss = gp.calc(gradients)
+
     """
 
     def __init__(self, return_all: bool = False) -> None:  # noqa: D107
@@ -106,6 +108,7 @@ class gradient_penalty(Penalty):
         Returns:
         -------
             torch.Tensor: The loss
+
         """
         assert center in [1.0, 0.0]
 
@@ -153,6 +156,7 @@ class dragan_penalty(Penalty):
         Returns:
         -------
             torch.Tensor: The loss.
+
         """
         x_hat = self.prepare_input(real)
         d_x_hat = self.filter_output(D(x_hat, *d_aux_input))
@@ -193,6 +197,7 @@ class r1_regularizer(Penalty):
         Returns:
         -------
             torch.Tensor: The loss.
+
         """
         real_loc = self.prepare_input(real)
         d_real_loc = self.filter_output(D(real_loc, *d_aux_input))
@@ -229,6 +234,7 @@ class r2_regularizer(r1_regularizer):
         Returns:
         -------
             torch.Tensor: The loss.
+
         """
         return super().__call__(fake, D, scaler, d_aux_input)
 

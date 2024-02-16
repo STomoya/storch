@@ -30,6 +30,7 @@ def get_constant_schedule(num_warmup_steps: int | None = None) -> Callable:
     Returns:
     -------
         Callable: always returns 1.0
+
     """
     if num_warmup_steps is None:
 
@@ -57,6 +58,7 @@ def get_multistep_schedule(milestones: list, num_warmup_steps: int | None = None
     Returns:
     -------
         Callable: function for LambdaLR
+
     """
     milestones = np.asarray(milestones)
     if num_warmup_steps is None:
@@ -86,6 +88,7 @@ def get_linear_schedule(num_training_steps: int, num_warmup_steps: int) -> Calla
     Returns:
     -------
         Callable: function for LambdaLR
+
     """
     if num_warmup_steps is None:
 
@@ -117,6 +120,7 @@ def get_polynomial_decay_schedule(
     Returns:
     -------
         Callable: _description_
+
     """
     if num_warmup_steps is None:
 
@@ -158,6 +162,7 @@ def get_cosine_schedule(
     Returns:
     -------
         Callable: function for LambdaLR
+
     """
     if num_warmup_steps is None:
 
@@ -212,6 +217,7 @@ def build_scheduler(
     Returns:
     -------
         LambdaLR: learning rate scheduler.
+
     """
     num_training_steps = num_training_steps * num_iter_per_step
     num_warmup_steps = num_warmup_steps * num_iter_per_step if num_warmup_steps is not None else None

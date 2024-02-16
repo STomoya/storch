@@ -20,6 +20,7 @@ def pil_configuration(
     ----
         max_image_pixels (int, optional): maximum image pixels. Default: Image.MAX_IMAGE_PIXELS.
         load_truncated_images (bool, optional): load truncated images? Default: False
+
     """
     Image.MAX_IMAGE_PIXELS = max_image_pixels
     ImageFile.LOAD_TRUNCATED_IMAGES = load_truncated_images
@@ -36,6 +37,7 @@ def pil_load_image(path: str, color_mode='RGB') -> Image.Image:
     Returns:
     -------
         Image.Image: The loaded image.
+
     """
     return Image.open(path).convert(color_mode)
 
@@ -53,6 +55,7 @@ def gif_from_files(
         optimize (bool, optional): optimize. Default: False.
         duration (int, optional): duration of each image. Default: 500.
         loop (int, optional): loop mode. Default: infinite loop. Default: 0.
+
     """
     images = [Image.open(str(path)) for path in image_paths]
     images[0].save(filename, save_all=True, append_images=images[1:], optimize=optimize, duration=duration, loop=loop)
@@ -69,6 +72,7 @@ def download(url: str, filename: str | None = None) -> Image.Image:
     Returns:
     -------
         Image.Image: The loaded image.
+
     """
     b = BytesIO(urllib.request.urlopen(url).read())
     image = Image.open(b)

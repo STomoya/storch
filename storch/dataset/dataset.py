@@ -36,6 +36,7 @@ class DatasetBase(Dataset):
         Returns:
         -------
             Self: Other keyword arguments to be passed to the DataLoader class
+
         """
         self.kwargs.batch_size = batch_size
         for key, value in kwargs.items():
@@ -49,6 +50,7 @@ class DatasetBase(Dataset):
         Returns
         -------
             DataLoader: data loader object.
+
         """
         return DataLoader(self, **self.kwargs)
 
@@ -72,6 +74,7 @@ class ImageFolder(DatasetBase):
             Defaul: None.
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
+
     """
 
     def __init__(  # noqa: D107
@@ -106,6 +109,7 @@ class ImageFolders(DatasetBase):
             Defaul: None.
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
+
     """
 
     def __init__(  # noqa: D107
@@ -142,6 +146,7 @@ class ImageFolders(DatasetBase):
         Args:
         ----
             index (int | None, optional): which to shuffle. If None, both. Default: None.
+
         """
         if index is not None:
             random.shuffle(self.images[index])
@@ -178,6 +183,7 @@ class ImagePathFile(DatasetBase):
             Defaul: None.
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
+
     """
 
     def __init__(  # noqa: D107
@@ -218,6 +224,7 @@ class ImagePathFiles(DatasetBase):
             Defaul: None.
         filter_fn (Callable | None, optional): A callable that inputs a path and returns a bool to filter the files.
             Defaul: None.
+
     """
 
     def __init__(  # noqa: D107
@@ -253,6 +260,7 @@ class ImagePathFiles(DatasetBase):
         Args:
         ----
             index (int | None, optional): which to shuffle. If None, both. Default: None.
+
         """
         if index is not None:
             random.shuffle(self.images[index])

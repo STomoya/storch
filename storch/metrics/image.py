@@ -28,6 +28,7 @@ def psnr(
     Returns:
     -------
         torch.Tensor: calculated PSNR score
+
     """
     mse_error = (input.double() - target.double()).square().mean(dim=(1, 2, 3), keepdim=True)
     psnr = 10.0 * torch.log10(max_val**2 / mse_error)
@@ -60,6 +61,7 @@ def ssim(
     Returns:
     -------
         torch.Tensor: _description_
+
     """
     B, C, device = input.size(0), input.size(1), input.device
     kernel_size, sigma = to_2tuple(kernel_size), to_2tuple(sigma)

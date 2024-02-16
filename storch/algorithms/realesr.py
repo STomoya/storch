@@ -72,6 +72,7 @@ class RealESRTransform(nn.Module):
         ----
             scale (float): scale
             **kwargs: See RealESRTransformsConfig.
+
         """
         super().__init__()
 

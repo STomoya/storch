@@ -54,6 +54,7 @@ class Checkpoint:
         >>> # this will load the state_dict from the latest checkpoint.
         >>> checkpoint.load_latest()
         {'constant': 1}
+
     """
 
     _container = storch.EasyDict()
@@ -69,6 +70,7 @@ class Checkpoint:
             keep_last (int, optional): keep last n checkpoints. None to keep all. Default: 3.
             filename_format (str, optional): format for filename of the checkpoint. Default: 'checkpoint.{count}.torch'.
             disthelper (None): deprecated.
+
         """
         self.folder = Path(folder)
         self.filename_format = filename_format
@@ -94,6 +96,7 @@ class Checkpoint:
         Returns
         -------
             dict: the state_dict of registered objects.
+
         """
         state_dict = dict()
         for key, value in self._container.items():
@@ -106,6 +109,7 @@ class Checkpoint:
         Returns
         -------
             dict: state_dict of this class.
+
         """
         return dict(storch_version=storch.__version__, file_deque=self.file_deque, count=self.count)
 
@@ -115,6 +119,7 @@ class Checkpoint:
         Args:
         ----
             state_dict (dict): load state_dict to checkpoint object.
+
         """
         _storch_version = state_dict.pop('storch_version')
         if storch.__version__ != _storch_version and distutils.is_primary():
@@ -135,6 +140,7 @@ class Checkpoint:
         Returns
         -------
             str: path to where the checkpoint was saved
+
         """
         filename = self.folder / self.filename_format.format(count=self.count)
         self.file_deque.append(filename)
@@ -176,6 +182,7 @@ class Checkpoint:
         Returns:
         -------
             dict: additional objects saved when save (if any).
+
         """
         distutils.wait_for_everyone()
 
@@ -208,6 +215,7 @@ class Checkpoint:
         Returns:
         -------
             dict: additional objects saved when save (if any).
+
         """
         paths = storch.natural_sort(glob.glob(self.folder / self.filename_format.format(count='*')))
         if len(paths) > 0:
@@ -221,6 +229,7 @@ class Checkpoint:
         Args:
         ----
             **kwargs: objects to be registered as keyword arguments.
+
         """
         not_registered_keys = []
         for key, value in kwargs.items():

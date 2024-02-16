@@ -28,6 +28,7 @@ def plt_subplots(nrows: int = 1, ncols: int = 1, format_axes: bool = True, filen
     ------
         Figure: matplotlib.figure.Figure object made by plt.subplot().
         Axes|list[Axes]|list[list[Axes]]: list or object of matplotlib.axes.Axes made by plt.subplot().
+
     """
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **kwargs)
     if format_axes:
@@ -104,6 +105,7 @@ def ax_setter(  # noqa: PLR0915
         invert_yaxis (bool, optional): invert y axis. Default: False.
         xscale (str, optional): scale of x axis. Default: None.
         yscale (str, optional): scale of y axis. Default: None.
+
     """
     if title is not None:
         ax.set_title(title)

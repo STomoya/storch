@@ -20,6 +20,7 @@ def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
     -------
         tuple[int]: xyxy
         float: adjusted lambda
+
     """
     W = size[0]
     H = size[1]
@@ -57,6 +58,7 @@ def cutout(
     Returns:
     -------
         torch.Tensor: The mixed image.
+
     """
     B, C, W, H = images.size()
 

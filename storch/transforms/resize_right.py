@@ -49,6 +49,7 @@ def resize(
     Returns:
     -------
         (np.ndarray | torch.Tensor): resized image
+
     """
     if isinstance(interp_method, str):
         interp_method = INTERP_METHODS[interp_method]

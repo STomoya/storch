@@ -26,6 +26,7 @@ def mixup(
         torch.Tensor: The mixed image.
         torch.Tensor: The target in the order of the shuffled images.
         torch.Tensor: The lambda used to make the mask.
+
     """
     B = images.size(0)
 
@@ -60,6 +61,7 @@ def mixed_cross_entropy_loss(
     Returns:
     -------
         torch.Tensor: the loss
+
     """
     ce_loss_a = F.cross_entropy(logits, targets_a, reduction='none') * lambdas
     ce_loss_b = F.cross_entropy(logits, targets_b, reduction='none') * (1 - lambdas)

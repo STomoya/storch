@@ -16,6 +16,7 @@ from storch.distributed.factory import (
     DistributedDataParallelFactory,
     FullyShardedDataParallelFactory,
     NoParallelFactory,
+    simple,
 )
 from storch.torchops import convert_outputs_to_fp32
 from storch.utils import version
@@ -33,6 +34,7 @@ class DistributedHelper:
         >>> os.environ['MASTER_PORT'] = '29500'
         >>> #   in main function
         >>> disthelper = DistributedHelper(world_size=world_size, rank=rank)
+
     """
 
     def __init__(self, **kwargs) -> None:  # noqa: D417
@@ -42,6 +44,7 @@ class DistributedHelper:
         ----
             world_size (int, optional): world size. ignored when {torchrun,CPU,single GPU}. Default: 1.
             rank (int, optional): rank. ignored when {torchrun,CPU,single GPU}. Default: 0.
+
         """
         self._state = DistributedState(**kwargs)
         self.backend = self._state.backend
@@ -88,6 +91,7 @@ class DistributedHelper:
         Returns:
         -------
             torch.Tensor: gathered tensor
+
         """
         output_tensor = utils.gather(tensor, dst=None, into_tensor=True)
         return output_tensor
@@ -102,6 +106,7 @@ class DistributedHelper:
         Returns:
         -------
             torch.Tensor: gathered values as an tensor.
+
         """
         if not isinstance(val, torch.Tensor):
             val = torch.tensor(val, device=self.device)
@@ -119,6 +124,7 @@ class DistributedHelper:
         Returns:
         -------
             torch.Tensor: the reduced tensor
+
         """
         tensor = utils.reduce(tensor, dst=None, op=op)
         return tensor
@@ -134,6 +140,7 @@ class DistributedHelper:
         Returns:
         -------
             torch.Tensor: the reduced tensor
+
         """
         if not isinstance(val, torch.Tensor):
             val = torch.tensor(val, device=self.device)
@@ -191,6 +198,7 @@ class DistributedHelper:
         Returns:
         -------
             str: a string representing the parallelizm strategy.
+
         """
         if self._mode is None:
             if mode is None:
@@ -237,6 +245,7 @@ class DistributedHelper:
         Returns:
         -------
             tuple[nn.Module]|nn.Module: the wrapped modules in the same order as input.
+
         """
         mode = self.get_parallel_mode(mode)
 
@@ -250,23 +259,10 @@ class DistributedHelper:
             original_modules.append(module)
 
             # wrap the model. see storch.distributed.factory.
-            wrap_kwargs = {}
-            if self._state.is_distributed:
-                if mode == 'ddp':
-                    factory = DistributedDataParallelFactory()
-                    wrap_kwargs['device_ids'] = [self.local_rank]
-                elif mode == 'fsdp':
-                    factory = FullyShardedDataParallelFactory()
-                    wrap_kwargs['mixed_precision'] = mixed_precision
-                    if compile and version.is_compiler_available():
-                        wrap_kwargs['use_orig_params'] = True
-                else:
-                    raise Exception(f'Unknown data parallelizm mode "{mode}"')
-
+            if version.is_dist_state_dict_available():
+                wrapped_module = self._wrap_module(module, mode, mixed_precision, compile)
             else:
-                factory = NoParallelFactory()
-
-            wrapped_module = factory.wrap_module(module, **wrap_kwargs)
+                wrapped_module = self._wrap_module_legacy(module, mode, mixed_precision, compile)
 
             # wrap forward with autocast if enabled.
             if mixed_precision and self.device.type == 'cuda':
@@ -276,8 +272,6 @@ class DistributedHelper:
                     dtype = torch.bfloat16
                 forward = torch.cuda.amp.autocast(dtype=dtype)(wrapped_module.forward)
                 wrapped_module.forward = convert_outputs_to_fp32(forward)
-
-            self._factories.append(factory)
 
             parallel_modules.append(wrapped_module)
 
@@ -304,6 +298,38 @@ class DistributedHelper:
             )
 
         return tuple(compiled_modules) if _return_as_tuple else compiled_modules[0]
+
+    def _wrap_module_legacy(
+        self, module: nn.Module, mode: str, mixed_precision: bool | str | None, compile: str | bool | None
+    ) -> nn.Module:
+        wrap_kwargs = {}
+        if self._state.is_distributed:
+            if mode == 'ddp':
+                factory = DistributedDataParallelFactory()
+                wrap_kwargs['device_ids'] = [self.local_rank]
+            elif mode == 'fsdp':
+                factory = FullyShardedDataParallelFactory()
+                wrap_kwargs['mixed_precision'] = mixed_precision
+                if compile and version.is_compiler_available():
+                    wrap_kwargs['use_orig_params'] = True
+            else:
+                raise Exception(f'Unknown data parallelizm mode "{mode}"')
+
+        else:
+            factory = NoParallelFactory()
+
+        wrapped_module = factory.wrap_module(module, **wrap_kwargs)
+        self._factories.append(factory)
+
+        return wrapped_module
+
+    def _wrap_module(
+        self, module: nn.Module, mode: str, mixed_precision: bool | str | None, compile: str | bool | None
+    ) -> nn.Module:
+        if self._state.is_distributed:
+            return simple.wrap_module(module, mode, mixed_precision, [self.rank], compile)
+        else:
+            return module
 
     def prepare_dataset(
         self,
@@ -334,6 +360,7 @@ class DistributedHelper:
         Returns:
         -------
             DataLoader: the created dataloader
+
         """
         if self._state.is_distributed:
             # when distributed training, always use DistributedSampler
@@ -382,7 +409,10 @@ class DistributedHelper:
         Returns:
         -------
             tuple|tuple[tuple]: module state_dict {get,set}ter and optimizer state_dict {get,set}ter
+
         """
+        if version.is_dist_state_dict_available():
+            raise Exception('Use `prepare_stateful` for torch>=2.2.0.')
         assert len(optimizers) == len(self._factories)
         ckpt_ifs = []
         kwargs = (
@@ -393,3 +423,44 @@ class DistributedHelper:
         for i, optimizer in enumerate(optimizers):
             ckpt_ifs.append(self._factories[i].create_checkpoint_interface(optimizer, **kwargs))
         return tuple(ckpt_ifs) if len(ckpt_ifs) > 1 else ckpt_ifs[0]
+
+    def prepare_stateful(
+        self,
+        module: nn.Module,
+        optimizers: torch.optim.Optimizer,
+        full_state_dict: bool = True,
+        cpu_offload: bool = True,
+        strict: bool = True,
+    ) -> tuple:
+        """Prepare models to be serialized.
+
+        This function is for `torch>=2.2.0`. Use `prepare_for_checkpointing` in previous versions.
+        Note that the arguments are different from the original legacy function.
+        The changes are:
+        - Does not support multiple inputs.
+        - Requires the module as an additional input.
+
+        Create two object that has {state_dict,load_state_dict} function, that returns/loads the state_dict like
+        modules that are not wrapped, for the wrapped module and corresponding optimizer.
+        This function is for checkpointing models without changing codes between different data parallel methods.
+        Tested to work well with storch.checkpoint.Checkpoint.
+
+        Args:
+        ----
+            module (nn.Module): _description_
+            optimizers (torch.optim.Optimizer): _description_
+            full_state_dict (bool, optional): _description_. Defaults to True.
+            cpu_offload (bool, optional): _description_. Defaults to True.
+            strict (bool, optional): _description_. Defaults to True.
+
+        Returns:
+        -------
+            tuple: _description_
+
+        """
+        if not version.is_dist_state_dict_available():
+            raise Exception('Use `prepare_for_checkpointing` for torch<=2.1.x.')
+
+        return simple.create_checkpoint_interface(
+            model=module, optim=optimizers, full_state_dict=full_state_dict, cpu_offload=cpu_offload, strict=strict
+        )

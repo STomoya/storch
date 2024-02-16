@@ -47,6 +47,7 @@ class NeST:
             grad_accum_steps (int, optional): number of gradient accumulation steps. Default: 1.
             compile (bool, optional): compile the model using `torch.compile`. only available for pytorch>=2.0.0.
                 Default: False.
+
         """
         self._disthelper = DistributedHelper()
 
@@ -142,6 +143,7 @@ class NeST:
         Returns:
         -------
             nn.Module: the model.
+
         """
         if index >= len(self._org_models):
             return None
@@ -162,6 +164,7 @@ class NeST:
         Returns:
         -------
             Callable: The optimizer_step function.
+
         """
         return self._step_fn.get(id(optimizer), None)
 
@@ -299,6 +302,7 @@ class NeST:
         Returns:
         -------
             DataLoader: The built data loader.
+
         """
         if not is_train:
             # If not train split, we do not need to `shuffle` and `drop_last` batch.
@@ -355,6 +359,7 @@ class NeST:
         Returns:
         -------
             nn.Module: The built model.
+
         """
         if isinstance(builder, str):
             model = storch.construct_class_by_name(class_name=builder, **builder_kwargs)
@@ -394,6 +399,7 @@ class NeST:
         Returns:
         -------
             optim.Optimizer: The built optimizer
+
         """
         if isinstance(builder, str):
             optimizer = storch.construct_class_by_name(parameters, class_name=builder, **builder_kwargs)
@@ -423,6 +429,7 @@ class NeST:
         Returns:
         -------
             LRScheduler: learning rate scheduler.
+
         """
         if builder_kwargs.get('num_iter_per_step', None) is None or not step_on_epoch:
             builder_kwargs['num_iter_per_step'] = 1 if step_on_epoch else self._actual_iters_per_epoch
@@ -503,6 +510,7 @@ class NeST:
         Returns:
         -------
             Status: training status keeper.
+
         """
         if to_log is None:
             to_log = []
@@ -522,7 +530,7 @@ class NeST:
 
         for i, (dmodel, optimizer) in enumerate(zip(self._para_models, self._optimizers, strict=False)):
             # if gpu memory logging is enabled instantiate hook and register.
-            if log_gpu_memory_at is not None:
+            if self.is_primary() and log_gpu_memory_at is not None:
                 if isinstance(log_gpu_memory_at, int):
                     log_gpu_memory_at = [log_gpu_memory_at]
                 stage_postfix = f' No. {i}' if len(self._optimizers) > 1 else ''
@@ -571,6 +579,7 @@ class NeST:
             name (str): name of the evaluation scores.
             direction: (str): either `minimize` or `maximize`.
             model (nn.Module): The model to keep the best states.
+
         """
         self._best_model_keepers[name] = BestStateKeeper(
             name=name, direction=direction, model=model, folder=self.project_folder
@@ -609,8 +618,55 @@ class NeST:
         Returns:
         -------
             tuple|tuple[tuple]: Interface for getting setting state_dict.
+
         """
         return self._disthelper.prepare_for_checkpointing(*optimizers, offload_to_cpu=offload_to_cpu)
+
+    def prepare_stateful(
+        self,
+        module: nn.Module,
+        optimizers: optim.Optimizer,
+        full_state_dict: bool = True,
+        cpu_offload: bool = True,
+        strict: bool = True,
+    ) -> tuple:
+        """Create interface for serialization for `torch>=2.2.0`.
+
+        Prepare for serialization by creating an interface which properly returns `state_dict` and loads `state_dict`,
+        according to the parallelizm strategy.To use the checkpointing functionality provided by NeST with distributed
+        setting, you must call this function before calling `register` and pass returned objects instead of the
+        model/optimizer. If the corresponding model is not meant to be trained and no optimizer is built, pass a
+        `None`. If not using distributed training, calling this function is not necessary and returns the input as-is
+        if called.
+
+        Usage:
+            >>> nest = NeST(...)
+            >>> model = nest.build_model(...)
+            >>> optimizer = nest.build_optimizer(...)
+            >>> nest.initialize_training(...)
+            >>> model_if, optim_if = nest.prepare_stateful(model, optimizer)
+            >>> nest.register(model=model_if, optim=optim_if)
+
+        Args:
+        ----
+            module (nn.Module): The module.
+            optimizers (optim.Optimizer) : The optimizer. Pass `None` if the model is not meant to be trained.
+            full_state_dict (bool, optional): If True, return unsharded tensors for FSDP models. Default: True.
+            cpu_offload (bool, optional): Offload state dict to CPU. Only affects 'fsdp'. Default: True.
+            strict (bool, optional): same as `strict` option in `module.load_state_dict()`. Default: True.
+
+        Returns:
+        -------
+            tuple|tuple[tuple]: Interface for getting setting state_dict.
+
+        """
+        return self._disthelper.prepare_stateful(
+            module=module,
+            optimizers=optimizers,
+            full_state_dict=full_state_dict,
+            cpu_offload=cpu_offload,
+            strict=strict,
+        )
 
     @nestutils._assert_initialized
     def register(self, **kwargs) -> None:
@@ -624,6 +680,7 @@ class NeST:
         ----
             **kwargs: key, value pairs of objects to be registered. values must have `state_dict` and
                 `load_state_dict` method.
+
         """
         for key, value in kwargs.items():
             if value is self._status:
@@ -638,6 +695,7 @@ class NeST:
         ----
             **constants: objects to save but does not have `state_dict` and `load_state_dict` method. You must
                 overwrite the values manually.
+
         """
         self._checkpoint.save(**constants)
 
@@ -662,6 +720,7 @@ class NeST:
         Raises:
         ------
             Exception: no best model keeper is set.
+
         """
         if len(self._best_model_keepers) == 0:
             raise Exception('You have not set any best model keepers. Call `set_best_model_keeper` beforehand.')
@@ -691,6 +750,7 @@ class NeST:
         Raises:
         ------
             Exception: no best model keeper is set.
+
         """
         if len(self._best_model_keepers) == 0:
             raise Exception('You have not set any best model keepers. Call `set_best_model_keeper` beforehand.')
@@ -710,6 +770,7 @@ class NeST:
         ----
             epoch (int, optional): epoch argument passed to `set_epoch`. If `None`, current epoch is determined
                 by `floor(_status.batches_done / _num_iters_per_epoch)`. Default: None.
+
         """  # noqa: D401
         epoch = self.epoch_index if epoch is None else epoch
         self._set_epoch_fn(epoch)
@@ -734,6 +795,7 @@ class NeST:
         Returns:
         -------
             Any | None: return value of the function or `None` if not on primary process.
+
         """
         if self.is_primary():
             return func(*args, **kwargs)
@@ -769,6 +831,7 @@ class NeST:
         Returns:
         -------
             torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
+
         """  # noqa: D401
         return distutils.gather(obj=obj, dst=dst, into_tensor=into_tensor)
 
@@ -799,6 +862,7 @@ class NeST:
         Returns:
         -------
             torch.Tensor: reduced tensor.
+
         """  # noqa: D401
         return distutils.reduce(tensor=tensor, dst=dst, op=op)
 
@@ -838,6 +902,7 @@ class NeST:
                 default behavior after pytorch>=2.0.0. Defaut: True.
             update_scaler (bool, optional): update gradient scaler used when AMP is enabled. ignored when AMP is not
                 enabled. Default: True.
+
         """
         self.get_step_fn(optimizer)(
             loss,
@@ -887,6 +952,7 @@ class NeST:
         Args:
         ----
             **kwargs: key, value pairs for objects to track.
+
         """
         self._status.update(**kwargs)
 
@@ -897,6 +963,7 @@ class NeST:
         Args:
         ----
             **kwargs: key, value pairs for objects to track.
+
         """
         self._status.dry_update(**kwargs)
 
@@ -908,6 +975,7 @@ class NeST:
         ----
             message (str): the message to log
             level (str, optional): logging level. Defaults to 'info'.
+
         """
         self._status.log(message, level)
 
@@ -918,6 +986,7 @@ class NeST:
         Args:
         ----
             quiet (bool, optional): do not log run stats. Default: None.
+
         """
         self._status.finish_wandb(quiet=quiet)
 
@@ -947,5 +1016,6 @@ class NeST:
         Returns:
         -------
             torch.Tensor | nn.Module: the object on the device.
+
         """
         return obj.to(self.device)
