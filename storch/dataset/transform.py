@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import Callable
 
+import torch
 import torchvision.transforms as T
 
+from storch.hydra_utils import DictConfig, ListConfig, to_object
 from storch.utils.version import is_v2_transforms_available
 
 # we do not try, except import because v0.15.x has v2 namespace, but we don't want
@@ -44,17 +46,36 @@ def make_simple_transform(
     if isinstance(image_size, int):
         image_size = (image_size, image_size)
 
-    if crop == 'random':
-        transform = [T.RandomResizeCrop(image_size)]
-    elif crop == 'center':
-        transform = [T.Resize(max(image_size)), T.CenterCrop(image_size)]
+    if not is_v2_transforms_available():
+        if crop == 'random':
+            transform = [T.RandomResizeCrop(image_size)]
+        elif crop == 'center':
+            transform = [T.Resize(max(image_size)), T.CenterCrop(image_size)]
 
-    if hflip:
-        transform.append(T.RandomHorizontalFlip())
+        if hflip:
+            transform.append(T.RandomHorizontalFlip())
 
-    transform.extend([T.ToTensor(), T.Normalize(mean, std)])
+        transform.extend([T.ToTensor(), T.Normalize(mean, std)])
 
-    return T.Compose(transform)
+        return T.Compose(transform)
+    else:
+        transform = [Tv2.ToImage(), Tv2.ToDtype(dtype=torch.float32, scale=True)]
+
+        if crop == 'random':
+            transform.append(Tv2.RandomResizedCrop(image_size))
+        elif crop == 'center':
+            transform.extend([Tv2.Resize(max(image_size)), Tv2.CenterCrop(image_size)])
+
+        if hflip:
+            transform.append(Tv2.RandomHorizontalFlip())
+
+        if isinstance(mean, float):
+            mean = [mean]
+        if isinstance(std, float):
+            std = [std]
+        transform.append(Tv2.Normalize(mean, std))
+
+        return Tv2.Compose(transform)
 
 
 def build_transform(name: str, **params) -> Callable:
@@ -80,6 +101,12 @@ def build_transform(name: str, **params) -> Callable:
         if isinstance(value, str) and value.startswith('pyobj:'):
             value = storch.get_obj_by_name(value.replace('pyobj:', ''))  # noqa: PLW2901
         transform_kwargs[key] = value
+
+    # For backward compatibility with v1.
+    # transforms v2 requires `mean` and `std` to be a squence.
+    if Tv2 is not None and name == 'Normalize':
+        params['mean'] = [params['mean']] if isinstance(params['mean'], float) else params['mean']
+        params['std'] = [params['std']] if isinstance(params['std'], float) else params['std']
 
     if Tv2 is not None and hasattr(Tv2, name):
         return getattr(Tv2, name)(**transform_kwargs)
@@ -112,6 +139,9 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
         >>> )
 
     """
+    if isinstance(configs, (DictConfig, ListConfig)):
+        configs = to_object(configs)  # some transforms requires arguments to be python bultin types.
+
     transform = []
     for config in configs:
         if config.get('name') in ['RandomChoice', 'RandomOrder', 'RandomApply']:
@@ -172,23 +202,23 @@ def make_cutmix_or_mixup(
 
     mixup, cutmix = None, None
 
-    if mixup_alpha > 0.0:  # noqa: PLR2004
+    if mixup_alpha > 0.0:
         mixup = Tv2.MixUp(alpha=mixup_alpha, num_classes=num_classes, labels_getter=labels_getter)
-    if cutmix_alpha > 0.0:  # noqa: PLR2004
+    if cutmix_alpha > 0.0:
         cutmix = Tv2.CutMix(alpha=cutmix_alpha, num_classes=num_classes, labels_getter=labels_getter)
 
     cutmix_or_mixup = None
     if cutmix is not None and mixup is not None:
-        assert 0 < switch_prob < 1.0, '`switch_prob` should be in (0, 1).'  # noqa: PLR2004
+        assert 0 < switch_prob < 1.0, '`switch_prob` should be in (0, 1).'
         cutmix_or_mixup = Tv2.RandomChoice([cutmix, mixup], p=[switch_prob, 1 - switch_prob])
     elif cutmix is not None or mixup is not None:
         cutmix_or_mixup = cutmix if cutmix is not None else mixup
     else:
         return _noops
 
-    if prob != 1.0:  # noqa: PLR2004
+    if prob != 1.0:
         cutmix_or_mixup = Tv2.RandomApply([cutmix_or_mixup], p=prob)
-    elif prob == 0.0:  # noqa: PLR2004
+    elif prob == 0.0:
         return _noops
 
     return cutmix_or_mixup
