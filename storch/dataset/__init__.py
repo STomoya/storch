@@ -8,5 +8,6 @@ from storch.dataset.dataset import (
     ImagePathFiles,
     _collect_image_paths,
 )
+from storch.dataset.hfdataset import imagecsv, imagefolder, imagepaths, is_datasets_available
 from storch.dataset.transform import make_cutmix_or_mixup, make_simple_transform, make_transform_from_config
 from storch.dataset.utils import is_image_file
