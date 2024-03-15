@@ -25,7 +25,7 @@ def is_image_file(path: str) -> bool:
         bool: file?
 
     """
-    ext = set(os.path.splitext(os.path.basename(path))[-1].lower())
+    ext = {os.path.splitext(os.path.basename(path))[-1].lower()}
     return ext.issubset(IMG_EXTENSIONS)
 
 
