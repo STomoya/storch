@@ -1,4 +1,5 @@
-git+https://github.com/STomoya/stutil@v0.0.6
+datasets[vision]
+git+https://github.com/STomoya/stutil@v0.0.7
 hydra-core
 matplotlib
 opencv-python
