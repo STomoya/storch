@@ -21,6 +21,7 @@ class PatchDiscriminator(ModelMixin):
             channels (int, optional): Base channel width. Default: 64.
             norm_name (str, optional): Normalization layer name. Default: 'bn'.
             act_name (str, optional): Activation function name. Default: 'lrelu'.
+
         """
         super().__init__()
         bias = norm_name != 'bn'

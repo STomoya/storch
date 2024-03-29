@@ -31,6 +31,7 @@ class MultiScale(nn.Module):
             downsample (Callable | None, optional): Callable to downsample the input tensor.
                 If not specified, nn.AvgPool2d(2) will be used. Default: None.
             collate_fn (Callable | None, optional): Func to collate the outputs. Default: None.
+
         """
         super().__init__()
         self._num_scales = num_scales

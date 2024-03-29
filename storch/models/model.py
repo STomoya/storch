@@ -3,6 +3,7 @@
 classes and functions in this file is for user defined models, not for pre-defined models in
 libraries like timm, etc.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -91,6 +92,7 @@ def parse_safetensors_metadata(file: str) -> dict:
     Args:
     ----
         file (str): the file to read metadata from.
+
     """
     with open(file, 'rb') as fp:
         header_length = struct.unpack('<Q', fp.read(8))[0]
@@ -112,6 +114,7 @@ def unwrap_model(model: nn.Module) -> nn.Module:
     Returns:
     -------
         nn.Module: unwrapped model.
+
     """
     if hasattr(model, 'dynamo_ctx'):
         model = model._orig_mod
@@ -133,6 +136,7 @@ def get_resolved_state_dict(model: nn.Module) -> dict[str, torch.Tensor]:
     Returns:
     -------
         dict[str, torch.Tensor]: the `state_dict` of the model.
+
     """
     # FSDP state_dict.
     if isinstance(model, FSDP):
@@ -173,6 +177,7 @@ def save_model(model: ModelMixin, fp: str, framework: str = 'safetensors'):
         framework (str): one of 'pytorch', 'safetensors', or 'both'. 'pytorch' will use `torch.save`,
             'safetensors' will use `safetensors.torch.save_file` to serialize the weights. 'both' will save
             the weights with both ways. Default: 'safetensors'.
+
     """
     model = unwrap_model(model)
     model_config = getattr(model, 'model_config', None)
@@ -212,6 +217,7 @@ def load_model(fp: str, device: str | torch.device = 'cpu') -> tuple[dict[str, A
     Returns:
     -------
         tuple[dict[str, Any], dict[str, torch.Tensor]]: _description_
+
     """
     # synchronize devices
     wait_for_everyone()
