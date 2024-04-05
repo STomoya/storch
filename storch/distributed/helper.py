@@ -206,7 +206,7 @@ class DistributedHelper:
                 if self.is_primary():
                     print('Data parallelizm default to "ddp".')
 
-            assert mode.lower() in ['ddp', 'fsdp']
+            assert mode.lower() in ['ddp', 'fsdp', 'none']
             self._mode = mode
 
         return self._mode
@@ -312,6 +312,8 @@ class DistributedHelper:
                 wrap_kwargs['mixed_precision'] = mixed_precision
                 if compile and version.is_compiler_available():
                     wrap_kwargs['use_orig_params'] = True
+            elif mode == 'none':
+                factory = NoParallelFactory()
             else:
                 raise Exception(f'Unknown data parallelizm mode "{mode}"')
 

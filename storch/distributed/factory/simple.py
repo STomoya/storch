@@ -2,6 +2,7 @@
 
 Some functions are modifications of implementations in the pytorch repo.
 """
+
 from __future__ import annotations
 
 from itertools import chain
@@ -193,7 +194,7 @@ def wrap_module(
         DDP | FSDP | nn.Module: The wrapped module.
 
     """
-    if strategy is None:
+    if strategy in [None, 'none']:
         return module
 
     elif strategy == 'ddp':
