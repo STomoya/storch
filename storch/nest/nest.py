@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import torch
 import torch.nn as nn
@@ -31,8 +31,8 @@ class NeST:
     def __init__(
         self,
         project_folder: Path,
-        strategy: str = 'ddp',
-        mixed_precision: bool = False,
+        strategy: Literal['none', 'ddp', 'fsdp'] = 'ddp',
+        mixed_precision: bool | Literal['fp16', 'float16', 'half', 'bf16', 'bfloat16'] = False,
         grad_accum_steps: int = 1,
         compile: bool | str | dict = False,
     ):
@@ -54,11 +54,20 @@ class NeST:
         self._project_folder = Path(project_folder)
 
         self._strategy = self._disthelper.get_parallel_mode(strategy)
-        self._mixed_precision = mixed_precision
+        self._mixed_precision = {
+            False: False,
+            True: 'fp16',
+            'fp16': 'fp16',
+            'float16': 'fp16',
+            'half': 'fp16',
+            'bfloat16': 'bfloat16',
+            'bf16': 'bfloat16',
+        }[mixed_precision]  # convert arg to consistant name.
         self._grad_accum_steps = grad_accum_steps
         self._compile = compile
 
-        self._grad_scaler = get_grad_scaler(mixed_precision, self._strategy == 'fsdp')
+        # grad scaler. only enabled when amp dtype is torch.float16
+        self._grad_scaler = get_grad_scaler(enabled=self._mixed_precision == 'fp16', is_fsdp=self._strategy == 'fsdp')
 
         # objects
         self._status = None
