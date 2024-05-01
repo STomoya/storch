@@ -128,4 +128,4 @@ def is_dist_state_dict_available() -> bool:
         bool: result.
 
     """
-    return is_torch_version_geq('2.2.0')
+    return is_torch_version_geq('2.2.2')
