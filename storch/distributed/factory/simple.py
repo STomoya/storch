@@ -5,77 +5,22 @@ Some functions are modifications of implementations in the pytorch repo.
 
 from __future__ import annotations
 
-from itertools import chain
-from typing import Any, cast
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributed.checkpoint.state_dict import (
     StateDictOptions,
-    _get_fqns,
-    _IncompatibleKeys,
-    _state_dict_fn,
-    _StateDictInfo,
-    _unflatten_model_state_dict,
-    _verify_options,
-    _verify_state_dict,
-    gc_context,
     get_model_state_dict,
     get_optimizer_state_dict,
+    set_model_state_dict,
     set_optimizer_state_dict,
 )
 from torch.distributed.checkpoint.stateful import Stateful
 from torch.distributed.fsdp import MixedPrecision
 from torch.distributed.fsdp.fully_sharded_data_parallel import FullyShardedDataParallel as FSDP
 from torch.nn.parallel import DistributedDataParallel as DDP
-
-##########################################################################
-# These functions are likely to be removed after PyTorch fixes this bug. #
-##########################################################################
-
-
-def _load_model_state_dict(
-    model: nn.Module,
-    state_dict: dict[str, Any],
-    info: _StateDictInfo,
-) -> _IncompatibleKeys:
-    """Reimplemented `torch.distributed.checkpoint.state_dict._load_model_state_dict`, supporting buffers."""
-    if not info.handle_model or not state_dict:
-        return _IncompatibleKeys({}, {})
-
-    for key, _ in chain(model.named_parameters(), model.named_buffers()):
-        fqns = _get_fqns(model, key)
-        fqns_with_ddp_prefix = _get_fqns(model, key, skip_ddp_prefix=False)
-        for fqn, fqn_with_ddp_prefix in zip(fqns, fqns_with_ddp_prefix, strict=False):
-            if fqn != fqn_with_ddp_prefix:
-                state_dict[fqn_with_ddp_prefix] = state_dict.pop(fqn)
-
-    with info.fsdp_context():
-        return cast(
-            _IncompatibleKeys,
-            _state_dict_fn(model, 'load_state_dict')(state_dict=state_dict, strict=info.strict),
-        )
-
-
-def _set_model_state_dict(
-    model: nn.Module,
-    model_state_dict: dict[str, Any],
-    *,
-    options: StateDictOptions | None = None,
-) -> _IncompatibleKeys:
-    """Reimplemented `torch.distributed.checkpoint.state_dict.set_model_state_dict`, supporting buffers."""
-    model_state_dict = _unflatten_model_state_dict(model, model_state_dict)
-    with gc_context():
-        info = _verify_options(model, tuple(), optim_only=False, options=options)
-
-        _verify_state_dict(model_state_dict, {}, info)
-        return _load_model_state_dict(model, model_state_dict, info)
-
-
-##########################################################################
-#     ##############################################################     #
-##########################################################################
 
 
 class ModelStateDict(Stateful):
@@ -113,7 +58,7 @@ class ModelStateDict(Stateful):
         #   `RuntimeError: The model has FSDP modules but no FSDP root module exists.`
         self._model.state_dict()
 
-        _set_model_state_dict(self._model, model_state_dict, options=self._options)
+        set_model_state_dict(self._model, model_state_dict, options=self._options)
 
     def state_dict(self) -> dict[str, Any]:
         """Get state_dict from model.
