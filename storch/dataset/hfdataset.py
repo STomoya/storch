@@ -72,9 +72,9 @@ def imagepaths(
 
     dataset = dataset.cast_column('image', Image())
 
-    def transform_sample(sample):
-        sample['image'] = transforms(sample['image'])
-        return sample
+    def transform_sample(samples):
+        samples['image'] = [transforms(image) for image in samples['image']]
+        return samples
 
     dataset = dataset.with_transform(transform_sample)
 
