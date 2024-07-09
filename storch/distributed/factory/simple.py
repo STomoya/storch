@@ -163,6 +163,7 @@ def wrap_module(
 def create_checkpoint_interface(
     model: nn.Module,
     optim: optim.Optimizer,
+    strategy: str,
     full_state_dict: bool = True,
     cpu_offload: bool = True,
     strict: bool = True,
@@ -177,6 +178,7 @@ def create_checkpoint_interface(
     ----
         model (nn.Module): The model.
         optim (optim.Optimizer): The optimizer used to optimize the model.
+        strategy (str): The parallel strategy.
         full_state_dict (bool, optional): Return full state_dict for FSDP models. Default: True.
         cpu_offload (bool, optional): Offload weights to CPU. Default: True.
         strict (bool, optional): Strict loading. Default: True.
@@ -200,6 +202,9 @@ def create_checkpoint_interface(
 
     """
     model_unwrapped = model._orig_mod if hasattr(model, 'dynamo_ctx') else model
+
+    if strategy in [None, 'none']:
+        return model_unwrapped, optim
 
     options = StateDictOptions(full_state_dict=full_state_dict, cpu_offload=cpu_offload, strict=strict)
 

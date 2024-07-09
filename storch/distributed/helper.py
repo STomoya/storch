@@ -464,5 +464,10 @@ class DistributedHelper:
             raise Exception('Use `prepare_for_checkpointing` for torch<=2.1.x.')
 
         return simple.create_checkpoint_interface(
-            model=module, optim=optimizers, full_state_dict=full_state_dict, cpu_offload=cpu_offload, strict=strict
+            model=module,
+            optim=optimizers,
+            strategy=self.mode,
+            full_state_dict=full_state_dict,
+            cpu_offload=cpu_offload,
+            strict=strict,
         )
