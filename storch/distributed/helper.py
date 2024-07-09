@@ -466,7 +466,7 @@ class DistributedHelper:
         return simple.create_checkpoint_interface(
             model=module,
             optim=optimizers,
-            strategy=self.mode,
+            strategy=self._mode,
             full_state_dict=full_state_dict,
             cpu_offload=cpu_offload,
             strict=strict,
