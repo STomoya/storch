@@ -17,7 +17,6 @@ def pil_configuration(
     """Configure PIL globals.
 
     Args:
-    ----
         max_image_pixels (int, optional): maximum image pixels. Default: Image.MAX_IMAGE_PIXELS.
         load_truncated_images (bool, optional): load truncated images? Default: False
 
@@ -30,12 +29,10 @@ def pil_load_image(path: str, color_mode='RGB') -> Image.Image:
     """Load image using PIL.
 
     Args:
-    ----
         path (str): The path of to the image.
         color_mode (str, optional): color mode. Default: 'RGB'.
 
     Returns:
-    -------
         Image.Image: The loaded image.
 
     """
@@ -49,7 +46,6 @@ def gif_from_files(
     """Make GIF from filelist.
 
     Args:
-    ----
         image_paths (list[str]): List of images to contain in the gif.
         filename (str, optional): filename of the save gif file. Default: 'out.gif'.
         optimize (bool, optional): optimize. Default: False.
@@ -65,12 +61,10 @@ def download(url: str, filename: str | None = None) -> Image.Image:
     """Download image from url and optionally save.
 
     Args:
-    ----
         url (str): URL.
         filename (str, optional): filename. Default: None.
 
     Returns:
-    -------
         Image.Image: The loaded image.
 
     """

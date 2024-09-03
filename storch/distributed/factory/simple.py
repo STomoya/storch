@@ -34,7 +34,6 @@ class ModelStateDict(Stateful):
         Functions in `torch.distributed.checkpoint` are used as backends.
 
         Args:
-        ----
             model (nn.Module): The model to get/set the parameters.
             options (StateDictOptions): StateDictOptions object.
 
@@ -46,7 +45,6 @@ class ModelStateDict(Stateful):
         """Load state_dict to model.
 
         Args:
-        ----
             model_state_dict (dict[str, Any]): The state_dict to load.
 
         """
@@ -63,8 +61,7 @@ class ModelStateDict(Stateful):
     def state_dict(self) -> dict[str, Any]:
         """Get state_dict from model.
 
-        Returns
-        -------
+        Returns:
             dict[str, Any]: The state_dict.
 
         """
@@ -82,7 +79,6 @@ class OptimStateDict(Stateful):
         Functions in `torch.distributed.checkpoint` are used as backends.
 
         Args:
-        ----
             model (nn.Module): The model optimized by the optimizers.
             optimizer (optim.Optimizer): The optimizer,
             options (StateDictOptions): StateDictOptions object.
@@ -96,7 +92,6 @@ class OptimStateDict(Stateful):
         """Load state_dict to optimizer.
 
         Args:
-        ----
             optim_state_dict (dict[str, Any]): The state_dict to load.
 
         """
@@ -105,8 +100,7 @@ class OptimStateDict(Stateful):
     def state_dict(self) -> dict[str, Any]:
         """Get state_dict from optimizer.
 
-        Returns
-        -------
+        Returns:
             dict[str, Any]: The state_dict.
 
         """
@@ -126,7 +120,6 @@ def wrap_module(
     If `torch.compile` is used on FSDP models, automatically adds `use_orig_params=True`.
 
     Args:
-    ----
         module (nn.Module): The module to wrap.
         strategy (str | None): wrap strategy.
         mixed_presision (str | bool | None): mixed_precision setting.
@@ -135,7 +128,6 @@ def wrap_module(
         **kwargs: Additional kwargs for parallel wrappers.
 
     Returns:
-    -------
         DDP | FSDP | nn.Module: The wrapped module.
 
     """
@@ -175,7 +167,6 @@ def create_checkpoint_interface(
     `optim` argument can be a `None` if the model is not meant for training.
 
     Args:
-    ----
         model (nn.Module): The model.
         optim (optim.Optimizer): The optimizer used to optimize the model.
         strategy (str): The parallel strategy.
@@ -184,21 +175,21 @@ def create_checkpoint_interface(
         strict (bool, optional): Strict loading. Default: True.
 
     Returns:
-    -------
         tuple[ModelStateDict, OptimStateDict]: Created interfaces.
 
     Examples:
-    --------
-        >>> model = Model(...)
-        >>> model = FSDP(model) # or DDP(model) or as-is.
-        >>> optim = torch.optim.Adam(model.parameters())
-        >>> model_sd, optim_sd = create_checkpoint_interface(model, optim)
-        >>> model_state_dict = model_sd.state_dict() # returns full state_dict
-        >>> model_sd.load_state_dict(model_state_dict) # load full state_dict on FSDP model.
+        ```
+        model = Model(...)
+        model = FSDP(model) # or DDP(model) or as-is.
+        optim = torch.optim.Adam(model.parameters())
+        model_sd, optim_sd = create_checkpoint_interface(model, optim)
+        model_state_dict = model_sd.state_dict() # returns full state_dict
+        model_sd.load_state_dict(model_state_dict) # load full state_dict on FSDP model.
 
-        >>> model_sd, optim_sd = create_checkpoint_interface(model, None) # None as optimizer is allowed.
-        >>> optim_sd is None
-        True
+        model_sd, optim_sd = create_checkpoint_interface(model, None) # None as optimizer is allowed.
+        optim_sd is None
+        # >>> True
+        ```
 
     """
     model_unwrapped = model._orig_mod if hasattr(model, 'dynamo_ctx') else model

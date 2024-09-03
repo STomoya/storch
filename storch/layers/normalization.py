@@ -12,17 +12,14 @@ def get_normalization2d(name: str, channels: int, **kwargs) -> nn.Module:
     """Get 2d normalization layers by name.
 
     Args:
-    ----
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
         **kwargs: extra args.
 
     Raises:
-    ------
         Exception: Unknown normalization layer name.
 
     Returns:
-    -------
         nn.Module: normalization layer module.
 
     """
@@ -43,17 +40,14 @@ def get_normalization1d(name: str, channels: int, **kwargs) -> nn.Module:
     """Get 1d normalization layers by name.
 
     Args:
-    ----
         name (str): Name of the normalization layer
         channels (int): Input tensor channel width
         **kwargs: extra args.
 
     Raises:
-    ------
         Exception: Unknown normalization layer name.
 
     Returns:
-    -------
         nn.Module: normalization layer module.
 
     """
@@ -114,7 +108,6 @@ class AdaptiveNorm2d(nn.Module):
     """Adaptive Normalization Layer.
 
     Args:
-    ----
         norm_name (str): Name of the base normalization layer.
         style_dim (int): Dimension of the style vector
         channels (int): Input tensor channel width

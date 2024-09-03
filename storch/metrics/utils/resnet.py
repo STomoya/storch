@@ -17,7 +17,6 @@ class _ResNet(nn.Module):
         """ResNet50 model.
 
         Args:
-        ----
             feature_dims (int, optional): deprecated.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): filename. Default: 'jit-inception-2015-12-05.torch'.
@@ -77,12 +76,10 @@ class ResNetIN(_ResNet):
         """Load checkpoint file.
 
         Args:
-        ----
             weight_folder (str): The folder to weights.
             filename (str): Filename of the weights.
 
         Returns:
-        -------
             str, nn.Module: path to the weights and the resnet model.
 
         """

@@ -53,7 +53,6 @@ def init(
 
 
     Args:
-    ----
         project (str): Project name.
         name (str | None, optional): name of the run. Default: None.
         config (DictConfig | dict | None, optional): config for the run. Default: None.
@@ -64,7 +63,6 @@ def init(
         entity (str | None, optional): entity (usename). Default: None.
 
     Returns:
-    -------
         Run: a `wandb.Run` object.
 
     """
@@ -92,7 +90,6 @@ def finish(quiet: bool | None = None) -> None:
     """Wrap `wandb.finish`.
 
     Args:
-    ----
         quiet (bool | None): Do not print summary. Default: None.
 
     """

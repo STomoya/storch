@@ -22,7 +22,6 @@ def test_classification(
     """Calculate and visualizing scores for classification (mostly using sklearn).
 
     Args:
-    ----
         targets (np.ndarray): Ground truth.
         predictions (np.ndarray): Predictions.
         labels (list, optional): List containing names of the classes.. Defaults to None.
@@ -32,7 +31,6 @@ def test_classification(
         print_fn (Callable, optional): A callable for printing the results. Defaults to print.
 
     Returns:
-    -------
         dict: classification report as dict if return_dict is True.
 
     """

@@ -95,13 +95,11 @@ def gather(
     If is not a distributed environment, this function will just return the input `obj`.
 
     Args:
-    ----
         obj (Any): object to gather. Can be a Tensor or picklable python object.
         dst (int, optional): destination device. If not given gathers to all devices. Default: None.
         into_tensor (bool, optional): If True and obj is a Tensor gather into a Tensor instead of a list. Default: True.
 
     Returns:
-    -------
         torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
 
     """
@@ -145,13 +143,11 @@ def reduce(tensor: torch.Tensor, dst: int | None = None, op: ReduceOp = ReduceOp
     If is not a distributed environment, this function will just return the input `obj`.
 
     Args:
-    ----
         tensor (torch.Tensor): Tensor to reduce.
         dst (int, optional): destination device. If not given reduced to all device. Default: None.
         op (ReduceOp, optional): reduce option. Default: ReduceOp.SUM.
 
     Returns:
-    -------
         torch.Tensor: reduced tensor.
 
     """
@@ -172,19 +168,18 @@ def reduce(tensor: torch.Tensor, dst: int | None = None, op: ReduceOp = ReduceOp
 def only_on_primary(func: Callable) -> Callable:
     """Decorate function to run only on primary process.
 
-    Examples:
-    --------
-        >>> @only_on_primary
-        ... def print0(*args, **kwargs):
-        ...     print(*args, **kwargs)
-
     Args:
-    ----
         func (Callable): the function to wrap.
 
     Returns:
-    -------
         Callable: wrapped function.
+
+    Examples:
+        ```
+        @only_on_primary
+        def print0(*args, **kwargs):
+            print(*args, **kwargs)
+        ```
 
     """
 

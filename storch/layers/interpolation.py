@@ -11,11 +11,9 @@ def _make_blur_kernel(filter_size: int) -> torch.Tensor:
     """Integer aproximation of gaussian kernel.
 
     Args:
-    ----
         filter_size (int): The size of the filter.
 
     Returns:
-    -------
         torch.Tensor: The resampling filter.
 
     """
@@ -41,7 +39,6 @@ class Blur(nn.Module):
     """Blur layer used in StyleGANs.
 
     Args:
-    ----
         filter_size (int): Size of the low pass filter. Default: 4
 
     """
@@ -71,7 +68,6 @@ class BlurUpsample(nn.Sequential):
     """Upsample then blur.
 
     Args:
-    ----
         filter_size (int, optional): Size of the low pass filter. Default: 4.
         scale_factor (int, optional): Scale factor for upsampling. Default: 2.
         mode (str, optional): Upsampling mode. Default: 'bilinear'.
@@ -91,7 +87,6 @@ class BlurDownsample(nn.Sequential):
     """Blur then downsample.
 
     Args:
-    ----
         filter_size (int, optional): Size of the low pass filter. Default: 4.
         scale (int, optional):  Scale for downsampling. Default: 2.
 
@@ -105,7 +100,6 @@ class AABilinearInterp(nn.Module):
     """Bilinear interpolation with antialias option enabled.
 
     Args:
-    ----
         size (int | None, optional): The output size. Default: None.
         scale_factor (int | None, optional): Scale factor.. Default: None.
 

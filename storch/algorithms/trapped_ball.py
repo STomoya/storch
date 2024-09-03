@@ -18,8 +18,7 @@ def get_ball_structuring_element(radius: int) -> np.ndarray:
 
     The radius of ball usually equals to (leaking_gap_size / 2).
 
-    Arguments:
-    ---------
+    Args:
         radius: int
             Radius of ball shape.
 
@@ -30,8 +29,7 @@ def get_ball_structuring_element(radius: int) -> np.ndarray:
 def get_unfilled_point(image: np.ndarray) -> np.ndarray:
     """Get points belong to unfilled(value==255) area.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image.
 
@@ -47,8 +45,7 @@ def exclude_area(image: np.ndarray, radius: int) -> np.ndarray:
     When the seed point is near boundary, it might not stay in the fill, and would
     not be a valid point for next floodfill operation. So we ignore these points with erosion.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image.
         radius: int
@@ -61,8 +58,7 @@ def exclude_area(image: np.ndarray, radius: int) -> np.ndarray:
 def trapped_ball_fill_single(image: np.ndarray, seed_point: tuple[int, int], radius: int) -> np.ndarray:
     """Perform a single trapped ball fill operation.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image. the image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -98,8 +94,7 @@ def trapped_ball_fill_single(image: np.ndarray, seed_point: tuple[int, int], rad
 def trapped_ball_fill_multi(image: np.ndarray, radius: int, method: str = 'mean', max_iter: int = 1000) -> np.ndarray:
     """Perform multi trapped ball fill operations until all valid areas are filled.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image. The image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -149,8 +144,7 @@ def trapped_ball_fill_multi(image: np.ndarray, radius: int, method: str = 'mean'
 def flood_fill_single(im: np.ndarray, seed_point: tuple[int, int]) -> np.ndarray:
     """Perform a single flood fill operation.
 
-    Arguments:
-    ---------
+    Args:
         im: np.ndarray
             an image. the image should consist of white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -173,8 +167,7 @@ def flood_fill_multi(image, max_iter=20000) -> np.ndarray:
 
     This operation will fill all rest areas, which may result large amount of fills.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image. the image should contain white background, black lines and black fills.
             the white area is unfilled area, and the black area is filled area.
@@ -202,8 +195,7 @@ def flood_fill_multi(image, max_iter=20000) -> np.ndarray:
 def mark_fill(image: np.ndarray, fills: list[np.ndarray]) -> np.ndarray:
     """Mark filled areas with 0.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image.
         fills: list[np.ndarray]
@@ -221,8 +213,7 @@ def mark_fill(image: np.ndarray, fills: list[np.ndarray]) -> np.ndarray:
 def build_fill_map(image: np.ndarray, fills: np.ndarray) -> np.ndarray:
     """Make an image(array) with each pixel(element) marked with fills' id. id of line is 0.
 
-    Arguments:
-    ---------
+    Args:
         image: np.ndarray
             an image.
         fills: np.ndarray
@@ -240,8 +231,7 @@ def build_fill_map(image: np.ndarray, fills: np.ndarray) -> np.ndarray:
 def show_fill_map(fillmap: np.ndarray) -> np.ndarray:
     """Mark filled areas with colors. It is useful for visualization.
 
-    Arguments:
-    ---------
+    Args:
         fillmap: np.ndarray
 
     """
@@ -256,8 +246,7 @@ def show_fill_map(fillmap: np.ndarray) -> np.ndarray:
 def get_bounding_rect(points: np.ndarray) -> tuple[int, int, int, int]:
     """Get a bounding rect of points.
 
-    Arguments:
-    ---------
+    Args:
         points: np.ndarray
             array of points.
 
@@ -271,8 +260,7 @@ def get_border_bounding_rect(
 ) -> tuple[int, int, int, int]:
     """Get a valid bounding rect in the image with border of specific size.
 
-    Arguments:
-    ---------
+    Args:
         h: int
             image max height.
         w: int
@@ -300,8 +288,7 @@ def get_border_point(
 ) -> tuple[tuple[np.ndarray, np.ndarray], np.ndarray]:
     """Get border points of a fill area.
 
-    Arguments:
-    ---------
+    Args:
         points: tuple[np.ndarray, np.ndarray]
             points of fill .
         rect: tuple[int, int, int, int]
@@ -340,8 +327,7 @@ def get_border_point(
 def merge_fill(fillmap: np.ndarray, max_iter: int = 10) -> np.ndarray:
     """Merge fill areas.
 
-    Arguments:
-    ---------
+    Args:
         fillmap: np.ndarray
             an image.
         max_iter: int (default: 10)
@@ -387,7 +373,6 @@ def merge_fill(fillmap: np.ndarray, max_iter: int = 10) -> np.ndarray:
             if len(approx_shape) == 1 or f['area'] == 1:
                 result[f['point']] = new_id
 
-            #
             if len(approx_shape) in [2, 3, 4, 5] and f['area'] < 500:  # noqa: PLR2004
                 result[f['point']] = new_id
 
@@ -406,8 +391,7 @@ def merge_fill(fillmap: np.ndarray, max_iter: int = 10) -> np.ndarray:
 def thinning(fillmap: np.ndarray, max_iter: int = 100) -> np.ndarray:
     """Fill area of line with surrounding fill color.
 
-    Arguments:
-    ---------
+    Args:
         fillmap: np.ndarray
             an image.
         max_iter: int (default: 10)
@@ -491,7 +475,6 @@ def trappedball_segmentation(
     """Trapped-ball segmentation.
 
     Args:
-    ----
         line_image (np.ndarray): Image of line drawings.
         color_image (np.ndarray, optional): Color image used to colorize the segments.
             If given, returns the colorized segment image. Default: None.
@@ -500,7 +483,6 @@ def trappedball_segmentation(
         threshold (int, optional): threshold used to binarize line_image. Default: 220.
 
     Returns:
-    -------
         np.ndarray: segment map
         np.ndarray: the filled image.
 

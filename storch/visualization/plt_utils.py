@@ -16,7 +16,6 @@ def plt_subplots(nrows: int = 1, ncols: int = 1, format_axes: bool = True, filen
     """Context manager which makes and yield subplots, then optionally save, finally close the figure.
 
     Args:
-    ----
         nrows (int, optional): Number of subplot rows. Default: 1.
         ncols (int, optional): Number of subplot columns. Default: 1.
         format_axes (bool, optional): Format axes output of plt.subplots to [[ax00, ...], [ax10, ...], ...].
@@ -25,7 +24,6 @@ def plt_subplots(nrows: int = 1, ncols: int = 1, format_axes: bool = True, filen
         **kwargs: keyword arguments for plt.sobplots()
 
     Yields:
-    ------
         Figure: matplotlib.figure.Figure object made by plt.subplot().
         Axes|list[Axes]|list[list[Axes]]: list or object of matplotlib.axes.Axes made by plt.subplot().
 
@@ -80,7 +78,6 @@ def ax_setter(  # noqa: PLR0915
     This is an inplace operation.
 
     Args:
-    ----
         ax (Axes): matplotlib.axes.Axes object.
         title (str, optional): title of the axes. Default: None.
         legend (bool, optional): visualize legend. Default: False.

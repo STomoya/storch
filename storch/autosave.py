@@ -17,12 +17,12 @@ class autosave:
     This class is only a container for the objects to be saved,
     with functions to register objects.
 
-    NOTE: This implementation might be a memory and computation overhead and
-          forces the user to take care of this, such as registering torch tensors on GPU
-          or calling registering functions multiple times.
+    Note:
+        This implementation might be a memory and computation overhead and
+        forces the user to take care of this, such as registering torch tensors on GPU
+        or calling registering functions multiple times.
 
-    Attributes
-    ----------
+    Attributes:
         _container (dict): contains the objects to be saved.
 
     """
@@ -34,20 +34,20 @@ class autosave:
         """Register an object to save.
 
         Args:
-        ----
             name (str): name to identify the object.
             obj (Any): the object to register.
             overwrite (bool, optional): overwrite the object if already exists. Default: False.
 
         Examples:
-        --------
-            >>> # anything that can be torch.save()-ed can be registered
-            >>> # optionally overwrite the object using 'overwrite' argument.
-            >>> autosave.register_object('name-of-object', torch.randn(10), overwrite=True)
+            ```
+            # anything that can be torch.save()-ed can be registered
+            # optionally overwrite the object using 'overwrite' argument.
+            autosave.register_object('name-of-object', torch.randn(10), overwrite=True)
 
-            >>> # model.state_dict() returns a reference so there is no need to overwrite
-            >>> # and only needs to be called once
-            >>> autosave.register_object('model', model.state_dict())
+            # model.state_dict() returns a reference so there is no need to overwrite
+            # and only needs to be called once
+            autosave.register_object('model', model.state_dict())
+            ```
 
         """
         if overwrite or name not in cls._container:
@@ -58,20 +58,20 @@ class autosave:
         """Register a function to save the outputs.
 
         Args:
-        ----
             func (Callable): The function to save the outputs of
 
         Returns:
-        -------
             Callable: The registered function.
 
-        Examples::
-            >>> # it can be used like a function
-            >>> func = autosave.register_function_output(func)
-            >>> # or a decorator
-            >>> @autosave.register_function_output
-            >>> def func():
-            >>>     return
+        Examples:
+            ```
+            # it can be used like a function
+            func = autosave.register_function_output(func)
+            # or a decorator
+            @autosave.register_function_output
+            def func():
+                return
+            ```
 
         """
         name = func.__qualname__
@@ -92,7 +92,6 @@ def _save(folder='.'):
     via atexit.
 
     Args:
-    ----
         folder (str, optional): The directory to save the registered objects. Default: '.'.
 
     """

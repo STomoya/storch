@@ -30,7 +30,6 @@ def make_simple_transform(
     """Make a simple transform.
 
     Args:
-    ----
         image_size (tuple[int] | int): size of the image to be resized to. if a single int value,
             (image_size, image_size) will be used.
         crop (str, optional): 'center': CenterCrop, 'random': RandomResizedCrop. Default: 'center'.
@@ -39,7 +38,6 @@ def make_simple_transform(
         std (tuple[float] | float, optional): std used to normalize the image. Default: 0.5.
 
     Returns:
-    -------
         Callable: transforms
 
     """
@@ -86,12 +84,10 @@ def build_transform(name: str, **params) -> Callable:
     `pyobj:` prefix (e.g., `'pyobj:torch.float32'` to pass `torch.float32`).
 
     Args:
-    ----
         name (str): The name of the transform. ex) ToTenor, Normalize
         **params: Keyword arguments of passed to the transform.
 
     Returns:
-    -------
         Callable: the built transform
 
     """
@@ -122,11 +118,9 @@ def make_transform_from_config(configs: list[dict]) -> Callable:
     """Make transform from list of TransformConfigs.
 
     Args:
-    ----
         configs (list[dict]): List of dicts containing a least 'name' key.
 
     Returns:
-    -------
         Callable: transforms
 
     Examples::
@@ -173,7 +167,6 @@ def make_cutmix_or_mixup(
     If `prob=0.0` or the alphas are both set to 0.0, returns a function that returns the input as-is.
 
     Args:
-    ----
         mixup_alpha (float, optional): alpha for MixUp. usually 1.0 is used. disabled if 0.0. Default: 1.0.
         cutmix_alpha (float, optional): alpha for CutMix. usually 1.0 is used. disabled if 0.0. Default: 0.0.
         prob (float, optional): probability to apply cutmix or mixup. Default: 1.0.
@@ -182,11 +175,9 @@ def make_cutmix_or_mixup(
         labels_getter (str, optional): See `torchvision.transforms.v2.{MixUp,CutMix}`. Default: 'default'.
 
     Raises:
-    ------
         Exception: torchvision version does not suport CutMix and MixUp.
 
     Returns:
-    -------
         Callable: _description_
 
     """

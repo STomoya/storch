@@ -43,15 +43,12 @@ def _argument_key_to_object_name(key: str) -> str:
     """Convert argument keys to variable names.
 
     Args:
-    ----
         key (str): argument key.
 
     Returns:
-    -------
         str: name of object used in shell script.
 
     Examples:
-    --------
       1. --foo     => foo
       2. -f        => f
       4. --foo_bar => foo_bar
@@ -70,11 +67,9 @@ def _argument_key_to_list_name(key: str):
     """Add "_list" at the end of the object_name indicating a list object.
 
     Args:
-    ----
         key (str): argument key.
 
     Returns:
-    -------
         str: name of list used in shell script.
 
     """
@@ -86,21 +81,22 @@ def _convert_value(value: Any, type: str) -> str:
     """Convert value to string.
 
     Args:
-    ----
         value (Any): value.
         type (str): either hydra or argparse.
 
     Returns:
-    -------
         str: value string
 
     Examples:
-    --------
         - iterables:
-            type=='hydra':   [1, 2, 3] => "[1,2,3]"
-            type=='argparse: [1, 2, 3] => "1 2 3"
+
+            `type=='hydra':   [1, 2, 3] => "[1,2,3]"`
+
+            `type=='argparse: [1, 2, 3] => "1 2 3"`
+
         - others:
-            str(value)
+
+            `str(value)`
 
     """
     if type == 'hydra':
@@ -119,13 +115,11 @@ def _for_loop(list_name: str, object_name: str, inner: str) -> str:
     """Create a for loop shell script.
 
     Args:
-    ----
         list_name (str): name of iterable.
         object_name (str): name of object used to catch items from the iterable.
         inner (str): script running inside the for loop.
 
     Returns:
-    -------
         str: a single for loop script.
 
     """
@@ -143,14 +137,12 @@ def create_command(command: str, arguments: dict, argument_type: str, include_te
     """Create command string.
 
     Args:
-    ----
         command (str): base command.
         arguments (dict): dictionary containing arguments of "command".
         argument_type (str): argument type. either hydra or argparse.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
-    -------
         str: command with arguments.
 
     """
@@ -176,13 +168,11 @@ def create_variables(arguments: dict, argument_type: str, excludes: set | None =
     """Create variable definition scripts from arguments.
 
     Args:
-    ----
         arguments (dict): dictionary containing arguments.
         argument_type (str, optional): argument type. either hydra or argparse.
         excludes (set): list of argument keys to exclude.
 
     Returns:
-    -------
         str: variable definition script
 
     """
@@ -205,13 +195,11 @@ def create_for_loop(command: str, arguments: dict, excludes: set | None = None) 
     """Create for loop for parameter sweep.
 
     Args:
-    ----
         command (str): the command to execute.
         arguments (dict): dictionary containing arguments.
         excludes (set): list of argument keys to exclude.
 
     Returns:
-    -------
         str: for loop.
 
     """
@@ -236,7 +224,6 @@ def generate_parameter_sweeper_script(
     """Generate parameter sweeper script.
 
     Args:
-    ----
         main_command (str): base command to run.
         arguments (dict): dictionary containing arguments.
         argument_type (str, optional): argument type. either hydra or argparse. Default: hydra.
@@ -244,7 +231,6 @@ def generate_parameter_sweeper_script(
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
-    -------
         str: sweeper script.
 
     """
@@ -269,12 +255,10 @@ def generate_from_json(path: str, include_test: bool = True) -> str:
     """Generate script from json file.
 
     Args:
-    ----
         path (str): path to the config file.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
-    -------
         str: parameter sweeper script.
 
     """
@@ -288,12 +272,10 @@ def generate_from_yaml(path: str, include_test: bool = True) -> str:
     """Generate script from yaml file.
 
     Args:
-    ----
         path (str): path to the config file.
         include_test (bool, optional): include test command. Default: True.
 
     Returns:
-    -------
         str: parameter sweeper script.
 
     """

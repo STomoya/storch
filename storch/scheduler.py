@@ -24,11 +24,9 @@ def get_constant_schedule(num_warmup_steps: int | None = None) -> Callable:
     """Get function for constant schedule.
 
     Args:
-    ----
         num_warmup_steps (int, optional): number of warmup steps.
 
     Returns:
-    -------
         Callable: always returns 1.0
 
     """
@@ -50,13 +48,11 @@ def get_multistep_schedule(milestones: list, num_warmup_steps: int | None = None
     """Create function for multistep schedules.
 
     Args:
-    ----
         milestones (list): list of steps on where to decay.
         num_warmup_steps (int, optional): number of warmup steps.
         gamma (float, optional): factor to decay on each milestone. Defaults to 0.1.
 
     Returns:
-    -------
         Callable: function for LambdaLR
 
     """
@@ -81,12 +77,10 @@ def get_linear_schedule(num_training_steps: int, num_warmup_steps: int) -> Calla
     """Create function for linear schedule.
 
     Args:
-    ----
         num_training_steps (int): total number of training steps.
         num_warmup_steps (int, optional): number of warmup steps.
 
     Returns:
-    -------
         Callable: function for LambdaLR
 
     """
@@ -105,12 +99,11 @@ def get_linear_schedule(num_training_steps: int, num_warmup_steps: int) -> Calla
 
 
 def get_polynomial_decay_schedule(
-    num_training_steps: int, num_warmup_steps: int, lr_init: float, power: float = 1.0, lr_end: float = 1e-7
+    num_training_steps: int, num_warmup_steps: int | None, lr_init: float, power: float = 1.0, lr_end: float = 1e-7
 ) -> Callable:
     """Create function for polynomial decay schedule.
 
     Args:
-    ----
         num_training_steps (int): total number of training steps.
         num_warmup_steps (int): number of warmup steps.
         lr_init (float): initial learning rate.
@@ -118,7 +111,6 @@ def get_polynomial_decay_schedule(
         lr_end (float, optional): _description_. Defaults to 1e-7.
 
     Returns:
-    -------
         Callable: _description_
 
     """
@@ -154,13 +146,11 @@ def get_cosine_schedule(
     """Create function for consine schedule.
 
     Args:
-    ----
         num_training_steps (int): total number of training steps.
         num_warmup_steps (int, optional): number of warmup steps.
         num_cycles (float, optional): The number of waves in the cosine schedule. Default: 0.5.
 
     Returns:
-    -------
         Callable: function for LambdaLR
 
     """
@@ -202,7 +192,6 @@ def build_scheduler(
     - cosine
 
     Args:
-    ----
         optimizer (Optimizer): the optimizer.
         type (str): name of the scheduler.
         num_training_steps (int): total number of training steps. assumes epochs.
@@ -215,7 +204,6 @@ def build_scheduler(
         last_epoch (int, optional): last epoch for resume training. Default: -1.
 
     Returns:
-    -------
         LambdaLR: learning rate scheduler.
 
     """
