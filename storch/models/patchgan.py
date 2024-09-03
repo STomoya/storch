@@ -15,7 +15,6 @@ class PatchDiscriminator(ModelMixin):
         """PatchGAN D.
 
         Args:
-        ----
             in_channels (int): Channel width of the input image.
             num_layers (int, optional): Number of strided convolution layers. Default: 3.
             channels (int, optional): Base channel width. Default: 64.

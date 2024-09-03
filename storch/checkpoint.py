@@ -31,29 +31,30 @@ class Checkpoint:
 
     Supports distributed training (serialization only on primary process).
 
-    Examples
-    --------
-        >>> checkpoint = Checkpoint('./checkpoints')
-        >>> # the objects must have state_dict and load_state_dict function.
-        >>> checkpoint.register(model=torch.nn.Linear(1, 1))
+    Examples:
+        ```
+        checkpoint = Checkpoint('./checkpoints')
+        # the objects must have state_dict and load_state_dict function.
+        checkpoint.register(model=torch.nn.Linear(1, 1))
 
-        >>> # this will save the registered models.
-        >>> checkpoint.save()
-        >>> # you can also save others, including objects without state_dict and load_state_dict func.
-        >>> checkpoint.save(constant=1)
+        # this will save the registered models.
+        checkpoint.save()
+        # you can also save others, including objects without state_dict and load_state_dict func.
+        checkpoint.save(constant=1)
 
-        >>> # update models
-        >>> train(...)
+        # update models
+        train(...)
 
-        >>> # this will load the models from a specific checkpoint to the registered objects.
-        >>> # no need to call load_state_dict.
-        >>> # it also returns additionally saved objects. (These must be over written by user code.)
-        >>> checkpoint.load('./checkpoints/checkpoint.0.torch')
-        {'constant': 1}
+        # this will load the models from a specific checkpoint to the registered objects.
+        # no need to call load_state_dict.
+        # it also returns additionally saved objects. (These must be over written by user code.)
+        checkpoint.load('./checkpoints/checkpoint.0.torch')
+        # >>> {'constant': 1}
 
-        >>> # this will load the state_dict from the latest checkpoint.
-        >>> checkpoint.load_latest()
-        {'constant': 1}
+        # this will load the state_dict from the latest checkpoint.
+        checkpoint.load_latest()
+        # >>> {'constant': 1}
+        ```
 
     """
 
@@ -65,7 +66,6 @@ class Checkpoint:
         """Checkpointer.
 
         Args:
-        ----
             folder (str): folder to save the checkpoints to.
             keep_last (int, optional): keep last n checkpoints. None to keep all. Default: 3.
             filename_format (str, optional): format for filename of the checkpoint. Default: 'checkpoint.{count}.torch'.
@@ -93,8 +93,7 @@ class Checkpoint:
     def _container_as_state_dict(self) -> dict:
         """Call state_dict on registered objects and return as dict.
 
-        Returns
-        -------
+        Returns:
             dict: the state_dict of registered objects.
 
         """
@@ -106,8 +105,7 @@ class Checkpoint:
     def state_dict(self):
         """Return state_dict.
 
-        Returns
-        -------
+        Returns:
             dict: state_dict of this class.
 
         """
@@ -117,7 +115,6 @@ class Checkpoint:
         """Load from a saved state_dict.
 
         Args:
-        ----
             state_dict (dict): load state_dict to checkpoint object.
 
         """
@@ -137,8 +134,7 @@ class Checkpoint:
     def save(self, **constants):
         """Save the registered objects along with additional objects.
 
-        Returns
-        -------
+        Returns:
             str: path to where the checkpoint was saved
 
         """
@@ -171,16 +167,13 @@ class Checkpoint:
         """Load checkpoint from "path".
 
         Args:
-        ----
             path (str): path to the saved checkpoint.
             map_location (torch.device, optional): location to load the checkpoint. Default: None.
 
         Raises:
-        ------
             Exception: the checkpoint was not saved by this class
 
         Returns:
-        -------
             dict: additional objects saved when save (if any).
 
         """
@@ -209,11 +202,9 @@ class Checkpoint:
         """Load checkpoint from latest file (if any).
 
         Args:
-        ----
             map_location (torch.device, optional): location to load the checkpoint. Default: None.
 
         Returns:
-        -------
             dict: additional objects saved when save (if any).
 
         """
@@ -227,7 +218,6 @@ class Checkpoint:
         The objects must have a "state_dict" and "load_state_dict" function.
 
         Args:
-        ----
             **kwargs: objects to be registered as keyword arguments.
 
         """

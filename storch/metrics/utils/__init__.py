@@ -7,12 +7,10 @@ def reduce_dimension(tensor: torch.Tensor, mode: str) -> torch.Tensor:
     """Dimension reduction of calculated loss.
 
     Args:
-    ----
         tensor (torch.Tensor): Loss.
         mode (str): reduction mode.
 
     Returns:
-    -------
         torch.Tensor: reduced loss.
 
     """

@@ -12,19 +12,20 @@ from storch.distributed import utils as distutils
 class KeeperCompose:
     """Compose multiple state_dict keepers.
 
-    Examples
-    --------
-        >>> model = build_model(...)
-        >>> best_models = Compose(dict(
-        ...     val_loss=BestStateKeeper('min', model),
-        ...     accuracy=BestStateKeeper('max', model)
-        ... ))
-        >>> output = model(input)
-        >>> loss = criterion(output, target)
-        >>> accuracy = metric(output, target)
-        >>> best_models.update(val_loss=loss, accuracy=accracy)
-        >>> # to load the best state_dict call load with the name of the metric.
-        >>> best_models.load('val_loss')
+    Examples:
+        ```
+        model = build_model(...)
+        best_models = Compose(dict(
+            val_loss=BestStateKeeper('min', model),
+            accuracy=BestStateKeeper('max', model)
+        ))
+        output = model(input)
+        loss = criterion(output, target)
+        accuracy = metric(output, target)
+        best_models.update(val_loss=loss, accuracy=accracy)
+        # to load the best state_dict call load with the name of the metric.
+        best_models.load('val_loss')
+        ```
 
     """
 
@@ -32,7 +33,6 @@ class KeeperCompose:
         """KeeperCompose.
 
         Args:
-        ----
             **keepers: state_dict keepers
 
         """
@@ -43,7 +43,6 @@ class KeeperCompose:
         """Update the state_dict keepers.
 
         Args:
-        ----
             step (int, optional): current training step. Default: None.
             **values: values for updating the keepers.
 
@@ -55,7 +54,6 @@ class KeeperCompose:
         """Load the state_dict specified by "name" to the model.
 
         Args:
-        ----
             name (str): the name of the keeper.
 
         """
@@ -74,16 +72,17 @@ class KeeperCompose:
 class BestStateKeeper:
     """Class for keeping the best state_dict, based on a certain metric.
 
-    Examples
-    --------
-        >>> model = build_model(...)
-        >>> # 'min' and 'max' indicates "smaller the better" and vise versa.
-        >>> val_loss_model = BestStateKeeper('min', model)
-        >>> loss = criterion(model(input), target)
-        >>> # this will update the best state_dict if the value is smaller than current best value.
-        >>> val_loss_model.update(loss)
-        >>> # to load the best state_dict to the model just call.
-        >>> val_loss_model.load()
+    Examples:
+        ```
+        model = build_model(...)
+        # 'min' and 'max' indicates "smaller the better" and vise versa.
+        val_loss_model = BestStateKeeper('min', model)
+        loss = criterion(model(input), target)
+        # this will update the best state_dict if the value is smaller than current best value.
+        val_loss_model.update(loss)
+        # to load the best state_dict to the model just call.
+        val_loss_model.load()
+        ```
 
     """
 
@@ -99,7 +98,6 @@ class BestStateKeeper:
         """BestStateKeeper.
 
         Args:
-        ----
             name (str): Name of the metric.
             direction (str): 'minimize' or 'maximize'.
             model (nn.Module): the model to keep the state_dict.
@@ -136,8 +134,7 @@ class BestStateKeeper:
     def is_minimize(self) -> bool:
         """Is direction minimize.
 
-        Returns
-        -------
+        Returns:
             bool: True if minimize.
 
         """
@@ -146,8 +143,7 @@ class BestStateKeeper:
     def is_maximize(self) -> bool:
         """Is direction maximize.
 
-        Returns
-        -------
+        Returns:
             bool: True if maximize.
 
         """
@@ -157,12 +153,10 @@ class BestStateKeeper:
         """Update the state_dict if new_value is better that current value.
 
         Args:
-        ----
             new_value (float): the calculated score to compare.
             step (int, optional): current training step. Default: None.
 
         Returns:
-        -------
             bool: True if updated, else False
 
         """
@@ -178,7 +172,6 @@ class BestStateKeeper:
         """Save state to file.
 
         Args:
-        ----
             filename (str): The file name to save to.
             model_state_only (bool, optional): Save only the model state. Default: True.
 
@@ -198,8 +191,7 @@ class BestStateKeeper:
     def state_dict(self, model_state_only: bool = False) -> dict:
         """Return this class' state.
 
-        Returns
-        -------
+        Returns:
             dict: state_dict of this class
 
         """
@@ -216,7 +208,6 @@ class BestStateKeeper:
         """Load state from specified state_dict.
 
         Args:
-        ----
             state_dict (dict): state_dict.
 
         """

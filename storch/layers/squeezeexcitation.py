@@ -14,7 +14,6 @@ class SpatialSqueezeAndChannelExcitation(nn.Module):
         - if pool_size=4, act_name='swish' => SE block used in FastGAN.
 
     Args:
-    ----
         channels (int): Channel width of the input feature vector.
         reduction (int, optional): Reduction factor. Default: 4.
         pool_size (int, optional): Adaptive average pooling size. Default: 1.
@@ -43,7 +42,6 @@ class ChannelSqueezeAndSpatialExcitation(nn.Module):
     Attention.
 
     Args:
-    ----
         channels (int): Channel width of the input feature vector.
 
     """
@@ -61,7 +59,6 @@ class SpatialChannelSqueezeAndExcitation(nn.Module):
     """Spatial channel squeeze and excitation block.
 
     Args:
-    ----
         channels (int): Channel width of the input feature vector.
         reduction (int, optional): Reduction factor. Default: 4.
         pool_size (int, optional): Adaptive average pooling size. Default: 1.

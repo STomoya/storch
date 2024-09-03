@@ -15,12 +15,10 @@ def _is_version_geq(current, minimum: str) -> bool:
     """Compair versions.
 
     Args:
-    ----
         current (str): current version.
         minimum (str): minimum version required.
 
     Returns:
-    -------
         bool: result.
 
     """
@@ -33,11 +31,9 @@ def is_python_version_geq(minimum) -> bool:
     """Is python version greater equal.
 
     Args:
-    ----
         minimum (str): the minimum version.
 
     Returns:
-    -------
         bool: result.
 
     """
@@ -48,11 +44,9 @@ def is_torch_version_geq(minimum) -> bool:
     """Is torch version greater equal.
 
     Args:
-    ----
         minimum (str): the minimum version.
 
     Returns:
-    -------
         bool: result.
 
     """
@@ -63,11 +57,9 @@ def is_torchvision_version_geq(minimum: str) -> bool:
     """Is torchvision version greater equal.
 
     Args:
-    ----
         minimum (str): the minimum version.
 
     Returns:
-    -------
         bool: result.
 
     """
@@ -77,8 +69,7 @@ def is_torchvision_version_geq(minimum: str) -> bool:
 def is_native_amp_available() -> bool:
     """Is native amp available.
 
-    Returns
-    -------
+    Returns:
         bool: result.
 
     """
@@ -88,8 +79,7 @@ def is_native_amp_available() -> bool:
 def is_multi_weight_api_available() -> bool:
     """Is multi weight API available.
 
-    Returns
-    -------
+    Returns:
         bool: result.
 
     """
@@ -99,8 +89,7 @@ def is_multi_weight_api_available() -> bool:
 def is_compiler_available() -> bool:
     """Is torch.compile available.
 
-    Returns
-    -------
+    Returns:
         bool: result.
 
     """
@@ -112,8 +101,7 @@ def is_v2_transforms_available() -> bool:
 
     NOTE: v2 namespace appeared in v0.15.0, but had some breaking changes in v0.16.0, so we skip v0.15.x series.
 
-    Returns
-    -------
+    Returns:
         bool: result.
 
     """
@@ -123,8 +111,7 @@ def is_v2_transforms_available() -> bool:
 def is_dist_state_dict_available() -> bool:
     """Is distributed get / set state_dict API available.
 
-    Returns
-    -------
+    Returns:
         bool: result.
 
     """

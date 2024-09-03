@@ -12,7 +12,6 @@ class MetaformerBlock(nn.Module):
         - trainable layer scaling with initial value of 1e-2
 
     Args:
-    ----
         token_mixer (nn.Module): nn.Module which implements an attention.
         feedforward (nn.Module): nn.Module which implements a feed forward network.
         norm_layer1 (nn.Module): Normalization layer applied before the attention.

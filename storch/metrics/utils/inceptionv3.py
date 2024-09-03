@@ -26,7 +26,6 @@ class InceptionV3JIT(nn.Module):
         """Inception v3 model.
 
         Args:
-        ----
             feature_dims (int, optional): deprecated.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): filename. Default: 'jit-inception-2015-12-05.torch'.
@@ -57,7 +56,6 @@ class InceptionV3(nn.Module):
         This class uses the official PyTorch implementation but modified to fit the Tensorflow implementation.
 
         Args:
-        ----
             feature_dims (int, optional): Number of output feature dimension. Default: 2048.
             weight_folder (str, optional): Folder to save the weights. Default: './.cache/storch/metrics'.
             filename (str, optional): File to save the weights. Default: 'inception-2015-12-05.torch'.

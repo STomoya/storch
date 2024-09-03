@@ -1,4 +1,5 @@
 """metrics for images."""
+
 from __future__ import annotations
 
 from typing import Sequence
@@ -19,14 +20,12 @@ def psnr(
     """Peak signal-to-noise ratio (PSNR).
 
     Args:
-    ----
         input (torch.Tensor): predicted image.
         target (torch.Tensor): original image.
         max_val (float, optional): maximum value of the images. either 1 or 255. Default: 1.0.
         reduction (str, optional): how to reduce dimension. Default: 'elementwise_mean'
 
     Returns:
-    -------
         torch.Tensor: calculated PSNR score
 
     """
@@ -48,7 +47,6 @@ def ssim(
     """Structual similarity index measure (SSIM).
 
     Args:
-    ----
         input (torch.Tensor): predicted image.
         target (torch.Tensor): original image.
         max_val (float, optional): maximum value of the images.. Default: 1.0.
@@ -59,7 +57,6 @@ def ssim(
         reduction (str, optional): how to reduce dimension. Default: 'elementwise_mean'
 
     Returns:
-    -------
         torch.Tensor: _description_
 
     """

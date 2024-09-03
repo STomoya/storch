@@ -34,7 +34,6 @@ def imagepaths(
     The arguments are made equivalent to `dataset.ImageFolder` class.
 
     Args:
-    ----
         paths (list[str]): list of paths to image files.
         transforms (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -44,7 +43,6 @@ def imagepaths(
         seed (int | None): seed for random sampling when reducing data according to `num_images`. Default: None.
 
     Returns:
-    -------
         Dataset: The created dataset.
 
     """
@@ -93,7 +91,6 @@ def imagefolder(
     The arguments are made equivalent to `dataset.ImageFolder` class.
 
     Args:
-    ----
         data_root (str): Root directory of images. Images are searched recursively inside this folder.
         transforms (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -103,7 +100,6 @@ def imagefolder(
         seed (int | None): seed for random sampling when reducing data according to `num_images`. Default: None.
 
     Returns:
-    -------
         Dataset: The created dataset.
 
     """
@@ -128,7 +124,6 @@ def imagecsv(
     The arguments are made equivalent to `dataset.ImageFolder` class.
 
     Args:
-    ----
         csv (str | list[str]): csv file containing the path to image files in each row in the first column. A csv file,
             multiple csv files in a list, and directory to csv files are supported.
         transforms (Callable): A callable that transforms the image.
@@ -139,7 +134,6 @@ def imagecsv(
         seed (int | None): seed for random sampling when reducing data according to `num_images`. Default: None.
 
     Returns:
-    -------
         Dataset: The created dataset.
 
     """

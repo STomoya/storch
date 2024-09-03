@@ -35,11 +35,10 @@ def run():
             compose.yaml
             README.md
 
-    Raises
-    ------
+    Raises:
         Exception: The folder is not empty.
 
-    Usage:
+    Example:
         $ python -m storch.commands.init_project
 
     """

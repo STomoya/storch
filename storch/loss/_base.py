@@ -2,7 +2,6 @@ class Loss:
     """Base class for loss functions.
 
     Args:
-    ----
         return_all (bool): Return all values used to calculate the loss. Default: False
 
     """

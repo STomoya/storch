@@ -19,7 +19,6 @@ def get_tb_profile(
     """Create a profile object with tensorboard_trace_handler.
 
     Args:
-    ----
         tb_folder (str): Folder for tensorboard trace output.
         activities (list[ProfilerActivity], optional): Activities to profile.
             Default: [ProfilerActivity.CPU, ProfilerActivity.CUDA].
@@ -31,7 +30,6 @@ def get_tb_profile(
         with_stack (bool, optional): Profile TorchScript stack trace. Default: True.
 
     Returns:
-    -------
         profile: profiler.
 
     """
@@ -54,11 +52,9 @@ def profiled_function(func: Callable) -> Callable:
     """Decorate profiling function.
 
     Args:
-    ----
         func (Callable): The function to profile.
 
     Returns:
-    -------
         Callable: The wrapped function.
 
     """

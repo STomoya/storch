@@ -69,7 +69,6 @@ class RealESRTransform(nn.Module):
         """Degredation process presented in RealESRGAN.
 
         Args:
-        ----
             scale (float): scale
             **kwargs: See RealESRTransformsConfig.
 
@@ -80,7 +79,7 @@ class RealESRTransform(nn.Module):
 
         self.scale = scale
         self.kernel_range = [2 * v + 1 for v in range(3, 11)]
-        if kwargs is not {}:
+        if kwargs != {}:
             config = replace(config, **kwargs)
         self.config = config
 

@@ -75,7 +75,6 @@ class VGGLoss(Loss):
     """loss using vgg.
 
     Args:
-    ----
         device (_type_): the device working on.
         vgg (int, optional): layers of VGG model. 16 or 19. Default: 16.
         p (int, optional): Lp. 1: L1, 2: L2. Default: 2.

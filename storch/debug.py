@@ -49,7 +49,6 @@ def test_model(
     """Test if the model works properly by forwarding dummy tensors (and optionally backward.).
 
     Args:
-    ----
         models (nn.Module | Iterable[nn.Module]): nn.Module or a list of nn.Module to be tested.
         input_shapes (tuple | Iterable[tuple]): tuple of iterable of tuples, each presenting
             the input shape of the model.

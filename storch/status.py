@@ -41,7 +41,6 @@ class Collector:
         """Report a value with an identical name to trace.
 
         Args:
-        ----
             name (str): Key for the value. This name will be used at .add_scalar() of SummaryWriter.
             value (float | torch.Tensor): The value to collect.
 
@@ -66,7 +65,6 @@ class Collector:
         """Report values using a dict object. See .report() for details.
 
         Args:
-        ----
             step (dict[str, Any]): dict of values to report.
 
         """
@@ -77,11 +75,9 @@ class Collector:
         """Return the mean value of the collected value. If not exist or total is 0, returns inf.
 
         Args:
-        ----
             name (str): Key used to report values.
 
         Returns:
-        -------
             float: mean of the collected values.
 
         """
@@ -92,9 +88,8 @@ class Collector:
     def update(self) -> dict[str, float]:
         """Return mean of all collected values and reset.
 
-        Returns
-        -------
-            dict[str, float]: dict of mean of all reported values.
+        Returns:
+            (dict[str, float]): dict of mean of all reported values.
 
         """
         output = {}
@@ -109,23 +104,24 @@ class Collector:
 class Status:
     """Class for logging training status.
 
-    Examples
-    --------
-        >>> status = Status(1000, './checkpoint/log.log')
-        >>> while not status.is_end():
-        >>>     output = model(input)
-        >>>     # update training state. also updates the training progress.
-        >>>     status.update(**{
-        >>>         'Loss/CE/train': torch.rand(1),
-        >>>         'Metrics/accuracy/train': torch.rand(1),
-        >>>         'Scores/output': output, # tensors with any shapes can be passed.
-        >>>         'Progress/lr': lr # float/int are also supported.
-        >>>     })
-        >>>     # update without updating training progress.
-        >>>     status.dry_update(**{
-        >>>         'Loss/CE/val': torch.rand(1),
-        >>>         'Metrics/accuracy/val': torch.rand(1),
-        >>>     })
+    Examples:
+        ```
+        status = Status(1000, './checkpoint/log.log')
+        while not status.is_end():
+            output = model(input)
+            # update training state. also updates the training progress.
+            status.update(**{
+                'Loss/CE/train': torch.rand(1),
+                'Metrics/accuracy/train': torch.rand(1),
+                'Scores/output': output, # tensors with any shapes can be passed.
+                'Progress/lr': lr # float/int are also supported.
+            })
+            # update without updating training progress.
+            status.dry_update(**{
+                'Loss/CE/val': torch.rand(1),
+                'Metrics/accuracy/val': torch.rand(1),
+            })
+        ```
 
     """
 
@@ -148,7 +144,6 @@ class Status:
         """Training status logger.
 
         Args:
-        ----
             max_iters (int): Maximum iterations to train.
             log_file (str): Path to file for output logging to.
             bar (bool, optional): Enable tqdm progress bar. Default: False.
@@ -227,7 +222,6 @@ class Status:
         """Finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
 
         Args:
-        ----
             quiet (bool, optional): do not log run stats. Default: None.
 
         """
@@ -238,11 +232,9 @@ class Status:
         """Format `batches_done` to kilo batches.
 
         Args:
-        ----
             format (str, optional): format of the string. Default: '{kbatches:.2f}k'.
 
         Returns:
-        -------
             str: The formated kilo batches.
 
         """
@@ -255,7 +247,6 @@ class Status:
         """Log a message.
 
         Args:
-        ----
             message (str): The message to log.
             level (str, optional): log level. Default: 'info'.
 
@@ -274,7 +265,6 @@ class Status:
         """Log argparse.Namespace obj.
 
         Args:
-        ----
             args (Namespace): The command line arguments parsed by argparse.
             parser (ArgumentParser, optional): Parser used to parse the command line arguments.
                 Used to display the default values. Default: None.
@@ -300,7 +290,6 @@ class Status:
         """Log omegaconf.DictConfig obj.
 
         Args:
-        ----
             config (DictConfig): The config to log.
 
         """
@@ -311,7 +300,6 @@ class Status:
         """Log DataLoader obj.
 
         Args:
-        ----
             dataloader (DataLoader): The DataLoader object to log.
 
         """
@@ -346,7 +334,6 @@ class Status:
         """Log optimizer obj.
 
         Args:
-        ----
             optimizer (Optimizer): The optimizer object to log.
 
         """
@@ -361,7 +348,6 @@ class Status:
         """Log nn.Module obj.
 
         Args:
-        ----
             model (torch.nn.Module): The module to log.
 
         """
@@ -376,21 +362,21 @@ class Status:
         Useful for registering this function as a hook for `OptimizerStep`.
 
         Args:
-        ----
             stage (str, optional): The name of the stage to summarize VRAM. Default: None.
             at (list[int], optional): Used to determine when to log summary.
                 If None always log summary. Default: None.
             as_hook (bool, option): return a function that can be executed without arguments. Default: False.
 
         Example:
-        -------
-            >>> status = Status(...)
-            >>> output = model(input)
-            >>> status.log_gpu_memory('forward', [0, 100])
-            >>> output.sum().backward()
-            >>> status.log_gpu_memory('backward', [0, 100])
-            >>> optimizer.step()
-            >>> status.log_gpu_memory('step', [0, 100])
+            ```
+            status = Status(...)
+            output = model(input)
+            status.log_gpu_memory('forward', [0, 100])
+            output.sum().backward()
+            status.log_gpu_memory('backward', [0, 100])
+            optimizer.step()
+            status.log_gpu_memory('step', [0, 100])
+            ```
 
         """
 
@@ -427,7 +413,6 @@ class Status:
         """Log actual batch size per optimization step.
 
         Args:
-        ----
             batch_size_per_proc (int): batch size per process.
             gradient_accumulation_steps (int): gradient accumulation steps.
             world_size (int): world size.
@@ -540,7 +525,6 @@ class Status:
         """Add image to tensorboard.
 
         Args:
-        ----
             tag (str): tag.
             image_tensor (torch.Tensor): tensor of images.
             normalize (bool, optional): argument for make_grid(). Default: True.
@@ -562,7 +546,6 @@ class Status:
         """Context manager to profile a code block using pytorch profiler module.
 
         Args:
-        ----
             enabled (bool, optional): Boolean to enable/disable profiling. Default: True.
 
         """
@@ -581,15 +564,16 @@ class Status:
         """Context manager to stop the timer.
 
         Args:
-        ----
             verbose (bool, optional): Boolean to enable logging. Default: False.
 
-        Examples::
-            >>> while not status.is_end():
-            >>>     train_epoch(...)
-            >>>     # this will stop the timer until exiting the with statement.
-            >>>     with status.stop_timer():
-            >>>         validate(...)
+        Examples:
+            ```
+            while not status.is_end():
+                train_epoch(...)
+                # this will stop the timer until exiting the with statement.
+                with status.stop_timer():
+                    validate(...)
+            ```
 
         """
         stop_start = time.time()
@@ -615,7 +599,6 @@ class Status:
         """Fast forward training status by the given state_dict.
 
         Args:
-        ----
             state_dict (dict): a dictionary made by status.state_dict().
 
         """
@@ -627,8 +610,7 @@ class Status:
     def state_dict(self) -> dict:
         """Make a dictionary to save current training status.
 
-        Returns
-        -------
+        Returns:
             dict: Dict containing the states.
 
         """
@@ -645,13 +627,16 @@ class ThinStatus:
         - no logging.
         - no loss accumulation.
 
-    Eaxmples::
-        >>> from storch.status import Status, ThinStatus
-        >>> from storch.dist_helper import DistributedHelper
-        >>> disthelper = DistributedHelper(rank, world_size)
-        >>> Status = Status if disthelper.is_primary() else ThinSatus
-        >>> status = Status(max_iter, ...)
-        >>> # then use the rest should work like Status.
+    Examples:
+        ```
+        from storch.status import Status, ThinStatus
+        from storch.dist_helper import DistributedHelper
+        disthelper = DistributedHelper(rank, world_size)
+        Status = Status if disthelper.is_primary() else ThinSatus
+        status = Status(max_iter, ...)
+        # then use the rest should work like Status.
+        ```
+
     """
 
     def __init__(self, max_iters: int, *_args, **_kwargs) -> None:  # noqa: D107

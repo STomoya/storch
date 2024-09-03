@@ -22,7 +22,6 @@ class PILToNumpy(nn.Module):
         """PIL to numpy.
 
         Args:
-        ----
             like_to_tensor (bool, optional): Default: True.
 
         """
@@ -50,7 +49,6 @@ class RandomMixedGaussianBlur(nn.Module):
         """Gaussian blur transform.
 
         Args:
-        ----
             kernel_list (tuple, optional): Default: all_kernels.
             kernel_probs (tuple, optional): Default: [1 / 6 for _ in range(6)].
             kernel_size (int, optional): Default: 21.
@@ -96,7 +94,6 @@ class RandomGaussianNoise(nn.Module):
         """Gaussian noise transform.
 
         Args:
-        ----
             sigma_range (tuple, optional): Default: [0.0, 10.0].
             gray_prob (float, optional): Default: 0.0.
 
@@ -117,7 +114,6 @@ class RandomPoissonNoise(nn.Module):
         """Poisson noise transform.
 
         Args:
-        ----
             scale_range (tuple, optional): Default: [0.0, 1.0].
             gray_prob (float, optional): Default: 0.0.
 
@@ -138,7 +134,6 @@ class RandomJPEGCompression(nn.Module):
         """JPEG compression.
 
         Args:
-        ----
             quality_range (tuple, optional): Default: [90, 100].
 
         """
@@ -157,7 +152,6 @@ class ResizeRight(nn.Module):
         """Resize iright.
 
         Args:
-        ----
             size (_type_): size to resize.
             interp_method (str, optional): Default: 'cubic'.
             antialias (bool, optional): Default: True.

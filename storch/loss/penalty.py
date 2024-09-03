@@ -15,13 +15,11 @@ def calc_grad(outputs: torch.Tensor, inputs: torch.Tensor, scaler: Optional[Grad
     """Calculate gradients with AMP support.
 
     Args:
-    ----
         outputs (torch.Tensor): Output tensor from a model
         inputs (torch.Tensor): Input tensor to a model
         scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Defaults to None.
 
     Returns:
-    -------
         torch.Tensor: The gradients of the input.
 
     """
@@ -39,25 +37,30 @@ def calc_grad(outputs: torch.Tensor, inputs: torch.Tensor, scaler: Optional[Grad
 class Penalty(Loss):
     """Penalty.
 
-    Examples
-    --------
+    Examples:
         Using classes
-        >>> gp = Penalty()
-        >>> loss = gp(...)
+        ```
+        gp = Penalty()
+        loss = gp(...)
+        ```
 
         Example for when your D has multiple outputs
-        >>> # 1. Use only first output
-        >>> gp.filter_output = lambda d_output: d_output[0]
-        >>> # 2. Sum all outputs
-        >>> gp.filter_output = lambda d_output: sum(map(lambda x:x.sum(), d_output))
-        >>> #   ...etc.
-        >>> # It should be a callable that receives outputs from D and outputs a scalar torch.Tensor.
-        >>> # Penalty().filter_output defaults to lambda x:x
+        ```
+        # 1. Use only first output
+        gp.filter_output = lambda d_output: d_output[0]
+        # 2. Sum all outputs
+        gp.filter_output = lambda d_output: sum(map(lambda x:x.sum(), d_output))
+        #   ...etc.
+        # It should be a callable that receives outputs from D and outputs a scalar torch.Tensor.
+        # Penalty().filter_output defaults to lambda x:x
+        ```
 
         Using functional
-        >>> gp_input = gp.prepare_input(real, fake)
-        >>> gradients = calc_grad(D(gp_input), gp_input)
-        >>> loss = gp.calc(gradients)
+        ```
+        gp_input = gp.prepare_input(real, fake)
+        gradients = calc_grad(D(gp_input), gp_input)
+        loss = gp.calc(gradients)
+        ```
 
     """
 
@@ -97,7 +100,6 @@ class gradient_penalty(Penalty):
         """Gradient penalty + 0-centered gradient penalty.
 
         Args:
-        ----
             real (torch.Tensor): Real samples
             fake (torch.Tensor): Fake samples
             D (nn.Module): Discriminator
@@ -106,7 +108,6 @@ class gradient_penalty(Penalty):
             d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
 
         Returns:
-        -------
             torch.Tensor: The loss
 
         """
@@ -146,7 +147,6 @@ class dragan_penalty(Penalty):
         """DRAGAN gradient penalty.
 
         Args:
-        ----
             real (torch.Tensor): Real samples
             D (nn.Module): Discriminator
             scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
@@ -154,7 +154,6 @@ class dragan_penalty(Penalty):
             d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
 
         Returns:
-        -------
             torch.Tensor: The loss.
 
         """
@@ -188,14 +187,12 @@ class r1_regularizer(Penalty):
         """R1 Regularizer.
 
         Args:
-        ----
             real (torch.Tensor): Real samples
             D (nn.Module): Discriminator
             scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
             d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
 
         Returns:
-        -------
             torch.Tensor: The loss.
 
         """
@@ -225,14 +222,12 @@ class r2_regularizer(r1_regularizer):
         """R2 Regularizer.
 
         Args:
-        ----
             fake (torch.Tensor): Fake samples
             D (nn.Module): Discriminator
             scaler (Optional[GradScaler], optional): GradScaler object if using AMP. Default: None.
             d_aux_input (tuple, optional): Auxiliary inputs to discriminator. Default: tuple().
 
         Returns:
-        -------
             torch.Tensor: The loss.
 
         """

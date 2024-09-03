@@ -25,8 +25,7 @@ from storch.utils import version
 class DistributedHelper:
     """Helper class for distributed training.
 
-    Examples
-    --------
+    Examples:
         >>> # When running with torchrun launcher, nothing needs to be set.
         >>> disthelper = DistributedHelper(world_size, rank) # arguments are ignored.
         >>> # When lauching with torch.multiprocessing.spawn
@@ -41,7 +40,6 @@ class DistributedHelper:
         """NeST.
 
         Args:
-        ----
             world_size (int, optional): world size. ignored when {torchrun,CPU,single GPU}. Default: 1.
             rank (int, optional): rank. ignored when {torchrun,CPU,single GPU}. Default: 0.
 
@@ -85,11 +83,9 @@ class DistributedHelper:
         """Gather all tensors, scattered to multiple devices, to a tensor concatenated on the 0th dimension.
 
         Args:
-        ----
             tensor (torch.Tensor): the tensor to gather
 
         Returns:
-        -------
             torch.Tensor: gathered tensor
 
         """
@@ -100,11 +96,9 @@ class DistributedHelper:
         """Gather that supports float and int input.
 
         Args:
-        ----
             val (Any): value to gather.
 
         Returns:
-        -------
             torch.Tensor: gathered values as an tensor.
 
         """
@@ -117,12 +111,10 @@ class DistributedHelper:
         """Reduce a tensor, scattered on multiple GPUs, with a certain operator.
 
         Args:
-        ----
             tensor (torch.Tensor): the tensor to reduce
             op (ReduceOp, optional): the operator. Default: ReduceOp.SUM.
 
         Returns:
-        -------
             torch.Tensor: the reduced tensor
 
         """
@@ -133,12 +125,10 @@ class DistributedHelper:
         """Reduce that supports float and int inputs.
 
         Args:
-        ----
             val (Any): value to reduce
             op (ReduceOp, optional): operator. Default: ReduceOp.SUM.
 
         Returns:
-        -------
             torch.Tensor: the reduced tensor
 
         """
@@ -192,11 +182,9 @@ class DistributedHelper:
         `_mode`.
 
         Args:
-        ----
             mode (str, optional): the parallelizm mode. Default: None.
 
         Returns:
-        -------
             str: a string representing the parallelizm strategy.
 
         """
@@ -226,7 +214,6 @@ class DistributedHelper:
             and storch.torchops.convert_outputc_to_fp32. No need to use autocast contextmanager.
 
         Args:
-        ----
             *modules (nn.Module): modules to wrap for distributed training.
             mode (str, optional): data parallel mode. one of {ddp,fsdp} for distributed settings,
                 any other for single GPU or CPU. Default: None.
@@ -239,12 +226,10 @@ class DistributedHelper:
             return_intermediates: Return itermediate models. Default: False.
 
         Raises:
-        ------
             Exception: unknown data parallel mode.
 
         Returns:
-        -------
-            tuple[nn.Module]|nn.Module: the wrapped modules in the same order as input.
+            (tuple[nn.Module] | nn.Module): the wrapped modules in the same order as input.
 
         """
         mode = self.get_parallel_mode(mode)
@@ -349,7 +334,6 @@ class DistributedHelper:
         If the distributed packae is initialized, `DistributedSampler` is used as the `sampler`.
 
         Args:
-        ----
             dataset (Dataset): Dataset
             batch_size (int): batch size.
             shuffle (bool, optional): Default: True.
@@ -360,7 +344,6 @@ class DistributedHelper:
             generator (torch.Generator, optional): Default: None.
 
         Returns:
-        -------
             DataLoader: the created dataloader
 
         """
@@ -401,7 +384,6 @@ class DistributedHelper:
         Tested to work well with storch.checkpoint.Checkpoint
 
         Args:
-        ----
             *optimizers: The optimizers used from training. If multiple models are used, the optimizers must be passed
                 in the same order. If a model is not intended to be trained, pass None.
             offload_to_cpu (bool, optional): When the model is FSDP, configures is the weights are offload to cpu before
@@ -409,8 +391,7 @@ class DistributedHelper:
                 processes that are `rank!=0`. Default: True.
 
         Returns:
-        -------
-            tuple|tuple[tuple]: module state_dict {get,set}ter and optimizer state_dict {get,set}ter
+            (tuple | tuple[tuple]): module state_dict {get,set}ter and optimizer state_dict {get,set}ter
 
         """
         if version.is_dist_state_dict_available():
@@ -448,7 +429,6 @@ class DistributedHelper:
         Tested to work well with storch.checkpoint.Checkpoint.
 
         Args:
-        ----
             module (nn.Module): _description_
             optimizers (torch.optim.Optimizer): _description_
             full_state_dict (bool, optional): _description_. Defaults to True.
@@ -456,7 +436,6 @@ class DistributedHelper:
             strict (bool, optional): _description_. Defaults to True.
 
         Returns:
-        -------
             tuple: _description_
 
         """

@@ -1,4 +1,5 @@
 """Pure python utilities."""
+
 import math
 
 from stutil import (
@@ -43,14 +44,11 @@ def calc_num_sampling(high_resl: int, low_resl: int) -> int:
     """Calculate number of sampling times when scale factor is 2.
 
     Args:
-    ----
         high_resl (int): Higher resolution.
         low_resl (int): Lower resolution.
 
     Returns:
-    -------
         int: Number of sampling times.
 
     """
-    """"""
     return int(math.log2(high_resl) - math.log2(low_resl))
