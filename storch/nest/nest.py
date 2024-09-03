@@ -613,7 +613,7 @@ class NeST:
             offload_to_cpu (bool, optional): Offload state dict to CPU. Only affects 'fsdp'. Default: True.
 
         Returns:
-            tuple|tuple[tuple]: Interface for getting setting state_dict.
+            (tuple | tuple[tuple]): Interface for getting setting state_dict.
 
         """
         return self._disthelper.prepare_for_checkpointing(*optimizers, offload_to_cpu=offload_to_cpu)
@@ -651,7 +651,7 @@ class NeST:
             strict (bool, optional): same as `strict` option in `module.load_state_dict()`. Default: True.
 
         Returns:
-            tuple|tuple[tuple]: Interface for getting setting state_dict.
+            (tuple | tuple[tuple]): Interface for getting setting state_dict.
 
         """
         return self._disthelper.prepare_stateful(
@@ -779,7 +779,7 @@ class NeST:
             **kwargs: keyword arguments
 
         Returns:
-            Any | None: return value of the function or `None` if not on primary process.
+            (Any | None): return value of the function or `None` if not on primary process.
 
         """
         if self.is_primary():
@@ -813,7 +813,7 @@ class NeST:
                 Default: True.
 
         Returns:
-            torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
+            (torch.Tensor | tuple[torch.Tensor] | tuple[Any]): gathered object.
 
         """  # noqa: D401
         return distutils.gather(obj=obj, dst=dst, into_tensor=into_tensor)
@@ -919,18 +919,20 @@ class NeST:
         Calling `NeST.update` or `NeST.status.update` will always increment `batches_done`. To report values without
         incrementation, use `NeST.dry_update` or `NeST.status.dry_update` instead.
 
-        Usage:
-            >>> nest = NeST(...)
-            >>> # ... build objects
-            >>> nest.initialize_training(
-            ...     ... # configure logging with this function.
-            ... )
-            >>> while not nest.is_end():
-            ...     # forward, update parameters, calc metrics, etc.
-            ...     nest.update(**{'Loss': loss, 'Accuracy': accuracy})
-
         Args:
             **kwargs: key, value pairs for objects to track.
+
+        Example:
+            ```
+            nest = NeST(...)
+            # build objects
+            nest.initialize_training(
+                # configure logging with this function.
+            )
+            while not nest.is_end():
+                # forward, update parameters, calc metrics, etc.
+                nest.update(**{'Loss': loss, 'Accuracy': accuracy})
+            ```
 
         """
         self._status.update(**kwargs)
@@ -989,7 +991,7 @@ class NeST:
             obj (torch.Tensor | nn.Module): object to send.
 
         Returns:
-            torch.Tensor | nn.Module: the object on the device.
+            (torch.Tensor | nn.Module): the object on the device.
 
         """
         return obj.to(self.device)

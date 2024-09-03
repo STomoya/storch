@@ -130,7 +130,7 @@ def get_resolved_state_dict(model: nn.Module) -> dict[str, torch.Tensor]:
         model (nn.Module): the model to collect the weights.
 
     Returns:
-        dict[str, torch.Tensor]: the `state_dict` of the model.
+        (dict[str, torch.Tensor]): the `state_dict` of the model.
 
     """
     # FSDP state_dict.
@@ -208,7 +208,7 @@ def load_model(fp: str, device: str | torch.device = 'cpu') -> tuple[dict[str, A
         device (str | torch.device, optional): _description_. Defaults to 'cpu'.
 
     Returns:
-        tuple[dict[str, Any], dict[str, torch.Tensor]]: _description_
+        (tuple[dict[str, Any], dict[str, torch.Tensor]]): _description_
 
     """
     # synchronize devices

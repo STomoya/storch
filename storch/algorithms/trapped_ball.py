@@ -483,8 +483,8 @@ def trappedball_segmentation(
         threshold (int, optional): threshold used to binarize line_image. Default: 220.
 
     Returns:
-        np.ndarray: segment map
-        np.ndarray: the filled image.
+        (tuple[np.ndarray, np.ndarray]):
+            Segment map, filled image.
 
     """
     _, result = cv2.threshold(line_image, threshold, 255, cv2.THRESH_BINARY)

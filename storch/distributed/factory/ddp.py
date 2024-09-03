@@ -79,7 +79,7 @@ class DistributedDataParallelFactory(ParallelFactoryBase):
             **kwargs: Currently not used.
 
         Returns:
-            tuple[DDPModuleCheckpointInterface, Optimizer]: Interface for checkpointing and the optimizer.
+            (tuple[DDPModuleCheckpointInterface, Optimizer]): Interface for checkpointing and the optimizer.
 
         """
         assert self.is_wrapped, 'Call "wrap_module()" first.'

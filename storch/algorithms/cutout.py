@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 
-def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
+def random_box(size: tuple, lambda_: float) -> tuple[tuple[int, ...], float]:
     """Make a random box within size.
 
     Args:
@@ -16,8 +16,7 @@ def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
         lambda_ (float): lambda sampled from beta.
 
     Returns:
-        tuple[int]: xyxy
-        float: adjusted lambda
+        (tuple[tuple[int, ...], float]): xyxy and adjusted lambda
 
     """
     W = size[0]

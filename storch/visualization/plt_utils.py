@@ -24,8 +24,8 @@ def plt_subplots(nrows: int = 1, ncols: int = 1, format_axes: bool = True, filen
         **kwargs: keyword arguments for plt.sobplots()
 
     Yields:
-        Figure: matplotlib.figure.Figure object made by plt.subplot().
-        Axes|list[Axes]|list[list[Axes]]: list or object of matplotlib.axes.Axes made by plt.subplot().
+        (tuple[Figure, Axes | list[Axes] | list[list[Axes]]]): matplotlib.figure.Figure object made by plt.subplot(),
+            and list or object of matplotlib.axes.Axes made by plt.subplot().
 
     """
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **kwargs)

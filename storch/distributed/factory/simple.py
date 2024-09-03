@@ -175,7 +175,7 @@ def create_checkpoint_interface(
         strict (bool, optional): Strict loading. Default: True.
 
     Returns:
-        tuple[ModelStateDict, OptimStateDict]: Created interfaces.
+        (tuple[ModelStateDict, OptimStateDict]): Created interfaces.
 
     Examples:
         ```

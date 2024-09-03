@@ -22,7 +22,7 @@ class FeatureCache:
             num_images (int): number of images.
 
         Returns:
-            np.ndarray | None: cached feature. None when not registered.
+            (np.ndarray | None): cached feature. None when not registered.
 
         """
         return cls._cache.get(cls.make_key(folder, model, num_images), None)
@@ -53,7 +53,7 @@ class FeatureCache:
             num_images (int): number of images.
 
         Returns:
-            tuple[str, str, int]: key.
+            (tuple[str, str, int]): key.
 
         """
         key = tuple(folder, model, num_images)

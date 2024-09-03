@@ -229,7 +229,7 @@ class DistributedHelper:
             Exception: unknown data parallel mode.
 
         Returns:
-            tuple[nn.Module]|nn.Module: the wrapped modules in the same order as input.
+            (tuple[nn.Module] | nn.Module): the wrapped modules in the same order as input.
 
         """
         mode = self.get_parallel_mode(mode)
@@ -391,7 +391,7 @@ class DistributedHelper:
                 processes that are `rank!=0`. Default: True.
 
         Returns:
-            tuple|tuple[tuple]: module state_dict {get,set}ter and optimizer state_dict {get,set}ter
+            (tuple | tuple[tuple]): module state_dict {get,set}ter and optimizer state_dict {get,set}ter
 
         """
         if version.is_dist_state_dict_available():

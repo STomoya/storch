@@ -100,7 +100,7 @@ def gather(
         into_tensor (bool, optional): If True and obj is a Tensor gather into a Tensor instead of a list. Default: True.
 
     Returns:
-        torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
+        (torch.Tensor | tuple[torch.Tensor] | tuple[Any]): gathered object.
 
     """
     state = DistributedState()

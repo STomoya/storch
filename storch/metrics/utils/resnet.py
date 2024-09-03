@@ -80,7 +80,7 @@ class ResNetIN(_ResNet):
             filename (str): Filename of the weights.
 
         Returns:
-            str, nn.Module: path to the weights and the resnet model.
+            (str, nn.Module): path to the weights and the resnet model.
 
         """
         ckpt_path = None

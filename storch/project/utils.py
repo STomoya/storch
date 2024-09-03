@@ -55,8 +55,7 @@ def init_run(
         default_config_file (str, optional): base config filename. Default: 'config.yaml'.
 
     Returns:
-        DictConfig: loaded config.
-        Folder: Folder object.
+        (tuple[DictConfig, Folder]): loaded config, Folder object.
 
     Examples:
         ```

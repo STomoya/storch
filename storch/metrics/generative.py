@@ -75,8 +75,7 @@ def feature_statistics(features: np.ndarray) -> tuple[np.ndarray]:
         features (np.ndarray): the extracted features.
 
     Returns:
-        np.ndarray: mean
-        np.ndarray: covariance
+        (tuple[np.ndarray, np.ndarray]): mean, covariance
 
     """
     mean = np.mean(features, axis=0)

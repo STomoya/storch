@@ -44,9 +44,8 @@ def mesh_grid(kernel_size: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         kernel_size (int):
 
     Returns:
-        ndarray: with the shape (kernel_size, kernel_size, 2)
-        ndarray: with the shape (kernel_size, kernel_size)
-        ndarray: with the shape (kernel_size, kernel_size)
+        (tuple[np.ndarray, np.ndarray, np.ndarray]): Arrays with shape (kernel_size, kernel_size, 2),
+            (kernel_size, kernel_size), (kernel_size, kernel_size)
 
     """
     ax = np.arange(-kernel_size // 2 + 1.0, kernel_size // 2 + 1.0)

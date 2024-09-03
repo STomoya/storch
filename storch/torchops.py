@@ -165,8 +165,8 @@ def set_seeds(
         cudnn_benchmark (bool, optional): cudnn benchmark. Default: False.
 
     Returns:
-        Callable: Function for DataLoader's worker_init_fn option.
-        torch.Generator: torch.Generator for DataLoader's generator option.
+        (tuple[Callable, torch.Generator]): Function for DataLoader's worker_init_fn option and torch.Generator for
+            DataLoader's generator option.
 
     """
     random.seed(seed)
@@ -196,8 +196,7 @@ def shuffle_batch(
         return_permutation (bool, optional): If True, return permutation. Default: False.
 
     Returns:
-        torch.Tensor: The shuffled tensor.
-        torch.Tensor: The permutation. Only when return_permutation==True.
+        (torch.Tensor | tuple[torch.Tensor, torch.Tensor]): The shuffled tensor and the permutation
 
     """
     permutation = torch.randperm(batch.size(0))

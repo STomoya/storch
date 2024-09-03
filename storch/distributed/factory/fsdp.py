@@ -177,7 +177,7 @@ class FullyShardedDataParallelFactory(ParallelFactoryBase):
             **kwargs: currently not used.
 
         Returns:
-            tuple[FSDPModuleCheckpointInterface, FSDPOptimizerCheckpointInterface]: Interface for checkpointing.
+            (tuple[FSDPModuleCheckpointInterface, FSDPOptimizerCheckpointInterface]): Interface for checkpointing.
 
         """
         assert self.is_wrapped, 'Call "wrap_module()" first.'
