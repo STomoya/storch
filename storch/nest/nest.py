@@ -897,6 +897,25 @@ class NeST:
             max_norm=max_norm,
         )
 
+    def sync_grad_accum_steps(self, base: torch.optim.Optimizer):
+        """Synchronize gradient accumulation steps.
+
+        If there are only one OptimizerStep, this function will exit without doing anything.
+
+        Args:
+            base (torch.optim.Optimizer): Synchronize based on this optimizer.
+
+        """
+        if len(self._step_fn) <= 1:
+            return
+
+        source = self.get_step_fn(base)
+        for target in self._step_fn.values():
+            if target is source:
+                continue
+            target.accumulation_count = source.accumulation_count
+            target.total_step_count = source.total_step_count
+
     """logger methods"""
 
     @nestutils._assert_initialized
