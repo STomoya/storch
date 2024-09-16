@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 
 import storch
+from storch._optimizer_step import OptimizerStep
 from storch.checkpoint import Checkpoint
 from storch.distributed import DistributedHelper
 from storch.distributed import utils as distutils
@@ -72,7 +73,7 @@ class NeST:
         self._status = None
         self._checkpoint = None
 
-        self._step_fn = {}
+        self._step_fn: dict[int, OptimizerStep] = {}
 
         self._train_dataset = None
         self._train_loader = None
@@ -160,7 +161,7 @@ class NeST:
         elif where == 'final':
             return self._final_models[index]
 
-    def get_step_fn(self, optimizer: optim.Optimizer) -> Callable:
+    def get_step_fn(self, optimizer: optim.Optimizer) -> OptimizerStep:
         """Return optimizer_step function, built for an specific optimizer.
 
         Args:
