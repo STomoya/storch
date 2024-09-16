@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 
 import storch
+from storch._optimizer_step import OptimizerStep
 from storch.checkpoint import Checkpoint
 from storch.distributed import DistributedHelper
 from storch.distributed import utils as distutils
@@ -72,7 +73,7 @@ class NeST:
         self._status = None
         self._checkpoint = None
 
-        self._step_fn = {}
+        self._step_fn: dict[int, OptimizerStep] = {}
 
         self._train_dataset = None
         self._train_loader = None
@@ -160,7 +161,7 @@ class NeST:
         elif where == 'final':
             return self._final_models[index]
 
-    def get_step_fn(self, optimizer: optim.Optimizer) -> Callable:
+    def get_step_fn(self, optimizer: optim.Optimizer) -> OptimizerStep:
         """Return optimizer_step function, built for an specific optimizer.
 
         Args:
@@ -896,6 +897,25 @@ class NeST:
             clip_grad_norm=clip_grad_norm,
             max_norm=max_norm,
         )
+
+    def sync_grad_accum_steps(self, base: torch.optim.Optimizer):
+        """Synchronize gradient accumulation steps.
+
+        If there are only one OptimizerStep, this function will exit without doing anything.
+
+        Args:
+            base (torch.optim.Optimizer): Synchronize based on this optimizer.
+
+        """
+        if len(self._step_fn) <= 1:
+            return
+
+        source = self.get_step_fn(base)
+        for target in self._step_fn.values():
+            if target is source:
+                continue
+            target.accumulation_count = source.accumulation_count
+            target.total_step_count = source.total_step_count
 
     """logger methods"""
 
