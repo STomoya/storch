@@ -30,12 +30,10 @@ def to_image(image: Image.Image, dtype: torch.dtype = torch.float) -> tv_tensors
     """Convert to image tensor.
 
     Args:
-    ----
         image (Image.Image): input image.
         dtype (torch.dtype, optional): dtype. Default: torch.float.
 
     Returns:
-    -------
         tv_tensors.Image: converted image.
 
     """
@@ -48,11 +46,9 @@ def to_mask(mask: Image.Image) -> tv_tensors.Mask:
     """Convert to mask tensor.
 
     Args:
-    ----
         mask (Image.Image): mask as image.
 
     Returns:
-    -------
         tv_tensors.Mask: mask.
 
     """
@@ -105,7 +101,6 @@ class RandomMixedGaussianBlur(Transform):
         """Gaussian blur transform.
 
         Args:
-        ----
             kernel_list (tuple, optional): Default: all_kernels.
             kernel_probs (tuple, optional): Default: [1 / 6 for _ in range(6)].
             kernel_size (int, optional): Default: 21.
@@ -153,7 +148,6 @@ class RandomGaussianNoise(Transform):
         """Gaussian noise transform.
 
         Args:
-        ----
             sigma_range (tuple, optional): Default: [0.0, 10.0].
             gray_prob (float, optional): Default: 0.0.
 
@@ -176,7 +170,6 @@ class RandomPoissonNoise(Transform):
         """Poisson noise transform.
 
         Args:
-        ----
             scale_range (tuple, optional): Default: [0.0, 1.0].
             gray_prob (float, optional): Default: 0.0.
 
@@ -199,7 +192,6 @@ class RandomJPEGCompression(Transform):
         """JPEG compression.
 
         Args:
-        ----
             quality_range (tuple, optional): Default: [90, 100].
 
         """
@@ -220,7 +212,6 @@ class ResizeRight(Transform):
         """Resize iright.
 
         Args:
-        ----
             size (_type_): size to resize.
             interp_method (str, optional): Default: 'cubic'.
             antialias (bool, optional): Default: True.

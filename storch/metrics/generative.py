@@ -8,7 +8,7 @@ import numpy as np
 import sklearn.metrics
 import torch
 from scipy import linalg
-from tqdm import tqdm
+from stutil.exceptions import deprecated
 
 import storch
 from storch.metrics.utils.cache import FeatureCache
@@ -16,6 +16,7 @@ from storch.metrics.utils.dataset import build_dataset
 from storch.metrics.utils.inceptionv3 import InceptionV3, InceptionV3JIT
 from storch.metrics.utils.resnet import ResNetIN, ResNetSwAVIN
 from storch.torchops import freeze
+from tqdm import tqdm
 
 __all__ = ['calc_metrics', 'MetricFlags']
 
@@ -46,14 +47,12 @@ def get_features(dataset, model: torch.nn.Module, device: torch.device, progress
     """Extractor features from all images inside the dataset.
 
     Args:
-    ----
         dataset (DataLoader): The dataset.
         model (torch.nn.Module): feature extractor model.
         device (torch.device): device
         progress (boo, optional): show progress bar. Default: False
 
     Returns:
-    -------
         np.ndarray: the extracted features.
 
     """
@@ -73,13 +72,10 @@ def feature_statistics(features: np.ndarray) -> tuple[np.ndarray]:
     """Compute mean and covariance of the given feature array.
 
     Args:
-    ----
         features (np.ndarray): the extracted features.
 
     Returns:
-    -------
-        np.ndarray: mean
-        np.ndarray: covariance
+        (tuple[np.ndarray, np.ndarray]): mean, covariance
 
     """
     mean = np.mean(features, axis=0)
@@ -91,17 +87,14 @@ def frechet_distance(feature1: np.ndarray, feature2: np.ndarray, eps: float = 1e
     """Calculate Frechet distance between the given two feature arrays.
 
     Args:
-    ----
         feature1 (np.ndarray): feature array. shape: [N, feat_dim]
         feature2 (np.ndarray): feature array. shape: [N, feat_dim]
         eps (float, optional): eps. Defaults to 1e-6.
 
     Raises:
-    ------
         ValueError: imaginary value found.
 
     Returns:
-    -------
         float: fid score
 
     """
@@ -145,14 +138,12 @@ def kernel_distance(feature1: np.ndarray, feature2: np.ndarray, num_subsets=100,
     """Calculate kernel distance between the given two feature arrays.
 
     Args:
-    ----
         feature1 (np.ndarray): feature array. shape: [N, feat_dim]
         feature2 (np.ndarray): feature array. shape: [N, feat_dim]
         num_subsets (int, optional): Defaults to 100.
         max_subset_size (int, optional): Defaults to 1000.
 
     Returns:
-    -------
         float: kid score
 
     """
@@ -176,12 +167,10 @@ def pairwise_distance(feature1: np.ndarray, feature2: np.ndarray = None) -> np.n
     """Calculate pairwise distances.
 
     Args:
-    ----
         feature1 (np.ndarray): feature array.
         feature2 (np.ndarray, optional): feature array. Defaults to None.
 
     Returns:
-    -------
         np.ndarray: distances.
 
     """
@@ -195,12 +184,10 @@ def nearest_neighbour_distances(features: np.ndarray, nearest_k: int) -> np.ndar
     """Calculate nearest neighbour distances.
 
     Args:
-    ----
         features (np.ndarray): feature array.
         nearest_k (int): nearest k.
 
     Returns:
-    -------
         np.ndarray: Distances to kth nearest neighbours.
 
     """
@@ -215,12 +202,10 @@ def precision(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: 
     """precision.
 
     Args:
-    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
-    -------
         float: precision score
 
     """
@@ -231,12 +216,10 @@ def recall(fake_nearest_neighbour_distances: np.ndarray, distance_real_fake: np.
     """recall.
 
     Args:
-    ----
         fake_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of fake features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
-    -------
         float: recall score
 
     """
@@ -247,13 +230,11 @@ def density(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: np
     """density.
 
     Args:
-    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
         nearest_k (int): nearest k.
 
     Returns:
-    -------
         float: density
 
     """
@@ -266,12 +247,10 @@ def coverage(real_nearest_neighbour_distances: np.ndarray, distance_real_fake: n
     """coverage.
 
     Args:
-    ----
         real_nearest_neighbour_distances (np.ndarray): nearest neighbour distances of real features
         distance_real_fake (np.ndarray): pairwise distances of real and fake features
 
     Returns:
-    -------
         float: coverage score
 
     """
@@ -303,6 +282,7 @@ class MetricFlags:
         return any([self.fid, self.kid, self.precision, self.recall, self.density, self.coverage])
 
 
+@deprecated('STomoya/ptfid', 'https://github.com/STomoya/ptfid')
 def calc_metrics(
     real_root: str,
     fake_root: str,
@@ -319,7 +299,6 @@ def calc_metrics(
     """Calculate metrics for generative models.
 
     Args:
-    ----
         real_root (str): directory containing real samples
         fake_root (str): directory containing fake samples
         synthesized_size (int | tuple[int]): Synthesized image size. Used to resize large real images
@@ -338,7 +317,6 @@ def calc_metrics(
         verbose (bool, optional): verbose mode. Default: False.
 
     Returns:
-    -------
         dict: dictionary containing the metrics
 
     """

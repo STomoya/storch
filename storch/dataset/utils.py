@@ -17,11 +17,9 @@ def is_image_file(path: str) -> bool:
     """Return whether if the path is a PIL.Image.Image openable file.
 
     Args:
-    ----
         path (str): the path to an image.
 
     Returns:
-    -------
         bool: file?
 
     """
@@ -32,8 +30,7 @@ def is_image_file(path: str) -> bool:
 def get_loader_kwargs() -> storch.EasyDict:
     """Loader keyword arguments.
 
-    Returns
-    -------
+    Returns:
         storch.EasyDict: default loader keyword arguments as dict.
 
     """
@@ -52,12 +49,10 @@ def to(data: torch.Tensor, device: torch.device) -> torch.Tensor:
     """Send tensor to device.
 
     Args:
-    ----
         data (torch.Tensor): Data to be sent.
         device (torch.device): The device to send to.
 
     Returns:
-    -------
         torch.Tensor: tensor on device.
 
     """
@@ -68,12 +63,10 @@ def device_placement_collate_fn(batch: Any, device: torch.device) -> Any:
     """Collate fn with device placement.
 
     Args:
-    ----
         batch (Any): batch from the dataset.
         device (torch.device): device to send to.
 
     Returns:
-    -------
         Any: The collated batch.
 
     """

@@ -18,7 +18,6 @@ def rand_bbox(image_shape, lam, margin=0.0, count=None):
     support for enforcing a border margin as percent of bbox dimensions.
 
     Args:
-    ----
         image_shape (tuple): Image shape as tuple
         lam (float): Cutmix lambda value
         margin (float): Percentage of bbox dimension to enforce as margin (reduce amount of box outside image)
@@ -46,7 +45,6 @@ def rand_bbox_minmax(image_shape, minmax, count=None):
     Typical defaults for minmax are usually in the  .2-.3 for min and .8-.9 range for max.
 
     Args:
-    ----
         image_shape (tuple): Image shape as tuple
         minmax (tuple or list): Min and max bbox ratios (as percent of image size)
         count (int): Number of bbox to generate
@@ -91,7 +89,6 @@ class Mixup(torch.nn.Module):
         """Mixup.
 
         Args:
-        ----
             mixup_alpha (float, optional): alpha used to sample from Beta dist. Default: 1.0.
             cutmix_alpha (float, optional): alpha used to sample from Beta dist. Default: 0.0.
             cutmix_minmax (_type_, optional): Min and max bbox ratios (as percent of image size). Default: None.
@@ -207,14 +204,12 @@ class Mixup(torch.nn.Module):
         """Cross entropy loss for mixed images. Use this function instead of nn.CrossEntropy.
 
         Args:
-        ----
             logits (torch.Tensor): Output logits of the model.
             targets (torch.Tensor): targets.
             lambdas (torch.Tensor): lambdas returned by mixup()
             label_smoothing (float): Amount of smoothing.
 
         Returns:
-        -------
             torch.Tensor: the loss
 
         """

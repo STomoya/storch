@@ -1,4 +1,5 @@
 """Activations."""
+
 import torch.nn as nn
 
 
@@ -15,16 +16,13 @@ def get_activation(name: str, **kwargs) -> nn.Module:
       - `sigmoid`: `torch.nn.Sigmoid`
 
     Args:
-    ----
         name (str): Name of the activation function.
         **kwargs: keyword arguments for the activation functions.
 
     Raises:
-    ------
         Exception: Unknown activation name.
 
     Returns:
-    -------
         nn.Module: The activation function module.
 
     """

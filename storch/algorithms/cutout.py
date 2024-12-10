@@ -8,18 +8,15 @@ import numpy as np
 import torch
 
 
-def random_box(size: tuple, lambda_: float) -> tuple[tuple[int], float]:
+def random_box(size: tuple, lambda_: float) -> tuple[tuple[int, ...], float]:
     """Make a random box within size.
 
     Args:
-    ----
         size (tuple): size of the image.
         lambda_ (float): lambda sampled from beta.
 
     Returns:
-    -------
-        tuple[int]: xyxy
-        float: adjusted lambda
+        (tuple[tuple[int, ...], float]): xyxy and adjusted lambda
 
     """
     W = size[0]
@@ -45,7 +42,6 @@ def cutout(
     """Cutout augmentation.
 
     Args:
-    ----
         images (torch.Tensor): Tensor of images to apply Cutout to.
         alpha (float, optional): Parameter for sampling random numbers from the Beta distribution. Default: 1.0.
         p (float, optional): Probability to apply Cutout to images.
@@ -56,7 +52,6 @@ def cutout(
         sample_wise (bool, optional): Make a mask for each samples in the batch. Default: True.
 
     Returns:
-    -------
         torch.Tensor: The mixed image.
 
     """

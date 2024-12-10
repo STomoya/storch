@@ -7,7 +7,6 @@ class DepthWiseConv2d(nn.Conv2d):
     """Depth-wise convolution 2d is a convolution layer with groups=channel width.
 
     Args:
-    ----
         channels (int): Channel width of the input/output feature tensor.
         kernel_size (int): Kernel size of the convolution weights.
         stride (int, optional): Stride. Default: 1.
@@ -45,7 +44,6 @@ class PointWiseConv2d(nn.Conv2d):
     """Point-wise convolution 2d is a convolution layer with 1x1 kernel.
 
     Args:
-    ----
         in_channels (int): Channel width of the input feature tensor.
         out_channels (int): Channel width of the resulting tensor.
         bias (bool, optional): Whether to use bias or not. Default: True.
@@ -63,7 +61,6 @@ class DepthSepConv2d(nn.Module):
     point-wise convolution.
 
     Args:
-    ----
         in_channels (int): Channel width of the input feature tensor.
         out_channels (int): Channel width of the resulting tensor.
         kernel_size (int): Kernel size of the convolution weights.

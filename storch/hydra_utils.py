@@ -18,12 +18,10 @@ def resolve(config: DictConfig | ListConfig) -> DictConfig | ListConfig:
     """Resolve the config.
 
     Args:
-    ----
         config (DictConfig | ListConfig): the config to resolve.
 
     Returns:
-    -------
-        DictConfig | ListConfig: resolved config.
+        (DictConfig | ListConfig): resolved config.
 
     """
     OmegaConf.resolve(config)
@@ -38,12 +36,10 @@ def to_object(config: DictConfig | ListConfig):
     are some cases were this behavior causes unexpected errors (e.g., isinstance(config, dict) is false).
 
     Args:
-    ----
         config (DictConfig | ListConfig): the config to convert.
 
     Returns:
-    -------
-        dict | list: the converted config.
+        (dict | list): the converted config.
 
     """
     py_obj = OmegaConf.to_object(config)
@@ -56,14 +52,12 @@ def get_hydra_config(
     """Gather config using hydra.
 
     Args:
-    ----
         config_dir (str): Relative path to directory where config files are stored.
         config_name (str): Filename of the head config file.
         overrides (list[str], optional): Overrides. Usually from command line arguments. Default: sys.argv[1:].
         resolve (bool, optional): resolve the config before returning. Default: True.
 
     Returns:
-    -------
         DictConfig: Loaded config.
 
     """
@@ -78,7 +72,6 @@ def save_hydra_config(config: DictConfig, filename: str, resolve: bool = True) -
     """Save OmegaConf as yaml file.
 
     Args:
-    ----
         config (DictConfig): Config to save.
         filename (str): filename of the saved config.
         resolve (bool, optional): resolve the config before saving. Default: True.

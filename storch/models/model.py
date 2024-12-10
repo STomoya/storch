@@ -69,7 +69,7 @@ class ModelMixin(nn.Module):
         return model
 
     def extra_repr(self):
-        """repr."""
+        """Repr."""
         return ', '.join([f'{k}={v}' for k, v in self._config_repr.items()])
 
 
@@ -90,7 +90,6 @@ def parse_safetensors_metadata(file: str) -> dict:
     """Load metadata entry inside file header.
 
     Args:
-    ----
         file (str): the file to read metadata from.
 
     """
@@ -108,11 +107,9 @@ def unwrap_model(model: nn.Module) -> nn.Module:
     FSDP is not unwrapped because it needs an special process to get state_dicts. See `get_resolved_state_dict`.
 
     Args:
-    ----
         model (nn.Module): the model to unwrap.
 
     Returns:
-    -------
         nn.Module: unwrapped model.
 
     """
@@ -130,12 +127,10 @@ def get_resolved_state_dict(model: nn.Module) -> dict[str, torch.Tensor]:
     primary rank.
 
     Args:
-    ----
         model (nn.Module): the model to collect the weights.
 
     Returns:
-    -------
-        dict[str, torch.Tensor]: the `state_dict` of the model.
+        (dict[str, torch.Tensor]): the `state_dict` of the model.
 
     """
     # FSDP state_dict.
@@ -170,7 +165,6 @@ def save_model(model: ModelMixin, fp: str, framework: str = 'safetensors'):
     If safetensors is not available, this function fallbacks to `torch.save` to pickle weights.
 
     Args:
-    ----
         model (ModelMixin): the model to save the weights. it can be wrapped via DDP or FSDP. If the model
             is wrapped via FSDP, you must pass the wrapped model for gathering the full state dict properly.
         fp (str): the filename to save the weights. the path does not need an file extension.
@@ -210,13 +204,11 @@ def load_model(fp: str, device: str | torch.device = 'cpu') -> tuple[dict[str, A
     does the instantiation and weigt loading.
 
     Args:
-    ----
         fp (str): _description_
         device (str | torch.device, optional): _description_. Defaults to 'cpu'.
 
     Returns:
-    -------
-        tuple[dict[str, Any], dict[str, torch.Tensor]]: _description_
+        (tuple[dict[str, Any], dict[str, torch.Tensor]]): _description_
 
     """
     # synchronize devices

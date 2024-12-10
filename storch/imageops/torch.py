@@ -39,12 +39,10 @@ def torch_load_image(path: str, mode: ImageReadMode = ImageReadMode.RGB):
     """Load image using torchvision.
 
     Args:
-    ----
         path (str): path to image
         mode (ImageReadMode, optional): mode. Default: ImageReadMode.RGB.
 
     Returns:
-    -------
         _type_: loaded image.
 
     """
@@ -55,12 +53,10 @@ def make_image_grid(*image_tensors, num_images: int | None = None):
     """Align images.
 
     Args:
-    ----
         *image_tensors: image tensors.
         num_images (int, optional): _description_. Default: None.
 
     Returns:
-    -------
         torch.Tensor: aligned images.
 
     Examples::
@@ -101,7 +97,6 @@ def save_images(
     """Create image grid and save.
 
     Args:
-    ----
         *image_tensors: Image tensors.
         filename (str): Where to save the images to.
         num_images (int, optional): Number of samples to save. Default: None.
@@ -119,13 +114,11 @@ def to_tensor(image: Image.Image, mean: float | tuple = 0.5, std: float | tuple 
     """Convert image to torch.Tensor.
 
     Args:
-    ----
         image (Image.Image): Image to convert to torch.Tensor
         mean (float | tuple, optional): Mean used to normalize the image.. Default: 0.5.
         std (float | tuple, optional): Standard used to normalize the image.. Default: 0.5.
 
     Returns:
-    -------
         torch.Tensor: image as tensor.
 
     """
@@ -142,7 +135,6 @@ def tensor2heatmap_cv2(tensor, size, normalize=True, cmap=cv2.COLORMAP_JET) -> t
     It converts the image to np.ndarray, apply colormap and convert back to torch.Tensor
 
     Args:
-    ----
         tensor (_type_): image tensor of shape [BHW] or [B1HW]
         size (_type_): output size of heatmap
         normalize (bool, optional):  normalize output to [-1, 1]. Default: True.
@@ -150,7 +142,6 @@ def tensor2heatmap_cv2(tensor, size, normalize=True, cmap=cv2.COLORMAP_JET) -> t
             Default: cv2.COLORMAP_JET.
 
     Returns:
-    -------
         torch.Tensor: heatmap as image.
 
     """
@@ -973,13 +964,11 @@ def tensor2heatmap(tensor: torch.Tensor, size: tuple[int], normalize: bool = Tru
     Fast, but only supports JET colormap.
 
     Args:
-    ----
         tensor (torch.Tensor): image tensor of shape [BHW] or [B1HW]
         size (tuple[int]): output size of heatmap
         normalize (bool, optional): normalize output to [-1, 1]. Default: True.
 
     Returns:
-    -------
         torch.Tensor: heatmap as image.
 
     """
@@ -1005,14 +994,12 @@ def make_mask(image_size: tuple[int], num_boxes: int = 1, min_size: float = 0.1,
     """Make a randomly sampled mask.
 
     Args:
-    ----
         image_size (tuple[int]): image size (H, W)
         num_boxes (int, optional): number of boxes to create. Default: 1.
         min_size (float, optional): relative minimum size of the box. Default: 0.1.
         max_size (float, optional): relative maximum size of the box. Default: 0.5.
 
     Returns:
-    -------
         torch.Tensor: _description_
 
     """
@@ -1028,14 +1015,12 @@ def make_masks(image: torch.Tensor, num_boxes: int = 1, min_size: float = 0.1, m
     """Make a batch of randomly sampled masks.
 
     Args:
-    ----
         image (torch.Tensor): image tensor
         num_boxes (int, optional): number of boxes to create. Default: 1.
         min_size (float, optional): relative minimum size of the box. Default: 0.1.
         max_size (float, optional): relative maximum size of the box. Default: 0.5.
 
     Returns:
-    -------
         torch.Tensor: _description_
 
     """
@@ -1053,14 +1038,12 @@ def apply_mask(
     """Apply generated mask to image.
 
     Args:
-    ----
         image (torch.Tensor): image tensor
         mask (torch.Tensor): mask tensor
         mask_filler (Callable | torch.Tensor, optional): A callable which creates a tensor or another image tensor.
             Default: torch.zeros.
 
     Returns:
-    -------
         torch.Tensor: _description_
 
     """
@@ -1077,12 +1060,10 @@ def gaussian_1d(kernel_size: int, sigma: float = 1.0) -> torch.Tensor:
     """1-D Gaussian filter.
 
     Args:
-    ----
         kernel_size (int): Size of the filter.
         sigma (float, optional): Sigma. Default: 1.0.
 
     Returns:
-    -------
         torch.Tensor: 1d-gaussian filter.
 
     """
@@ -1097,12 +1078,10 @@ def gaussian_2d(kernel_size: int | tuple[int], sigma: float | tuple[float] = 1.0
     """2-D Gaussian filter.
 
     Args:
-    ----
         kernel_size (int | tuple[int]): Size of the filter.
         sigma (float | tuple[float], optional): Sigma. Default: 1.0.
 
     Returns:
-    -------
         torch.Tensor: 2d-gaussian filter
 
     """
@@ -1132,11 +1111,9 @@ def pascal_1d(kernel_size: int) -> torch.Tensor:
     """1-D discrete aproximation of Gaussian filter.
 
     Args:
-    ----
         kernel_size (int): filter size.
 
     Returns:
-    -------
         torch.Tensor: 1-d gaussian filter.
 
     """
@@ -1148,11 +1125,9 @@ def pascal_2d(kernel_size: int | tuple[int]) -> torch.Tensor:
     """2-D discrete aproximation of Gaussian filter.
 
     Args:
-    ----
         kernel_size (int | tuple[int]): Size of the filter.
 
     Returns:
-    -------
         torch.Tensor: 2-d gaussian filter
 
     """
@@ -1167,15 +1142,12 @@ def laplacian_1d(kernel_size: int) -> torch.Tensor:
     """1-D Laplacian filter.
 
     Args:
-    ----
         kernel_size (int): size of the filter
 
     Raises:
-    ------
         Exception: kernel_size is not an odd number.
 
     Returns:
-    -------
         torch.Tensor: 1-D Laplacian filter
 
     """
@@ -1190,11 +1162,9 @@ def laplacian_2d(kernel_size: int | tuple[int]) -> torch.Tensor:
     """1-D Laplacian filter.
 
     Args:
-    ----
         kernel_size (int | tuple[int]): size of the filter
 
     Returns:
-    -------
         torch.Tensor: 2-D Laplacian filter
 
     """
@@ -1208,12 +1178,10 @@ def sobel_2d(kernel_size: int, direction: int = 0) -> torch.Tensor:
     """2-D Sobel filter.
 
     Args:
-    ----
         kernel_size (int): Size of the filter.
         direction (int, optional): 0: vertical 1: horizontal. Default: 0.
 
     Returns:
-    -------
         torch.Tensor: 2-D Sobel filter
 
     """

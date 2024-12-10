@@ -43,7 +43,6 @@ def init_run(
     Optionally resume using saved config file inside a workspace dir.
 
     Args:
-    ----
         config_file (str): name of the config file tobe saved.
         child_folders (dict, optional): child folders inside root dir. Default: {}.
         save_config (bool): save config. pass false on child processes. Default: False
@@ -56,16 +55,15 @@ def init_run(
         default_config_file (str, optional): base config filename. Default: 'config.yaml'.
 
     Returns:
-    -------
-        DictConfig: loaded config.
-        Folder: Folder object.
+        (tuple[DictConfig, Folder]): loaded config, Folder object.
 
     Examples:
-    --------
-        >>> # create new run.
-        >>> $ python3 train.py
-        >>> # resume from a checkpoint
-        >>> $ python3 train.py ./path/to/checkpoint/config.yaml
+        ```
+        # create new run.
+        $ python3 train.py
+        # resume from a checkpoint
+        $ python3 train.py ./path/to/checkpoint/config.yaml
+        ```
 
     """
     if child_folders is None:

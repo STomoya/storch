@@ -7,14 +7,12 @@ def random_box(size: tuple, min_size: float = 0, max_size: float = 1.0, margin: 
     """Sample a random rectangle.
 
     Args:
-    ----
         size (tuple): Size of the region.
         min_size (float, optional): Minimum size of the box, relative to size. Default: 0.
         max_size (float, optional): Maximum size of the box, relative to size. Default: 1..
         margin (int, optional): Margin. Default: 0.
 
     Returns:
-    -------
         _type_: _description_
 
     """

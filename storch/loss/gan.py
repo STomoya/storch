@@ -15,11 +15,9 @@ class Adversarial(Loss):
         """Classify logits as real images.
 
         Args:
-        ----
             prob (torch.Tensor): D output to classify as real.
 
         Returns:
-        -------
             torch.Tensor: The loss
 
         """
@@ -29,11 +27,9 @@ class Adversarial(Loss):
         """Classify logits as fake images.
 
         Args:
-        ----
             prob (torch.Tensor): D output to classify as fake.
 
         Returns:
-        -------
             torch.Tensor: The loss
 
         """
@@ -43,12 +39,10 @@ class Adversarial(Loss):
         """Calc discriminator loss.
 
         Args:
-        ----
             real_prob (torch.Tensor): D output of real inputs
             fake_prob (torch.Tensor): D output of fake inputs
 
         Returns:
-        -------
             torch.Tensor: The loss
 
         """
@@ -63,11 +57,9 @@ class Adversarial(Loss):
         """Calc generator loss.
 
         Args:
-        ----
             fake_prob (torch.Tensor): D output of fake inputs.
 
         Returns:
-        -------
             torch.Tensor: The loss
 
         """

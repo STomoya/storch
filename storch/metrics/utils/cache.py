@@ -17,14 +17,12 @@ class FeatureCache:
         """Get cached features.
 
         Args:
-        ----
             folder (str): folder to images
             model (str): name of the model used to extract the features.
             num_images (int): number of images.
 
         Returns:
-        -------
-            np.ndarray | None: cached feature. None when not registered.
+            (np.ndarray | None): cached feature. None when not registered.
 
         """
         return cls._cache.get(cls.make_key(folder, model, num_images), None)
@@ -34,7 +32,6 @@ class FeatureCache:
         """Set features to cache.
 
         Args:
-        ----
             folder (str): folder to images
             model (str): name of the model used to extract the features.
             num_images (int): number of images.
@@ -51,14 +48,12 @@ class FeatureCache:
         """Create dictionary key for the cache.
 
         Args:
-        ----
             folder (str): folder to images
             model (str): name of the model used to extract the features.
             num_images (int): number of images.
 
         Returns:
-        -------
-            tuple[str, str, int]: key.
+            (tuple[str, str, int]): key.
 
         """
         key = tuple(folder, model, num_images)

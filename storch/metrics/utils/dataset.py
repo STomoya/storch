@@ -26,7 +26,6 @@ def build_dataset(
     """Build dataset for metrics.
 
     Args:
-    ----
         root_dir (str): root folder to images
         synthesized_size (int | tuple | list): synthesized image size.
         synthetic (bool): is the dataset fake?
@@ -38,7 +37,6 @@ def build_dataset(
         filter_fn (Callable, optional): callable to filter files. Default: None.
 
     Returns:
-    -------
         DataLoader: dataset
 
     """
@@ -66,7 +64,6 @@ class CleanResizeDataset(Dataset):
         Resizes the images using antialiased interpolation methods.
 
         Args:
-        ----
             root_dir (str): Dir to images.
             syn_size (int): Synthesized size.
             image_size (tuple, optional): Image size. Default: (299, 299).
@@ -115,13 +112,11 @@ class CleanResizeDataset(Dataset):
         """Resize with anti-aliasing.
 
         Args:
-        ----
             image (Image.Image): Image.Image object.
             size (tuple | list): size in (height, width) order.
             mode (_type_, optional): Interpolation mode. Default: Image.BICUBIC.
 
         Returns:
-        -------
             Image.Image: resized image.
 
         """

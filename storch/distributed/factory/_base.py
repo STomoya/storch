@@ -15,13 +15,15 @@ class CheckpointInterfaceBase:
     different parallelization methods (DDP or FSDP).
 
     inherited classes should work as follows:
-    >>> module = {FSDP,DDP}(original_module, ...)
-    >>> ckpt_if = CheckpointInterface(module, ...)
-    >>> state_dict = ckpt_if.state_dict()
-    >>> if primary_process:
-    ...     torch.save(state_dict, './state_dict')
-    >>> state_dict = torch.load('./state_dict')
-    >>> ckpt_if.load_state_dict(state_dict)
+        ```
+        module = {FSDP,DDP}(original_module, ...)
+        ckpt_if = CheckpointInterface(module, ...)
+        state_dict = ckpt_if.state_dict()
+        if primary_process:
+            torch.save(state_dict, './state_dict')
+        state_dict = torch.load('./state_dict')
+        ckpt_if.load_state_dict(state_dict)
+        ```
     """
 
     def __init__(self, to_checkpoint: nn.Module | Optimizer) -> None:

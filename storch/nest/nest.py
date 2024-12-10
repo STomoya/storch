@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 
 import storch
+from storch._optimizer_step import OptimizerStep
 from storch.checkpoint import Checkpoint
 from storch.distributed import DistributedHelper
 from storch.distributed import utils as distutils
@@ -39,7 +40,6 @@ class NeST:
         """NeST.
 
         Args:
-        ----
             project_folder (Path): the path to save logs and checkpoints for this project.
             strategy (str, optional): data parallelizm strategy. should be one of 'ddp' or 'fsdp'. Default: 'ddp'
             mixed_precision (bool, optional): Flag for enable/disable AMP. only supports pytorch native AMP
@@ -73,7 +73,7 @@ class NeST:
         self._status = None
         self._checkpoint = None
 
-        self._step_fn = {}
+        self._step_fn: dict[int, OptimizerStep] = {}
 
         self._train_dataset = None
         self._train_loader = None
@@ -89,7 +89,7 @@ class NeST:
         self._initialized = False
 
     def __repr__(self) -> str:
-        """repr."""
+        """Repr."""
         string = (
             'NeST(\n'
             f'    project_folder: {self.project_folder}\n'
@@ -145,12 +145,10 @@ class NeST:
         parallel and no `torch.compile` is enabled, all variants return the same model.
 
         Args:
-        ----
             index (int): returns the `index`-th created model.
             where (str, optional): Default: 'parallel'.
 
         Returns:
-        -------
             nn.Module: the model.
 
         """
@@ -163,15 +161,13 @@ class NeST:
         elif where == 'final':
             return self._final_models[index]
 
-    def get_step_fn(self, optimizer: optim.Optimizer) -> Callable:
+    def get_step_fn(self, optimizer: optim.Optimizer) -> OptimizerStep:
         """Return optimizer_step function, built for an specific optimizer.
 
         Args:
-        ----
             optimizer (optim.Optimizer): optimizer.
 
         Returns:
-        -------
             Callable: The optimizer_step function.
 
         """
@@ -260,6 +256,11 @@ class NeST:
             return
         return self.epoch_index + 1
 
+    @property
+    def gradscaler(self):
+        """GradScaler."""
+        return self._grad_scaler
+
     def is_end(self) -> bool:
         """Has reached maximum training iterations."""
         return self._status.is_end() if self._status is not None else None
@@ -291,7 +292,6 @@ class NeST:
         and the DataLoader.sampler.set_epoch function needed for shuffling the dataset on distributed training.
 
         Args:
-        ----
             is_train (bool): If True, the dataset is used to determine the actual training iterations considering
                 the gradient accumulation steps.
             dataset (Dataset): The user defined dataset.
@@ -309,7 +309,6 @@ class NeST:
             generator (Generator | None, optional): RNG for random numbers. Default: None.
 
         Returns:
-        -------
             DataLoader: The built data loader.
 
         """
@@ -361,12 +360,10 @@ class NeST:
         if `compile` is enabled. Note that `torch.compile` is only available for `PyTorch>=2.0.0`.
 
         Args:
-        ----
             builder (Callable | str): The builder.
             **builder_kwargs: Keyword arguments used to build the object.
 
         Returns:
-        -------
             nn.Module: The built model.
 
         """
@@ -400,13 +397,11 @@ class NeST:
         is called with the keyword arguments. The resulting object must be a `optim.Optimizer` object.
 
         Args:
-        ----
             builder (Callable | str): the builder.
             parameters (OrderedDict): parameters updated by the optimizer.
             **builder_kwargs: Keyword arguments used to build the object.
 
         Returns:
-        -------
             optim.Optimizer: The built optimizer
 
         """
@@ -430,13 +425,11 @@ class NeST:
         call `scheduler.step()` on every iteration. To switch this behavior, pass `step_on_epoch=True`.
 
         Args:
-        ----
             optimizer (optim.Optimizer): Optimizer to adjust learning rate using the built scheduler.
             step_on_epoch (bool, optional): call scheduler.step on each epoch. Default: False.
             **builder_kwargs: Keyword arguments used to build the object.
 
         Returns:
-        -------
             LRScheduler: learning rate scheduler.
 
         """
@@ -497,7 +490,6 @@ class NeST:
 
 
         Args:
-        ----
             max_training_iters (int): maximum training iterations. Note that it is not epochs.
             log_file (str, optional): Output filename for logging. Default: 'log.log'.
             log_interval (int, optional): interval for logging training state. Default: 100.
@@ -517,7 +509,6 @@ class NeST:
                 Default: 'checkpoint.{count}.torch'.
 
         Returns:
-        -------
             Status: training status keeper.
 
         """
@@ -584,7 +575,6 @@ class NeST:
         both `{update/load}_best_model`.
 
         Args:
-        ----
             name (str): name of the evaluation scores.
             direction: (str): either `minimize` or `maximize`.
             model (nn.Module): The model to keep the best states.
@@ -619,14 +609,12 @@ class NeST:
             >>> nest.register(model=model_if, optim=optim_if)
 
         Args:
-        ----
             *optimizers: The optimizers. If multiple optimizers are used, they must to passed in the same order
                 as the corresponding `build_model` function call. Pass `None` is the model is not meant to be trained.
             offload_to_cpu (bool, optional): Offload state dict to CPU. Only affects 'fsdp'. Default: True.
 
         Returns:
-        -------
-            tuple|tuple[tuple]: Interface for getting setting state_dict.
+            (tuple | tuple[tuple]): Interface for getting setting state_dict.
 
         """
         return self._disthelper.prepare_for_checkpointing(*optimizers, offload_to_cpu=offload_to_cpu)
@@ -657,7 +645,6 @@ class NeST:
             >>> nest.register(model=model_if, optim=optim_if)
 
         Args:
-        ----
             module (nn.Module): The module.
             optimizers (optim.Optimizer) : The optimizer. Pass `None` if the model is not meant to be trained.
             full_state_dict (bool, optional): If True, return unsharded tensors for FSDP models. Default: True.
@@ -665,8 +652,7 @@ class NeST:
             strict (bool, optional): same as `strict` option in `module.load_state_dict()`. Default: True.
 
         Returns:
-        -------
-            tuple|tuple[tuple]: Interface for getting setting state_dict.
+            (tuple | tuple[tuple]): Interface for getting setting state_dict.
 
         """
         return self._disthelper.prepare_stateful(
@@ -686,7 +672,6 @@ class NeST:
         given.
 
         Args:
-        ----
             **kwargs: key, value pairs of objects to be registered. values must have `state_dict` and
                 `load_state_dict` method.
 
@@ -701,7 +686,6 @@ class NeST:
         """Save the checkpoint.
 
         Args:
-        ----
             **constants: objects to save but does not have `state_dict` and `load_state_dict` method. You must
                 overwrite the values manually.
 
@@ -721,13 +705,11 @@ class NeST:
         you should explicitly provide the name of the metric.
 
         Args:
-        ----
             value (float): The value used to update the best model.
             name (str, optional): The name of the model. If only one best model keeper is set, this argument is not
                 needed. If you have set multiple best model keepers this argument is required. Default: None.
 
         Raises:
-        ------
             Exception: no best model keeper is set.
 
         """
@@ -751,13 +733,11 @@ class NeST:
         the first best model keeper is used to load parameters.
 
         Args:
-        ----
             name (str, optional): The name of the model. If only one best model keeper is set, this argument is not
                 needed. If you have set multiple best model keepers and `None` is passed, the first model keeper is
                 used to load parameters. Default: None.
 
         Raises:
-        ------
             Exception: no best model keeper is set.
 
         """
@@ -776,7 +756,6 @@ class NeST:
         """Wrapper of `torch.utils.data.DistributedSampler.set_epoch`.
 
         Args:
-        ----
             epoch (int, optional): epoch argument passed to `set_epoch`. If `None`, current epoch is determined
                 by `floor(_status.batches_done / _num_iters_per_epoch)`. Default: None.
 
@@ -796,14 +775,12 @@ class NeST:
         """Execute function only on primary process.
 
         Args:
-        ----
             func (Callable): the function to execute.
             *args: positional arguments
             **kwargs: keyword arguments
 
         Returns:
-        -------
-            Any | None: return value of the function or `None` if not on primary process.
+            (Any | None): return value of the function or `None` if not on primary process.
 
         """
         if self.is_primary():
@@ -831,15 +808,13 @@ class NeST:
         If is not a distributed environment, this function will just return the input `obj`.
 
         Args:
-        ----
             obj (Any): object to gather. Can be a Tensor or picklable python object.
             dst (int, optional): destination device. If not given gathers to all devices. Default: None.
             into_tensor (bool, optional): If True and obj is a Tensor gather into a Tensor instead of a list.
                 Default: True.
 
         Returns:
-        -------
-            torch.Tensor | tuple[torch.Tensor] | tuple[Any]: gathered object.
+            (torch.Tensor | tuple[torch.Tensor] | tuple[Any]): gathered object.
 
         """  # noqa: D401
         return distutils.gather(obj=obj, dst=dst, into_tensor=into_tensor)
@@ -863,13 +838,11 @@ class NeST:
         If is not a distributed environment, this function will just return the input `obj`.
 
         Args:
-        ----
             tensor (torch.Tensor): Tensor to reduce.
             dst (int, optional): destination device. If not given reduced to all device. Default: None.
             op (ReduceOp, optional): reduce option. Default: ReduceOp.SUM.
 
         Returns:
-        -------
             torch.Tensor: reduced tensor.
 
         """  # noqa: D401
@@ -897,7 +870,6 @@ class NeST:
         `storch._optimizer_step.OptimizerStep` for more details.
 
         Args:
-        ----
             loss (torch.Tensor): loss. Must be a scalar tensor.
             optimizer (optim.Optimizer): the optimizer to call `step` on.
             scheduler: (LRScheduler, optional): learning rate scheduler. This function assumes `step` is called every
@@ -926,6 +898,25 @@ class NeST:
             max_norm=max_norm,
         )
 
+    def sync_grad_accum_steps(self, base: torch.optim.Optimizer):
+        """Synchronize gradient accumulation steps.
+
+        If there are only one OptimizerStep, this function will exit without doing anything.
+
+        Args:
+            base (torch.optim.Optimizer): Synchronize based on this optimizer.
+
+        """
+        if len(self._step_fn) <= 1:
+            return
+
+        source = self.get_step_fn(base)
+        for target in self._step_fn.values():
+            if target is source:
+                continue
+            target.accumulation_count = source.accumulation_count
+            target.total_step_count = source.total_step_count
+
     """logger methods"""
 
     @nestutils._assert_initialized
@@ -948,19 +939,20 @@ class NeST:
         Calling `NeST.update` or `NeST.status.update` will always increment `batches_done`. To report values without
         incrementation, use `NeST.dry_update` or `NeST.status.dry_update` instead.
 
-        Usage:
-            >>> nest = NeST(...)
-            >>> # ... build objects
-            >>> nest.initialize_training(
-            ...     ... # configure logging with this function.
-            ... )
-            >>> while not nest.is_end():
-            ...     # forward, update parameters, calc metrics, etc.
-            ...     nest.update(**{'Loss': loss, 'Accuracy': accuracy})
-
         Args:
-        ----
             **kwargs: key, value pairs for objects to track.
+
+        Example:
+            ```
+            nest = NeST(...)
+            # build objects
+            nest.initialize_training(
+                # configure logging with this function.
+            )
+            while not nest.is_end():
+                # forward, update parameters, calc metrics, etc.
+                nest.update(**{'Loss': loss, 'Accuracy': accuracy})
+            ```
 
         """
         self._status.update(**kwargs)
@@ -970,7 +962,6 @@ class NeST:
         """Log but do not update training progress.
 
         Args:
-        ----
             **kwargs: key, value pairs for objects to track.
 
         """
@@ -981,7 +972,6 @@ class NeST:
         """Log message using python logger.
 
         Args:
-        ----
             message (str): the message to log
             level (str, optional): logging level. Defaults to 'info'.
 
@@ -993,7 +983,6 @@ class NeST:
         """Finish wandb logging. It is recommended to call this function explicitly to avoid bugs for resume.
 
         Args:
-        ----
             quiet (bool, optional): do not log run stats. Default: None.
 
         """
@@ -1019,12 +1008,10 @@ class NeST:
         """Send object to device.
 
         Args:
-        ----
             obj (torch.Tensor | nn.Module): object to send.
 
         Returns:
-        -------
-            torch.Tensor | nn.Module: the object on the device.
+            (torch.Tensor | nn.Module): the object on the device.
 
         """
         return obj.to(self.device)

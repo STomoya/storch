@@ -33,12 +33,10 @@ def replace_vit_attn_forward(
     """Replace forward of Attention layers in ViT.
 
     Args:
-    ----
         vit_model (VisionTransformer): This ViT model.
 
     Returns:
-    -------
-        tuple[Callable[[], list[torch.Tensor]], Callable[[], None]]: Func to collect attention maps from Attention
+        (tuple[Callable[[], list[torch.Tensor]], Callable[[], None]]): Func to collect attention maps from Attention
             layers and func to convert back to the original model.
 
     """
@@ -86,7 +84,6 @@ def create_vit_heat_maps(
     """Convert attention maps to heat maps.
 
     Args:
-    ----
         attn_maps (list[torch.Tensor]): The collected attn maps.
         num_prefix_tokens (int): Number of prefix tokens. VisionTransformer.num_prefix_tokens.
         image_tokens_size (tuple[int, int]): Shape of image tokens in 2D.
@@ -95,8 +92,7 @@ def create_vit_heat_maps(
         include_avg (bool, optional): include averaged image. Default: True.
 
     Returns:
-    -------
-        dict[str, torch.Tensor]: dict of heat maps.
+        (dict[str, torch.Tensor]): dict of heat maps.
 
     """
     token_index = token_index or 0
@@ -132,7 +128,6 @@ def create_attn_heat_maps(
     Currently only objects of VisionTransformer class of timm is supportted.
 
     Args:
-    ----
         model (VisionTransformer): The ViT model.
         input (torch.Tensor | tuple[Any, ...]): input Tensor or tuple of tensors. The first element must be the image.
         target_token_index (int, optional): The index of the token to create the heat map on. Default: 0 (CLS token).
@@ -140,8 +135,7 @@ def create_attn_heat_maps(
         resize (bool, optional): resize the heat map. Default: True.
 
     Returns:
-    -------
-        dict[str, torch.Tensor]: dict of heat maps.
+        (dict[str, torch.Tensor]): dict of heat maps.
 
     """
     assert isinstance(model, VisionTransformer), 'This function only supports timm.models.VisionTransformer class.'

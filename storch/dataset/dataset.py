@@ -29,12 +29,10 @@ class DatasetBase(Dataset):
         """Set keyword arguments for DataLoader.
 
         Args:
-        ----
             batch_size (int): Batch size
             **kwargs: other kwargs for DataLoader.
 
         Returns:
-        -------
             Self: Other keyword arguments to be passed to the DataLoader class
 
         """
@@ -47,8 +45,7 @@ class DatasetBase(Dataset):
     def toloader(self) -> DataLoader:
         """Transform dataset to DataLoader object.
 
-        Returns
-        -------
+        Returns:
             DataLoader: data loader object.
 
         """
@@ -67,7 +64,6 @@ class ImageFolder(DatasetBase):
     """ImageFolder, but w/o class labels.
 
     Args:
-    ----
         data_root (str): Root directory of images. Images are searched recursively inside this folder.
         transform (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -102,7 +98,6 @@ class ImageFolders(DatasetBase):
     """ImageFolder, but w/o class labels and w/ multiple folder support.
 
     Args:
-    ----
         data_roots (list[str]): Root directory of images. Images are searched recursively inside this folder.
         transforms (Callable | list[Callable]): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -144,15 +139,14 @@ class ImageFolders(DatasetBase):
         """Shuffle the data.
 
         Args:
-        ----
             index (int | None, optional): which to shuffle. If None, both. Default: None.
 
         """
         if index is not None:
             random.shuffle(self.images[index])
         else:
-            for index, value in self.images.items():
-                if index != 0:
+            for i, value in self.images.items():
+                if i != 0:
                     random.shuffle(value)
 
 
@@ -176,7 +170,6 @@ class ImagePathFile(DatasetBase):
             ...
 
     Args:
-    ----
         path (str): Path to a file with path to images.
         transform (Callable): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -217,7 +210,6 @@ class ImagePathFiles(DatasetBase):
             ...
 
     Args:
-    ----
         path (list[str]): Path to a file with path to images.
         transform (Callable | list[Callable]): A callable that transforms the image.
         num_images (int | None, optional): If given, the dataset will be reduced to have at most num_images samples.
@@ -258,13 +250,12 @@ class ImagePathFiles(DatasetBase):
         """Shuffle the data.
 
         Args:
-        ----
             index (int | None, optional): which to shuffle. If None, both. Default: None.
 
         """
         if index is not None:
             random.shuffle(self.images[index])
         else:
-            for index, value in self.images.items():
-                if index != 0:
+            for i, value in self.images.items():
+                if i != 0:
                     random.shuffle(value)

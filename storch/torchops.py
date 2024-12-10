@@ -53,7 +53,6 @@ def auto_get_device(force_cpu: bool = False, no_gpu_msg_type='warn') -> torch.de
     'cuda' if torch.cuda.is_available() else 'cpu'
 
     Args:
-    ----
         force_cpu (bool, optional): Force device to be CPU. Default: False.
         no_gpu_msg_type (str, optional): How this function tells you, you do not have any GPUs.
             Ignored when force_cpu=True.
@@ -63,11 +62,9 @@ def auto_get_device(force_cpu: bool = False, no_gpu_msg_type='warn') -> torch.de
             Default: 'warn'.
 
     Raises:
-    ------
         Exception: Raised when no GPUs found.
 
     Returns:
-    -------
         torch.device: Device.
 
     """
@@ -92,7 +89,6 @@ def freeze(model: nn.Module) -> None:
     This is an inplace operation.
 
     Args:
-    ----
         model (nn.Module): The module to freeze.
 
     """
@@ -107,7 +103,6 @@ def unfreeze(model: nn.Module) -> None:
     This is an inplace operation.
 
     Args:
-    ----
         model (nn.Module): The module to unfreeze.
 
     """
@@ -128,7 +123,6 @@ def update_ema(
     w'_new = w' * decay + w * (1 - decay)
 
     Args:
-    ----
         model (torch.nn.Module): Model, which actually is updated
         model_ema (torch.nn.Module): Copy of the model, which is updated by exponential moving average.
         decay (float, optional):  Decay for exponential modving average. Default: 0.999.
@@ -163,7 +157,6 @@ def set_seeds(
     """Set variables for reproducible training.
 
     Args:
-    ----
         seed (int, optional): Random number generator seed. Default: 3407.
         use_deterministic_algorithms (bool, optional): use deterministic algorithms?
             True for reproducibility. Default: False.
@@ -172,9 +165,8 @@ def set_seeds(
         cudnn_benchmark (bool, optional): cudnn benchmark. Default: False.
 
     Returns:
-    -------
-        Callable: Function for DataLoader's worker_init_fn option.
-        torch.Generator: torch.Generator for DataLoader's generator option.
+        (tuple[Callable, torch.Generator]): Function for DataLoader's worker_init_fn option and torch.Generator for
+            DataLoader's generator option.
 
     """
     random.seed(seed)
@@ -200,14 +192,11 @@ def shuffle_batch(
     """Randomly shuffle a batched tensor and optionally return pthe permutation.
 
     Args:
-    ----
         batch (torch.Tensor): Batched tensor to shuffle.
         return_permutation (bool, optional): If True, return permutation. Default: False.
 
     Returns:
-    -------
-        torch.Tensor: The shuffled tensor.
-        torch.Tensor: The permutation. Only when return_permutation==True.
+        (torch.Tensor | tuple[torch.Tensor, torch.Tensor]): The shuffled tensor and the permutation
 
     """
     permutation = torch.randperm(batch.size(0))
@@ -221,7 +210,6 @@ def assert_shape(tensor: torch.Tensor, shape: torch.Size | tuple | list) -> None
     """Assert shape of tensor.
 
     Args:
-    ----
         tensor (torch.Tensor): tensor to check the shape of
         shape (torch.Size | tuple | list): expected shape of tensor. -1 or None for arbitrary size.
 
@@ -245,7 +233,6 @@ def print_module_summary(
     Taken from: https://github.com/NVlabs/stylegan3/blob/583f2bdd139e014716fc279f23d362959bcc0f39/torch_utils/misc.py#L196-L264
 
     Args:
-    ----
         module (nn.Module): The module to summarize.
         inputs (list | tuple): List of input tensors.
         max_nesting (int, optional): Max nested modules to print. Default: 3.
@@ -332,11 +319,9 @@ def convert_outputs_to_fp32(func: Callable) -> Callable:
     """Convert function output to fp32 dtype.
 
     Args:
-    ----
         func (Callable): the function to wrap.
 
     Returns:
-    -------
         Callable: the wrapped function.
 
     """
@@ -357,14 +342,12 @@ def get_grad_scaler(enabled=True, is_fsdp=False, disable_with_none=False) -> Gra
     """Get the proper gradient scaler.
 
     Args:
-    ----
         enabled (bool, optional): Enable gradient scaling? Default: True.
         is_fsdp (bool, optional): is distributed mode FSDP? Default: False.
         disable_with_none (bool, optional): Disable grdient scaling by returning None. Default: False.
 
     Returns:
-    -------
-        GradScaler | None: gradient scaler class
+        (GradScaler | None): gradient scaler class
 
     """
     scaler = GradScaler(enabled=enabled) if not is_fsdp else ShardedGradScaler(enabled=enabled)
@@ -378,7 +361,6 @@ def local_seed_builtin(seed: int, enabled: bool = True) -> None:
     """Locally set the seed of builtin random module.
 
     Args:
-    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
 
@@ -396,7 +378,6 @@ def local_seed_numpy(seed: int, enabled: bool = True) -> None:
     """Locally set the seed of numpy.
 
     Args:
-    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
 
@@ -414,7 +395,6 @@ def local_seed_torch(seed: int, enabled: bool = True) -> None:
     """Locally set the seed of torch.
 
     Args:
-    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
 
@@ -432,7 +412,6 @@ def local_seed(seed: int, enabled: bool = True, builtin: bool = True, numpy: boo
     """Locally set the seed of builtin random, numpy, and torch.
 
     Args:
-    ----
         seed (int): Seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
         builtin (bool, optional): Independent flag for builtin random. Ignored when enabled=False. Default: True.
@@ -450,19 +429,18 @@ def fixed_random(seed: int, enabled: bool = True) -> Callable:
     """Fix random.
 
     Args:
-    ----
         seed (int): seed.
         enabled (bool, optional): Enable local seed if True. Default: True.
 
     Returns:
-    -------
         Callable: wrapped function.
 
     Examples:
-    --------
-        >>> @fixed_random(3407)
-        ... def test():
-        ...     pass
+        ```
+        @fixed_random(3407)
+        def test():
+            pass
+        ```
 
     """
 

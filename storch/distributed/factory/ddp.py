@@ -22,7 +22,6 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
     to easily get/set the state_dict dealing with parameter names.
 
     Args:
-    ----
         to_checkpoint (nn.Module): The module to wrap witch this interface.
 
     """
@@ -30,8 +29,7 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
     def state_dict(self) -> OrderedDict:
         """Return the state_dict of the original module.
 
-        Returns
-        -------
+        Returns:
             OrderedDict: the state_dict
 
         """
@@ -41,7 +39,6 @@ class DDPModuleCheckpointInterface(CheckpointInterfaceBase):
         """Properly set the state_dict to the parallelized model.
 
         Args:
-        ----
             state_dict (OrderedDict): The non-parallelized model's state_dict to load.
 
         """
@@ -60,13 +57,11 @@ class DistributedDataParallelFactory(ParallelFactoryBase):
         """Wrap the input `module` using pytorch native DDP class.
 
         Args:
-        ----
             module (nn.Module): module to wrap.
             device_ids (list): device ids.
             **kwargs: Currently not used.
 
         Returns:
-        -------
             DDP: the wrapped module.
 
         """
@@ -80,13 +75,11 @@ class DistributedDataParallelFactory(ParallelFactoryBase):
         DDP does not require code changes for optimizers so they, are returned as-is.
 
         Args:
-        ----
             optim (Optimizer): The corresponding optimizer for training the wrapped module.
             **kwargs: Currently not used.
 
         Returns:
-        -------
-            tuple[DDPModuleCheckpointInterface, Optimizer]: Interface for checkpointing and the optimizer.
+            (tuple[DDPModuleCheckpointInterface, Optimizer]): Interface for checkpointing and the optimizer.
 
         """
         assert self.is_wrapped, 'Call "wrap_module()" first.'

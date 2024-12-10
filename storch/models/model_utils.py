@@ -11,11 +11,9 @@ def get_parameters_and_buffers(module: nn.Module) -> Iterable:
     """Get parameters and buffers from a module.
 
     Args:
-    ----
         module (nn.Module): The module to collect the parameters and buffers from.
 
     Returns:
-    -------
         Iterable: An iterable containing all parameters and buffers.
 
     """
@@ -28,11 +26,9 @@ def get_named_parameters_and_buffers(module: nn.Module) -> Iterable:
     """Get named parameters and buffers from a module.
 
     Args:
-    ----
         module (nn.Module): The module to collect the parameters and buffers from.
 
     Returns:
-    -------
         Iterable: An iterable containing all named parameters and buffers.
 
     """
@@ -45,15 +41,12 @@ def get_device_from_module(module: nn.Module) -> torch.device:
     """Get the device of a module.
 
     Args:
-    ----
         module (nn.Module): The module to get the device from.
 
     Raises:
-    ------
         UserWarning: No parameters nor buffers.
 
     Returns:
-    -------
         torch.device: The device.
 
     """
@@ -71,15 +64,12 @@ def get_dtype_from_module(module: nn.Module) -> torch.dtype:
     """Get the dtype of a module.
 
     Args:
-    ----
         module (nn.Module): The module to get the dtype from.
 
     Raises:
-    ------
         UserWarning: No parameters nor buffers.
 
     Returns:
-    -------
         torch.dtype: The dtype.
 
     """

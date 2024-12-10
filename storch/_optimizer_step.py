@@ -20,7 +20,6 @@ def grad_nan_to_num_(
     This is an inplace operation.
 
     Args:
-    ----
         input (nn.Module | list[torch.Tensor]): Module or list of tensors with .grad attribute.
         nan (float, optional): Value to replace nan. Default: 0.0.
         posinf (float, optional): Value to replace positive inf. Default: 1e5.
@@ -78,7 +77,6 @@ def get_optimizer_step(
     epoch, you should call them manually, outside of this function.
 
     Args:
-    ----
         trigger_gradient_scaling_via_gradscaler (bool, optional): deprecated argument. Default: False.
         gradient_accumulation_steps (int, optional): gradient accumulation steps. Default: 1.
         num_iters_per_epoch (int, optional): number of iterations per epoch. This is used to set the gradient
@@ -95,7 +93,6 @@ def get_optimizer_step(
             optimizer. The function must not require any arguments. Default: [].
 
     Returns:
-    -------
         Callable: Optimizer step function.
 
     """
@@ -122,14 +119,12 @@ class OptimizerStep:
     """A function which calls backward on loss and step on optimizer, supporting gradient accumulation.
 
     Args:
-    ----
         gradient_accumulation_steps (int): number of gradient accumulation steps. Default: 1.
         num_iters_per_epoch (int | None): number of iterations per epoch. used to adjust the
             accumulation steps of the last few batches. Pass None for infinite. Default: None.
         no_syn_context (Callable): contextmanager which suppresses device synchronization on backward. Default: None.
 
     Examples:
-    --------
         >>> optimizer_step = OptimizerStep(grad_steps, total_iters)
 
     """
@@ -169,7 +164,6 @@ class OptimizerStep:
         """Register hooks to be executed inside the step function.
 
         Args:
-        ----
             when (str): either 'backward' or 'step'
             *hooks: callables to be executed.
 
@@ -249,7 +243,6 @@ class OptimizerStep:
         epoch, you should call them manually, outside of this function.
 
         Args:
-        ----
             loss (torch.Tensor): loss to backpropagate.
             optimizer (optim.Optimizer): optimizer.
             scaler (GradScaler, optional): Optional GradScaler object.

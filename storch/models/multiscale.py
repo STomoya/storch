@@ -24,7 +24,6 @@ class MultiScale(nn.Module):
         """Multi scale D.
 
         Args:
-        ----
             build_model (Callable): Func that builds the model. Requires to have no arguments.
                 Use functools.partial, etc.
             num_scales (int, optional): Number of scales. Default: 2.
