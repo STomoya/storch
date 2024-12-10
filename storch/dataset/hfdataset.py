@@ -48,12 +48,7 @@ def imagepaths(
     """
     assert is_datasets_available(), 'This function requires the `datasets` module.'
 
-    def generator():
-        for path in paths:
-            if is_image_file(path):
-                yield dict(image=path)
-
-    dataset = Dataset.from_generator(generator)
+    dataset = Dataset.from_dict({'image': list(filter(is_image_file, paths))})
     dataset = dataset.sort('image')  # always sort the data.
 
     if callable(filter_fn):
