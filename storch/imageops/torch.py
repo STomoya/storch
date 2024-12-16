@@ -77,7 +77,7 @@ def make_image_grid(*image_tensors, num_images: int | None = None):
 
     image_tensor_lists = map(_split, image_tensors)
     images = []
-    for index, image_set in enumerate(zip(*image_tensor_lists, strict=False)):
+    for index, image_set in enumerate(zip(*image_tensor_lists)):
         images.extend(list(image_set))
         if num_images is not None and index == num_images - 1:
             break

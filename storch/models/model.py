@@ -46,7 +46,7 @@ class ModelMixin(nn.Module):
                 signiture = inspect.signature(init)
                 parameters = {k: v.default for k, v in signiture.parameters.items() if k != 'self'}
 
-                for arg, name in zip(args, parameters.keys(), strict=False):
+                for arg, name in zip(args, parameters.keys()):
                     config[name] = arg
                 config.update({k: kwargs.get(k, default) for k, default in parameters.items() if k not in config})
                 self.__model_config = config

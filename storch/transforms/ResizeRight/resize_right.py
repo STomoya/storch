@@ -202,7 +202,7 @@ def calc_pad_sz(in_sz, out_sz, field_of_view, projected_grid, scale_factor, dim_
         # in the by_convs case pad_sz is a list of left-right pairs. one per
         # each filter
 
-        pad_sz = list(zip(left_pads, right_pads, strict=False))
+        pad_sz = list(zip(left_pads, right_pads))
 
     return pad_sz, projected_grid, field_of_view
 
@@ -268,7 +268,7 @@ def apply_convs(input, scale_factor, in_sz, out_sz, weights, dim, pad_sz, pad_mo
 
     # iterate over the conv operations. we have as many as the numerator
     # of the scale-factor. for each we need boundaries and a filter.
-    for conv_ind, (pad_sz, filt) in enumerate(zip(pad_sz, weights, strict=False)):  # noqa: B020
+    for conv_ind, (pad_sz, filt) in enumerate(zip(pad_sz, weights)):  # noqa: B020
         # apply padding (we pad last dim, padding can be negative)
         pad_dim = input.ndim - 1
         tmp_input = fw_pad(input, fw, pad_sz, pad_mode, dim=pad_dim)
@@ -297,7 +297,7 @@ def set_scale_and_out_sz(in_shape, out_shape, scale_factors, by_convs, scale_tol
         if scale_factors is None:
             # if no scale given, we calculate it as the out to in ratio
             # (not recomended)
-            scale_factors = [out_sz / in_sz for out_sz, in_sz in zip(out_shape, in_shape, strict=False)]
+            scale_factors = [out_sz / in_sz for out_sz, in_sz in zip(out_shape, in_shape)]
     if scale_factors is not None:
         # by default, if a single number is given as scale, we assume resizing
         # two dims (most common are images with 2 spatial dims)
@@ -312,9 +312,7 @@ def set_scale_and_out_sz(in_shape, out_shape, scale_factors, by_convs, scale_tol
         if out_shape is None:
             # when no out_shape given, it is calculated by multiplying the
             # scale by the in_shape (not recomended)
-            out_shape = [
-                ceil(scale_factor * in_sz) for scale_factor, in_sz in zip(scale_factors, in_shape, strict=False)
-            ]
+            out_shape = [ceil(scale_factor * in_sz) for scale_factor, in_sz in zip(scale_factors, in_shape)]
         # next part intentionally after out_shape determined for stability
         # we fix by_convs to be a list of truth values in case it is not
         if not isinstance(by_convs, (list, tuple)):
@@ -322,7 +320,7 @@ def set_scale_and_out_sz(in_shape, out_shape, scale_factors, by_convs, scale_tol
 
         # next loop fixes the scale for each dim to be either frac or float.
         # this is determined by by_convs and by tolerance for scale accuracy.
-        for ind, (sf, dim_by_convs) in enumerate(zip(scale_factors, by_convs, strict=False)):
+        for ind, (sf, dim_by_convs) in enumerate(zip(scale_factors, by_convs)):
             # first we fractionaize
             if dim_by_convs:
                 frac = Fraction(1 / sf).limit_denominator(max_numerator)

@@ -215,7 +215,7 @@ def assert_shape(tensor: torch.Tensor, shape: torch.Size | tuple | list) -> None
 
     """
     assert tensor.ndim == len(shape), f'Wrong number of dimensions: got {tensor.ndim} expected {len(shape)}'
-    for i, (size, exp_size) in enumerate(zip(tensor.size(), shape, strict=False)):
+    for i, (size, exp_size) in enumerate(zip(tensor.size(), shape)):
         if exp_size is None or exp_size == -1:
             continue
         assert size == exp_size, f'Wrong size for dimension {i}: got {size} expected {exp_size}'
@@ -307,10 +307,10 @@ def print_module_summary(
     rows += [['Total', str(param_total), str(buffer_total), '-', '-']]
 
     # Print table.
-    widths = [max(len(cell) for cell in column) for column in zip(*rows, strict=False)]
+    widths = [max(len(cell) for cell in column) for column in zip(*rows)]
     print_fn()
     for row in rows:
-        print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths, strict=True)))
+        print_fn('  '.join(cell + ' ' * (width - len(cell)) for cell, width in zip(row, widths)))
     print_fn()
     return outputs
 

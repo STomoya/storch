@@ -39,6 +39,7 @@ ignore = [
     "NPY002",  # numpy.random.Generator. Most torch programs use np.random.seed().
     "PLR0402", # import torch.nn as nn -> from torch import nn.
     "SIM108",  # if: a=...; else: a=... -> a = ... if else ...;. I like using if-else in some cases.
+    "B905",    # strict=True
 ]
 
 [format]

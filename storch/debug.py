@@ -66,7 +66,7 @@ def test_model(
 
     models = [model.to(device) for model in models]
 
-    for model, input_shape in zip(models, input_shapes, strict=False):
+    for model, input_shape in zip(models, input_shapes):
         input = input_sampler(batch_size, *input_shape, device=device)
         output = model(input)
 

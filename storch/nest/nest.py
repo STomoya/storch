@@ -528,7 +528,7 @@ class NeST:
             delta_format=delta_format,
         )
 
-        for i, (dmodel, optimizer) in enumerate(zip(self._para_models, self._optimizers, strict=False)):
+        for i, (dmodel, optimizer) in enumerate(zip(self._para_models, self._optimizers)):
             # if gpu memory logging is enabled instantiate hook and register.
             if self.is_primary() and log_gpu_memory_at is not None:
                 if isinstance(log_gpu_memory_at, int):
@@ -554,7 +554,7 @@ class NeST:
 
         if len(self._org_models) > len(self._optimizers):
             to_log += self._org_models[len(self._optimizers) :]
-        for model, optimizer in zip(self._org_models, self._optimizers, strict=False):
+        for model, optimizer in zip(self._org_models, self._optimizers):
             to_log += [model, optimizer]
         self._status.log_stuff(*to_log, self._train_loader)
         self._status.log_actual_batch_size(self._train_loader.batch_size, self._grad_accum_steps, self.world_size)
