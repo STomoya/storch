@@ -655,7 +655,7 @@ class ThinStatus:
     def batches_done(self, value):
         self._batches_done = value
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, __name: str, /) -> Any:
         """If "__name" is not specified in ThinStatus but exists in Status, return a function that does nothing."""
         if __name in Status.__dict__ and callable(Status.__dict__[__name]):
 

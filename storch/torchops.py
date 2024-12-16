@@ -20,24 +20,24 @@ from storch._optimizer_step import get_optimizer_step, grad_nan_to_num_
 from storch.utils import version
 
 __all__ = [
-    'auto_get_device',
-    'freeze',
-    'unfreeze',
-    'update_ema',
-    'set_seeds',
-    'shuffle_batch',
-    'get_optimizer_step',
     'assert_shape',
-    'print_module_summary',
+    'auto_get_device',
+    'convert_outputs_to_fp32',
+    'fixed_random',
+    'freeze',
+    'get_grad_scaler',
+    'get_optimizer_step',
     'grad_nan_to_num_',
     'inference_mode',
-    'convert_outputs_to_fp32',
-    'get_grad_scaler',
+    'local_seed',
     'local_seed_builtin',
     'local_seed_numpy',
     'local_seed_torch',
-    'local_seed',
-    'fixed_random',
+    'print_module_summary',
+    'set_seeds',
+    'shuffle_batch',
+    'unfreeze',
+    'update_ema',
 ]
 
 
@@ -138,12 +138,12 @@ def update_ema(
     model.eval()
     param_ema = dict(model_ema.named_parameters())
     param = dict(model.named_parameters())
-    for key in param_ema:
+    for key in param_ema:  # noqa: PLC0206
         param_ema[key].data.mul_(decay).add_(param[key].data, alpha=(1 - decay))
     if copy_buffers:
         buffer_ema = dict(model_ema.named_buffers())
         buffer = dict(model.named_buffers())
-        for key in buffer_ema:
+        for key in buffer_ema:  # noqa: PLC0206
             buffer_ema[key].data.copy_(buffer[key].data)
     model.train()
 

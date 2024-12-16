@@ -433,7 +433,7 @@ class NeST:
             LRScheduler: learning rate scheduler.
 
         """
-        if builder_kwargs.get('num_iter_per_step', None) is None or not step_on_epoch:
+        if builder_kwargs.get('num_iter_per_step') is None or not step_on_epoch:
             builder_kwargs['num_iter_per_step'] = 1 if step_on_epoch else self._actual_iters_per_epoch
         scheduler = build_scheduler(optimizer, **builder_kwargs)
         return scheduler

@@ -21,22 +21,22 @@ from stutil import (
 from stutil.timer import Timer
 
 __all__ = [
+    'EasyDict',
+    'Timer',
     'calc_num_sampling',
-    'check_folder',
-    'get_obj_by_name',
     'call_func_by_name',
+    'check_folder',
     'construct_class_by_name',
     'dynamic_default',
-    'EasyDict',
     'get_now_string',
+    'get_obj_by_name',
     'glob_inside',
+    'import_all_modules',
     'natural_sort',
     'prod',
     'recursive_apply',
     'save_command_args',
     'save_exec_status',
-    'import_all_modules',
-    'Timer',
 ]
 
 
