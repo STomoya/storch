@@ -16,22 +16,22 @@ from storch.imageops.utils import random_box
 from storch.utils.layer_helpers import to_2tuple
 
 __all__ = [
-    'make_image_grid',
-    'save_images',
-    'to_tensor',
-    'tensor2heatmap',
-    'tensor2heatmap_cv2',
-    'torch_load_image',
-    'make_mask',
-    'make_masks',
     'apply_mask',
     'gaussian_1d',
     'gaussian_2d',
-    'pascal_1d',
-    'pascal_2d',
     'laplacian_1d',
     'laplacian_2d',
+    'make_image_grid',
+    'make_mask',
+    'make_masks',
+    'pascal_1d',
+    'pascal_2d',
+    'save_images',
     'sobel_2d',
+    'tensor2heatmap',
+    'tensor2heatmap_cv2',
+    'to_tensor',
+    'torch_load_image',
 ]
 
 

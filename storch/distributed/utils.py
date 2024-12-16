@@ -12,18 +12,18 @@ from torch.distributed import ReduceOp
 from storch.distributed._state import DistributedState
 
 __all__ = [
-    'is_available',
-    'is_torchrun',
-    'is_primary',
-    'wait_for_everyone',
-    'get_backend',
-    'get_world_size',
-    'get_rank',
-    'get_local_rank',
-    'get_device',
     'gather',
-    'reduce',
+    'get_backend',
+    'get_device',
+    'get_local_rank',
+    'get_rank',
+    'get_world_size',
+    'is_available',
+    'is_primary',
+    'is_torchrun',
     'only_on_primary',
+    'reduce',
+    'wait_for_everyone',
 ]
 
 

@@ -24,17 +24,17 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 __all__ = [
-    'np',
-    'torch',
-    'nn',
+    'TF',
+    'Image',
+    'RandomDataset',
     'dummy_tensor',
+    'nn',
+    'np',
+    'print_module_summary',
     'save_image',
     'save_images',
     'test_model',
-    'print_module_summary',
-    'Image',
-    'TF',
-    'RandomDataset',
+    'torch',
 ]
 
 

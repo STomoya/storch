@@ -8,7 +8,7 @@ from contextlib import contextmanager
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-__all__ = ['plt_subplots', 'ax_setter']
+__all__ = ['ax_setter', 'plt_subplots']
 
 
 @contextmanager

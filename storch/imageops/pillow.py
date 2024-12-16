@@ -8,7 +8,7 @@ from io import BytesIO
 import torch
 from PIL import Image, ImageFile
 
-__all__ = ['download', 'gif_from_files', 'pil_load_image', 'pil_configuration']
+__all__ = ['download', 'gif_from_files', 'pil_configuration', 'pil_load_image']
 
 
 def pil_configuration(

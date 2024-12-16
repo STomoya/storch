@@ -28,7 +28,7 @@ except ImportError:
 
 from storch.distributed.utils import is_primary, wait_for_everyone
 
-__all__ = ['ModelMixin', 'save_model', 'load_model', 'is_safetensors_available']
+__all__ = ['ModelMixin', 'is_safetensors_available', 'load_model', 'save_model']
 
 
 class ModelMixin(nn.Module):
