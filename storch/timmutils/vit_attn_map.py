@@ -1,5 +1,7 @@
 """ViT attn map."""
 
+from __future__ import annotations
+
 from functools import partial
 from types import MethodType
 from typing import Any, Callable

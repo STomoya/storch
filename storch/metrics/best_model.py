@@ -1,5 +1,7 @@
 """Classes for keeping the best state_dict for easy saving and loading."""
 
+from __future__ import annotations
+
 import os
 import warnings
 
